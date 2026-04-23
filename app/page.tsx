@@ -1,65 +1,102 @@
-import Image from "next/image";
+'use client';
 
+import { useState, useEffect } from 'react';
 export default function Home() {
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') setDark(true);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = !dark;
+    setDark(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  };
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div style={{
+      minHeight: '100vh',
+      background: dark ? '#0f0f0f' : '#faf7f2',
+      color: dark ? '#f0f0f0' : '#1a1208',
+      fontFamily: 'sans-serif',
+      padding: '24px 20px',
+      transition: 'all 0.3s ease'
+    }}>
+
+      {/* Top Bar */}
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px'}}>
+        <div style={{fontSize:'24px', fontWeight:800}}>
+          Com<span style={{color: dark ? '#ffa030' : '#e07000'}}>panion</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <button onClick={toggleTheme} style={{
+          background: dark ? '#2a2a2a' : '#fff3e0',
+          border: `1px solid ${dark ? '#333' : '#ffd080'}`,
+          color: dark ? '#ffa030' : '#c05800',
+          borderRadius:'20px',
+          padding:'6px 14px',
+          fontSize:'12px',
+          cursor:'pointer'
+        }}>
+          {dark ? '☀️ Light' : '🌙 Dark'}
+        </button>
+      </div>
+      {/* Greeting */}
+      <div style={{marginBottom:'8px', fontSize:'13px', color: dark ? '#666' : '#b09060'}}>
+        Good morning 👋
+      </div>
+      <div style={{fontSize:'26px', fontWeight:800, lineHeight:1.2, marginBottom:'28px'}}>
+        Ready to <span style={{color: dark ? '#ffa030' : '#e07000'}}>crush</span><br/>your JAMB?
+      </div>
+
+      {/* Main Cards */}
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px'}}>
+        
+        <div style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
+          <div style={{fontSize:'24px', marginBottom:'8px'}}>📚</div>
+          <div style={{fontSize:'14px', fontWeight:700, marginBottom:'3px'}}>Learn</div>
+          <div style={{fontSize:'11px', color: dark ? '#555' : '#b09060'}}>Topic lessons</div>
         </div>
-      </main>
+
+        <div style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
+          <div style={{fontSize:'24px', marginBottom:'8px'}}>✏️</div>
+          <div style={{fontSize:'14px', fontWeight:700, marginBottom:'3px'}}>Practice</div>
+          <div style={{fontSize:'11px', color: dark ? '#555' : '#b09060'}}>Past questions</div>
+        </div>
+
+      </div>
+      {/* Ask AI Button */}
+      <button style={{
+        width:'100%',
+        background: dark ? '#1a1208' : '#1a1208',
+        color:'#ffa030',
+        border:'none',
+        borderRadius:'14px',
+        padding:'16px',
+        fontSize:'15px',
+        fontWeight:700,
+        cursor:'pointer',
+        marginBottom:'20px'
+      }}>
+        🤖 Ask AI Anything
+      </button>
+
+      {/* Stats */}
+      <div style={{display:'flex', gap:'16px', paddingTop:'16px', borderTop:`1px solid ${dark ? '#2a2a2a' : '#ede8df'}`}}>
+        <div style={{flex:1, textAlign:'center'}}>
+          <div style={{fontSize:'22px', fontWeight:700, color: dark ? '#ffa030' : '#e07000'}}>0</div>
+          <div style={{fontSize:'10px', color: dark ? '#555' : '#b09060', letterSpacing:'1px'}}>QUESTIONS</div>
+        </div>
+        <div style={{flex:1, textAlign:'center'}}>
+          <div style={{fontSize:'22px', fontWeight:700, color: dark ? '#ffa030' : '#e07000'}}>1</div>
+          <div style={{fontSize:'10px', color: dark ? '#555' : '#b09060', letterSpacing:'1px'}}>DAY STREAK</div>
+        </div>
+        <div style={{flex:1, textAlign:'center'}}>
+          <div style={{fontSize:'22px', fontWeight:700, color: dark ? '#ffa030' : '#e07000'}}>0%</div>
+          <div style={{fontSize:'10px', color: dark ? '#555' : '#b09060', letterSpacing:'1px'}}>AVG SCORE</div>
+        </div>
+      </div>
+
     </div>
   );
 }

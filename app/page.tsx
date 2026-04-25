@@ -52,13 +52,13 @@ export default function Home() {
       {/* Main Cards */}
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px'}}>
         
-        <div style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
+        <div onClick={() => window.location.href='/subjects'} style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
           <div style={{fontSize:'24px', marginBottom:'8px'}}>📚</div>
           <div style={{fontSize:'14px', fontWeight:700, marginBottom:'3px'}}>Learn</div>
           <div style={{fontSize:'11px', color: dark ? '#555' : '#b09060'}}>Topic lessons</div>
         </div>
 
-        <div style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
+        <div onClick={() => window.location.href='/subjects'} style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
           <div style={{fontSize:'24px', marginBottom:'8px'}}>✏️</div>
           <div style={{fontSize:'14px', fontWeight:700, marginBottom:'3px'}}>Practice</div>
           <div style={{fontSize:'11px', color: dark ? '#555' : '#b09060'}}>Past questions</div>

@@ -8,37 +8,39 @@ export default function AIChat() {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hello! I'm your Companion AI. Ask me anything about your JAMB subjects or exam prep." }
   ]);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
-    const newMessages = [...messages, { role: "user", content: input }];
+    if (!input.trim() || loading) return;
+    const userMessage = input.trim();
+    const newMessages = [...messages, { role: "user", content: userMessage }];
     setMessages(newMessages);
     setInput("");
+    setLoading(true);
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        body: JSON.stringify({ messages: newMessages }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage }),
       });
       const data = await res.json();
-      setMessages([...newMessages, { role: "assistant", content: data.content }]);
+      const reply = data.reply || data.error || "Sorry, I could not get a response. Please try again.";
+      setMessages([...newMessages, { role: "assistant", content: reply }]);
     } catch (error) {
-      console.error("Chat error:", error);
+      setMessages([...newMessages, { role: "assistant", content: "Network error. Please check your connection and try again." }]);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-      {/* Header */}
       <div className="p-4 border-b dark:border-gray-800 flex items-center bg-white dark:bg-gray-900 sticky top-0 z-10">
         <Link href="/" className="mr-4 text-xl">←</Link>
         <div>
@@ -47,13 +49,12 @@ export default function AIChat() {
         </div>
       </div>
 
-      {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[85%] p-3 rounded-2xl ${
-              m.role === "user" 
-                ? "bg-orange-600 text-white rounded-tr-none" 
+              m.role === "user"
+                ? "bg-orange-600 text-white rounded-tr-none"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-none shadow-sm"
             }`}>
               <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none break-words">
@@ -62,10 +63,16 @@ export default function AIChat() {
             </div>
           </div>
         ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none">
+              <span className="text-gray-500 text-sm">Thinking...</span>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
       <div className="p-4 border-t dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-full px-4 py-2 items-center">
           <input
@@ -75,9 +82,10 @@ export default function AIChat() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
-          <button 
+          <button
             onClick={handleSend}
-            className="bg-orange-600 text-white p-2 rounded-full hover:scale-105 transition-transform"
+            disabled={loading}
+            className="bg-orange-600 text-white p-2 rounded-full hover:scale-105 transition-transform disabled:opacity-50"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
               <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />

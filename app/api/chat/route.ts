@@ -14,30 +14,34 @@ export async function POST(req: Request) {
       // PRIMARY: Gemini
       const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await geminiModel.generateContent(userMessage);
-      const response = await result.response;
       
-      // Check if response actually has text (to avoid returning raw error objects)
-      const text = response.text();
-      if (!text) throw new Error("Empty Gemini response");
+      // CRITICAL FIX: Explicitly check if candidates exist before calling .text()
+      if (!result.response || !result.response.candidates || result.response.candidates.length === 0) {
+        throw new Error("Gemini Quota Exceeded or No Candidates");
+      }
 
+      const text = result.response.text();
       return NextResponse.json({ content: text, provider: "gemini" });
 
     } catch (geminiError: any) {
-      console.log("Gemini limit reached or error. Switching to Groq...");
+      console.log("Switching to Groq backup due to Gemini error:", geminiError.message);
 
-      [span_0](start_span)[span_1](start_span)// BACKUP: Groq (using llama-4-scout-17b-16e-instruct)[span_0](end_span)[span_1](end_span)
+      // BACKUP: Groq (using llama-4-scout-17b-16e-instruct)
       const groqResponse = await groq.chat.completions.create({
         messages: [{ role: "user", content: userMessage }],
         model: "meta-llama/llama-4-scout-17b-16e-instruct",
       });
 
+      const groqContent = groqResponse.choices[0]?.message?.content || "I'm having a bit of a moment. Please try again in a few seconds!";
+      
       return NextResponse.json({ 
-        content: groqResponse.choices[0]?.message?.content || "Sorry, I'm having trouble connecting to my brain right now.",
+        content: groqContent,
         provider: "groq"
       });
     }
 
   } catch (error) {
-    return NextResponse.json({ error: "Service Unavailable" }, { status: 500 });
+    console.error("Critical System Error:", error);
+    return NextResponse.json({ error: "Service temporarily unavailable." }, { status: 500 });
   }
 }

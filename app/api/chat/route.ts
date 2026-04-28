@@ -1,52 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 
-export async function POST(req: NextRequest) {
+// Initialize both AI clients
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
+
+export async function POST(req: Request) {
   try {
-    const { message, history } = await req.json();
+    const { messages } = await req.json();
+    const userMessage = messages[messages.length - 1].content;
 
-    const apiKey = process.env.GROQ_API_KEY;
+    try {
+      // PRIMARY: Gemini 1.5 Flash
+      const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await geminiModel.generateContent(userMessage);
+      const response = await result.response;
+      const text = response.text();
 
-    if (!apiKey) {
-      return NextResponse.json({ reply: 'API key not configured.' });
+      return NextResponse.json({ 
+        content: text,
+        provider: "gemini" 
+      });
+
+    } catch (geminiError) {
+      console.error("Gemini failed, switching to Groq:", geminiError);
+
+      // BACKUP: Groq (Llama-4-Scout)
+      const groqResponse = await groq.chat.completions.create({
+        messages: [{ role: "user", content: userMessage }],
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      });
+
+      return NextResponse.json({ 
+        content: groqResponse.choices[0]?.message?.content || "No response available.",
+        provider: "groq"
+      });
     }
-
-    const messages = [
-      {
-        role: 'system',
-        content: `You are Companion, a dedicated JAMB study assistant for Nigerian students. You have expert knowledge of JAMB past questions, the JAMB syllabus for all subjects, university cutoff marks for all Nigerian universities, admission requirements, Post-UTME processes, and JAMB portal guidance. Always respond in simple English a Nigerian SS3 student can understand. Be encouraging, friendly and concise.`
-      },
-      ...history.map((h: {role: string, text: string}) => ({
-        role: h.role === 'user' ? 'user' : 'assistant',
-        content: h.text
-      })),
-      { role: 'user', content: message }
-    ];
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        messages,
-        max_tokens: 1024,
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json({ reply: `API error: ${error}` });
-    }
-
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || 'No response from AI.';
-
-    return NextResponse.json({ reply });
 
   } catch (error) {
-    return NextResponse.json({ reply: `Error: ${error}` });
+    console.error("Critical API Error:", error);
+    return NextResponse.json({ error: "Both AI services are unavailable." }, { status: 500 });
   }
 }

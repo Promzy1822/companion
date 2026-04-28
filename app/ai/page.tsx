@@ -11,7 +11,6 @@ export default function AIChat() {
   const [loading, setLoading] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -51,22 +50,18 @@ export default function AIChat() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", backgroundColor: "#fff", fontFamily: "Arial, sans-serif" }}>
-      
-      {/* Fixed Header */}
+
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        backgroundColor: "#fff",
-        borderBottom: "1px solid #f0f0f0",
-        padding: "12px 16px",
-        display: "flex", alignItems: "center", gap: "12px",
+        backgroundColor: "#fff", borderBottom: "1px solid #f0f0f0",
+        padding: "12px 16px", display: "flex", alignItems: "center", gap: "12px",
         boxShadow: "0 2px 12px rgba(0,0,0,0.08)"
       }}>
         <Link href="/" style={{ textDecoration: "none", color: "#ea580c", fontSize: "20px", fontWeight: "bold" }}>←</Link>
         <div style={{
           width: "40px", height: "40px", borderRadius: "50%",
           background: "linear-gradient(135deg, #ea580c, #f97316)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "18px"
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px"
         }}>🤖</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: "700", color: "#ea580c", fontSize: "15px" }}>Companion AI</div>
@@ -77,10 +72,8 @@ export default function AIChat() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div style={{
-        flex: 1, overflowY: "auto",
-        padding: "80px 16px 16px 16px",
+        flex: 1, overflowY: "auto", padding: "80px 16px 16px 16px",
         display: "flex", flexDirection: "column", gap: "12px"
       }}>
         {messages.map((m, i) => (
@@ -93,8 +86,7 @@ export default function AIChat() {
               }}>🤖</div>
             )}
             <div style={{
-              maxWidth: "78%",
-              padding: "10px 14px",
+              maxWidth: "78%", padding: "10px 14px",
               borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
               backgroundColor: m.role === "user" ? "#ea580c" : "#f8f8f8",
               color: m.role === "user" ? "#fff" : "#1a1a1a",
@@ -120,10 +112,7 @@ export default function AIChat() {
               background: "linear-gradient(135deg, #ea580c, #f97316)",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px"
             }}>🤖</div>
-            <div style={{
-              padding: "12px 16px", borderRadius: "18px 18px 18px 4px",
-              backgroundColor: "#f8f8f8", display: "flex", gap: "4px", alignItems: "center"
-            }}>
+            <div style={{ padding: "12px 16px", borderRadius: "18px 18px 18px 4px", backgroundColor: "#f8f8f8", display: "flex", gap: "4px", alignItems: "center" }}>
               {[0,1,2].map(i => (
                 <div key={i} style={{
                   width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ea580c",
@@ -134,7 +123,6 @@ export default function AIChat() {
           </div>
         )}
 
-        {/* Suggestions for first message */}
         {messages.length === 1 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
             <div style={{ fontSize: "12px", color: "#999", textAlign: "center" }}>Try asking:</div>
@@ -149,11 +137,9 @@ export default function AIChat() {
             </div>
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Attachment preview */}
       {attachment && (
         <div style={{
           margin: "0 16px 8px", padding: "8px 12px",
@@ -161,42 +147,31 @@ export default function AIChat() {
           borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "space-between"
         }}>
           <span style={{ fontSize: "13px", color: "#ea580c" }}>📎 {attachment.name}</span>
-          <button onClick={() => setAttachment(null)} style={{
-            background: "none", border: "none", color: "#999", cursor: "pointer", fontSize: "16px"
-          }}>✕</button>
+          <button onClick={() => setAttachment(null)} style={{ background: "none", border: "none", color: "#999", cursor: "pointer", fontSize: "16px" }}>✕</button>
         </div>
       )}
 
-      {/* Fixed Input Area */}
       <div style={{
-        position: "sticky", bottom: 0,
-        backgroundColor: "#fff",
-        borderTop: "1px solid #f0f0f0",
-        padding: "12px 16px",
+        position: "sticky", bottom: 0, backgroundColor: "#fff",
+        borderTop: "1px solid #f0f0f0", padding: "12px 16px",
         boxShadow: "0 -2px 12px rgba(0,0,0,0.06)"
       }}>
         <div style={{
           display: "flex", alignItems: "center", gap: "8px",
           backgroundColor: "#f8f8f8", borderRadius: "24px",
-          padding: "8px 8px 8px 16px",
-          border: "1.5px solid #f0f0f0"
+          padding: "8px 8px 8px 4px", border: "1.5px solid #f0f0f0"
         }}>
+          <label style={{ cursor: "pointer", padding: "0 8px", flexShrink: 0, fontSize: "20px", color: "#999" }}>
+            📎
+            <input
+              type="file"
+              style={{ display: "none" }}
+              accept="image/*,.pdf,.doc,.docx"
+              onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+            />
+          </label>
           <input
-            ref={fileInputRef}
-            type="file"
-            style={{ display: "none" }}
-            accept="image/*,.pdf,.doc,.docx"
-            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-          />
-          <button onClick={() => fileInputRef.current?.click()} style={{
-            background: "none", border: "none", cursor: "pointer",
-            fontSize: "20px", color: "#999", padding: "0", flexShrink: 0
-          }}>📎</button>
-          <input
-            style={{
-              flex: 1, background: "none", border: "none", outline: "none",
-              fontSize: "14px", color: "#1a1a1a"
-            }}
+            style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: "14px", color: "#1a1a1a" }}
             placeholder="Ask anything about JAMB..."
             value={input}
             onChange={(e) => setInput(e.target.value)}

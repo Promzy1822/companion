@@ -32,7 +32,7 @@ export default function AIChat() {
       const data = await res.json();
       const reply = data.reply || data.error || "Sorry, I could not get a response. Please try again.";
       setMessages([...newMessages, { role: "assistant", content: reply }]);
-    } catch (error) {
+    } catch {
       setMessages([...newMessages, { role: "assistant", content: "Network error. Please check your connection and try again." }]);
     } finally {
       setLoading(false);
@@ -52,14 +52,12 @@ export default function AIChat() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] p-3 rounded-2xl ${
+            <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
               m.role === "user"
                 ? "bg-orange-600 text-white rounded-tr-none"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-none shadow-sm"
             }`}>
-              <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none break-words">
-                {m.content}
-              </ReactMarkdown>
+              <ReactMarkdown>{m.content}</ReactMarkdown>
             </div>
           </div>
         ))}

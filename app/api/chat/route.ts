@@ -7,20 +7,14 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ reply: 'API key not configured. Please check Vercel environment variables.' });
+      return NextResponse.json({ reply: 'API key not configured.' });
     }
 
-    const systemPrompt = `You are Companion, a dedicated JAMB study assistant for Nigerian students. You have expert knowledge of:
-- JAMB past questions and detailed explanations for all subjects
-- The complete JAMB syllabus for every subject
-- University cutoff marks for all Nigerian universities
-- Admission requirements and Post-UTME processes
-- JAMB portal guidance
-- Study tips for Nigerian students
-
-Always respond in simple English a Nigerian SS3 student can understand. Be encouraging and friendly.`;
+    const systemPrompt = `You are Companion, a dedicated JAMB study assistant for Nigerian students. You have expert knowledge of JAMB past questions, the JAMB syllabus, university cutoff marks, admission requirements, and study tips. Always respond in simple English a Nigerian SS3 student can understand. Be encouraging and friendly.`;
 
     const contents = [
+      { role: 'user', parts: [{ text: systemPrompt }] },
+      { role: 'model', parts: [{ text: 'Understood! I am Companion, your JAMB study assistant. How can I help you today?' }] },
       ...history.map((h: {role: string, text: string}) => ({
         role: h.role === 'user' ? 'user' : 'model',
         parts: [{ text: h.text }]
@@ -33,10 +27,7 @@ Always respond in simple English a Nigerian SS3 student can understand. Be encou
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents
-        })
+        body: JSON.stringify({ contents })
       }
     );
 

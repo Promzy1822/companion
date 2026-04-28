@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 export default function Home() {
   const [dark, setDark] = useState(false);
 
@@ -14,6 +15,7 @@ export default function Home() {
     setDark(newTheme);
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
   };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -27,7 +29,7 @@ export default function Home() {
       {/* Top Bar */}
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px'}}>
         <div style={{fontSize:'24px', fontWeight:800}}>
-          Com<span style={{color: dark ? '#ffa030' : '#e07000'}}>panion</span>
+          Com<span style={{color:'#e07000'}}>panion</span>
         </div>
         <button onClick={toggleTheme} style={{
           background: dark ? '#2a2a2a' : '#fff3e0',
@@ -41,38 +43,55 @@ export default function Home() {
           {dark ? '☀️ Light' : '🌙 Dark'}
         </button>
       </div>
+
       {/* Greeting */}
       <div style={{marginBottom:'8px', fontSize:'13px', color: dark ? '#666' : '#b09060'}}>
         Good morning 👋
       </div>
       <div style={{fontSize:'26px', fontWeight:800, lineHeight:1.2, marginBottom:'28px'}}>
-        Ready to <span style={{color: dark ? '#ffa030' : '#e07000'}}>crush</span><br/>your JAMB?
+        Ready to <span style={{color:'#e07000'}}>crush</span><br/>your JAMB?
       </div>
 
       {/* Main Cards */}
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px'}}>
-        
-        <div onClick={() => window.location.href='/subjects?mode=learn'} style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
+        <div onClick={() => window.location.href='/subjects?mode=learn'} style={{
+          background: dark ? '#1a1a1a' : '#ffffff',
+          border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`,
+          borderRadius:'14px', padding:'18px 14px', cursor:'pointer'
+        }}>
           <div style={{fontSize:'24px', marginBottom:'8px'}}>📚</div>
           <div style={{fontSize:'14px', fontWeight:700, marginBottom:'3px'}}>Learn</div>
           <div style={{fontSize:'11px', color: dark ? '#555' : '#b09060'}}>Topic lessons</div>
         </div>
 
-        <div onClick={() => window.location.href='/subjects?mode=practice'} style={{background: dark ? '#1a1a1a' : '#ffffff', border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`, borderRadius:'14px', padding:'18px 14px', cursor:'pointer'}}>
+        <div onClick={() => window.location.href='/subjects?mode=practice'} style={{
+          background: dark ? '#1a1a1a' : '#ffffff',
+          border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`,
+          borderRadius:'14px', padding:'18px 14px', cursor:'pointer'
+        }}>
           <div style={{fontSize:'24px', marginBottom:'8px'}}>✏️</div>
           <div style={{fontSize:'14px', fontWeight:700, marginBottom:'3px'}}>Practice</div>
           <div style={{fontSize:'11px', color: dark ? '#555' : '#b09060'}}>Past questions</div>
         </div>
-
       </div>
-      </button>
+
       {/* Ask AI Button */}
-      <div onClick={() => window.location.href='/ai'} style={{width:'100%', background:'linear-gradient(135deg, #e07000, #ff9500)', borderRadius:'16px', padding:'18px 20px', marginBottom:'12px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+      <div onClick={() => window.location.href='/ai'} style={{
+        width:'100%',
+        background:'linear-gradient(135deg, #e07000, #ff9500)',
+        borderRadius:'16px',
+        padding:'18px 20px',
+        marginBottom:'20px',
+        cursor:'pointer',
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'space-between'
+      }}>
         <div>
           <div style={{fontSize:'16px', fontWeight:800, color:'#ffffff'}}>Ask AI Anything ✨</div>
           <div style={{fontSize:'12px', color:'rgba(255,255,255,0.8)', marginTop:'2px'}}>JAMB questions, cutoffs, explanations</div>
         </div>
-        <div style={{fontSize:'28px'}}>→</div>
+        <div style={{fontSize:'24px'}}>→</div>
       </div>
 
       {/* Stats */}

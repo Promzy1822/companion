@@ -65,21 +65,15 @@ export default function Home() {
         </div>
 
       </div>
-      {/* Ask AI Button */}
-      <button style={{
-        width:'100%',
-        background: dark ? '#1a1208' : '#1a1208',
-        color:'#ffa030',
-        border:'none',
-        borderRadius:'14px',
-        padding:'16px',
-        fontSize:'15px',
-        fontWeight:700,
-        cursor:'pointer',
-        marginBottom:'20px'
-      }}>
-        🤖 Ask AI Anything
       </button>
+      {/* Ask AI Button */}
+      <div onClick={() => window.location.href='/ai'} style={{width:'100%', background:'linear-gradient(135deg, #e07000, #ff9500)', borderRadius:'16px', padding:'18px 20px', marginBottom:'12px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <div>
+          <div style={{fontSize:'16px', fontWeight:800, color:'#ffffff'}}>Ask AI Anything ✨</div>
+          <div style={{fontSize:'12px', color:'rgba(255,255,255,0.8)', marginTop:'2px'}}>JAMB questions, cutoffs, explanations</div>
+        </div>
+        <div style={{fontSize:'28px'}}>→</div>
+      </div>
 
       {/* Stats */}
       <div style={{display:'flex', gap:'16px', paddingTop:'16px', borderTop:`1px solid ${dark ? '#2a2a2a' : '#ede8df'}`}}>

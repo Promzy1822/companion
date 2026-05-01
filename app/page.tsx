@@ -154,6 +154,8 @@ export default function Home() {
           {[
             {href:"/subjects?mode=learn", icon:"📚", label:"Learn", sub:"Video lessons", color:"#3b82f6"},
             {href:"/subjects?mode=practice", icon:"✏️", label:"Practice", sub:"Past questions", color:"#8b5cf6"},
+            {href:"/solver", icon:"🧮", label:"Solver", sub:"AI explanations", color:"#f59e0b"},
+            {href:"/studyplan", icon:"📅", label:"Study Plan", sub:"AI-generated", color:"#10b981"},
           ].map((c,i) => (
             <Link key={i} href={c.href} style={{textDecoration:"none"}}>
               <div style={{backgroundColor:cardBg, borderRadius:"18px", padding:"20px 16px", boxShadow: darkMode ? "0 2px 8px rgba(0,0,0,0.4)" : "0 2px 12px rgba(0,0,0,0.08)", textAlign:"center", border:`1px solid ${borderC}`, transition:"transform 0.15s"}}>

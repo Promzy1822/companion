@@ -4,16 +4,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const SUBJECTS = [
-  { id: 'english', name: 'English Language', emoji: '📝', color: '#3b82f6' },
-  { id: 'mathematics', name: 'Mathematics', emoji: '🔢', color: '#8b5cf6' },
-  { id: 'physics', name: 'Physics', emoji: '⚡', color: '#f59e0b' },
-  { id: 'chemistry', name: 'Chemistry', emoji: '🧪', color: '#10b981' },
-  { id: 'biology', name: 'Biology', emoji: '🧬', color: '#ec4899' },
-  { id: 'government', name: 'Government', emoji: '🏛️', color: '#6366f1' },
-  { id: 'economics', name: 'Economics', emoji: '📈', color: '#14b8a6' },
-  { id: 'literature', name: 'Literature', emoji: '📚', color: '#f97316' },
-  { id: 'geography', name: 'Geography', emoji: '🌍', color: '#84cc16' },
-  { id: 'crs', name: 'CRS / IRS', emoji: '✝️', color: '#a78bfa' },
+  { id:'english', name:'English Language', emoji:'📝', color:'#3b82f6' },
+  { id:'mathematics', name:'Mathematics', emoji:'🔢', color:'#8b5cf6' },
+  { id:'physics', name:'Physics', emoji:'⚡', color:'#f59e0b' },
+  { id:'chemistry', name:'Chemistry', emoji:'🧪', color:'#10b981' },
+  { id:'biology', name:'Biology', emoji:'🧬', color:'#ec4899' },
+  { id:'government', name:'Government', emoji:'🏛️', color:'#6366f1' },
+  { id:'economics', name:'Economics', emoji:'📈', color:'#14b8a6' },
+  { id:'literature', name:'Literature', emoji:'📚', color:'#f97316' },
+  { id:'geography', name:'Geography', emoji:'🌍', color:'#84cc16' },
+  { id:'crs', name:'CRS / IRS', emoji:'✝️', color:'#a78bfa' },
 ];
 
 function SubjectsContent() {
@@ -23,9 +23,7 @@ function SubjectsContent() {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    // Read darkMode correctly — string "true" not boolean
-    const saved = localStorage.getItem('darkMode');
-    setDarkMode(saved === 'true');
+    setDarkMode(localStorage.getItem('darkMode') === 'true');
   }, []);
 
   const bg = darkMode ? '#0a0a0a' : '#f5f5f7';
@@ -35,13 +33,14 @@ function SubjectsContent() {
   const borderC = darkMode ? '#2c2c2e' : '#e5e5ea';
 
   return (
-    <div style={{ minHeight:'100vh', backgroundColor:bg, fontFamily:"-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", transition:'background 0.3s' }}>
+    <div style={{ minHeight:'100vh', backgroundColor:bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
 
       {/* Header */}
-      <div style={{ background:'linear-gradient(135deg, #431407, #7c2d12, #c2410c, #ea580c)', padding:'20px 20px 32px', position:'relative', overflow:'hidden' }}>
+      <div style={{ background:'linear-gradient(135deg,#431407,#7c2d12,#c2410c,#ea580c)', padding:'20px 20px 28px', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', top:'-30px', right:'-30px', width:'120px', height:'120px', borderRadius:'50%', background:'rgba(255,255,255,0.06)' }} />
+        
         <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'20px' }}>
-          <Link href="/" style={{ width:'34px', height:'34px', borderRadius:'10px', backgroundColor:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'16px', textDecoration:'none', flexShrink:0 }}>←</Link>
+          <Link href="/" style={{ width:'34px', height:'34px', borderRadius:'10px', backgroundColor:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'16px', textDecoration:'none', flexShrink:0 }}>←</Link>
           <div>
             <div style={{ color:'#fff', fontWeight:'800', fontSize:'18px' }}>
               {mode === 'learn' ? '📚 Learn' : '✏️ Practice'}
@@ -52,19 +51,34 @@ function SubjectsContent() {
           </div>
         </div>
 
-        {/* Mode toggle */}
-        <div style={{ display:'flex', gap:'8px', backgroundColor:'rgba(255,255,255,0.12)', borderRadius:'14px', padding:'4px' }}>
-          {['learn','practice'].map(m => (
-            <button key={m} onClick={() => router.push(`/subjects?mode=${m}`)} style={{
-              flex:1, padding:'9px', borderRadius:'10px', border:'none', cursor:'pointer',
-              fontWeight:'700', fontSize:'13px',
-              backgroundColor: mode === m ? '#fff' : 'transparent',
-              color: mode === m ? '#ea580c' : 'rgba(255,255,255,0.7)',
-              transition:'all 0.2s'
-            }}>
-              {m === 'learn' ? '📚 Learn' : '✏️ Practice'}
-            </button>
-          ))}
+        {/* Mode toggle — two separate clean buttons */}
+        <div style={{ display:'flex', gap:'10px' }}>
+          <button
+            onClick={() => router.push('/subjects?mode=learn')}
+            style={{
+              flex:1, padding:'11px 0', borderRadius:'12px', border:'none',
+              cursor:'pointer', fontWeight:'700', fontSize:'14px',
+              backgroundColor: mode === 'learn' ? '#fff' : 'rgba(255,255,255,0.15)',
+              color: mode === 'learn' ? '#ea580c' : 'rgba(255,255,255,0.8)',
+              transition:'all 0.2s',
+              boxShadow: mode === 'learn' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+            }}
+          >
+            📚 Learn
+          </button>
+          <button
+            onClick={() => router.push('/subjects?mode=practice')}
+            style={{
+              flex:1, padding:'11px 0', borderRadius:'12px', border:'none',
+              cursor:'pointer', fontWeight:'700', fontSize:'14px',
+              backgroundColor: mode === 'practice' ? '#fff' : 'rgba(255,255,255,0.15)',
+              color: mode === 'practice' ? '#ea580c' : 'rgba(255,255,255,0.8)',
+              transition:'all 0.2s',
+              boxShadow: mode === 'practice' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+            }}
+          >
+            ✏️ Practice
+          </button>
         </div>
       </div>
 
@@ -79,14 +93,12 @@ function SubjectsContent() {
               <div style={{
                 backgroundColor:cardBg, borderRadius:'18px', padding:'20px 16px',
                 boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.08)',
-                border:`1px solid ${borderC}`,
-                transition:'transform 0.15s',
-                cursor:'pointer'
+                border:`1px solid ${borderC}`, cursor:'pointer', transition:'transform 0.15s',
               }}>
-                <div style={{ width:'44px', height:'44px', borderRadius:'12px', backgroundColor:`${subject.color}18`, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'10px', fontSize:'22px' }}>
+                <div style={{ width:'48px', height:'48px', borderRadius:'14px', backgroundColor:`${subject.color}18`, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'12px', fontSize:'24px' }}>
                   {subject.emoji}
                 </div>
-                <div style={{ fontWeight:'700', color:textColor, fontSize:'14px', marginBottom:'3px' }}>{subject.name}</div>
+                <div style={{ fontWeight:'700', color:textColor, fontSize:'14px', marginBottom:'4px' }}>{subject.name}</div>
                 <div style={{ fontSize:'12px', color:subject.color, fontWeight:'600' }}>
                   {mode === 'learn' ? 'Watch lessons →' : 'Practice now →'}
                 </div>
@@ -101,7 +113,7 @@ function SubjectsContent() {
 
 export default function Subjects() {
   return (
-    <Suspense fallback={<div style={{ minHeight:'100vh', backgroundColor:'#f5f5f7', display:'flex', alignItems:'center', justifyContent:'center' }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ minHeight:'100vh', backgroundColor:'#f5f5f7', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Arial', color:'#666' }}>Loading...</div>}>
       <SubjectsContent />
     </Suspense>
   );

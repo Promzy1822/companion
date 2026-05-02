@@ -26,6 +26,13 @@ const QUICK_LINKS = [
   {href:"/studyplan", icon:"📅", label:"Study Plan", sub:"AI generated", color:"#ec4899"},
 ];
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState<User|null>(null);
@@ -90,16 +97,16 @@ export default function Home() {
   const calcAggregate = () => {
     setCalcError(""); setAggResult(null);
     const j = parseFloat(jambScore), p = parseFloat(postUtme);
-    if (isNaN(j)||j<0||j>400) { setCalcError("Enter valid JAMB score (0–400)"); return; }
+    if (isNaN(j)||j<0||j>400) { setCalcError("Enter valid JAMB score (0-400)"); return; }
     if (calcType === "aggregate") {
-      if (isNaN(p)||p<0||p>100) { setCalcError("Enter valid Post-UTME score (0–100)"); return; }
+      if (isNaN(p)||p<0||p>100) { setCalcError("Enter valid Post-UTME score (0-100)"); return; }
       const jP=j/8, pP=p/2, agg=jP+pP;
-      const grade = agg>=70?"Excellent 🔥":agg>=55?"Good ✅":agg>=45?"Average ⚠️":"Below average ❌";
+      const grade = agg>=70?"Excellent":agg>=55?"Good":agg>=45?"Average":"Below average";
       const color = agg>=70?"#16a34a":agg>=55?"#2563eb":agg>=45?"#d97706":"#dc2626";
       setAggResult({aggregate:parseFloat(agg.toFixed(2)), jamb:parseFloat(jP.toFixed(2)), post:parseFloat(pP.toFixed(2)), grade, color});
     } else {
       const scaled = (j/400)*100;
-      const grade = j>=300?"Excellent 🔥":j>=250?"Good ✅":j>=200?"Average ⚠️":"Below average ❌";
+      const grade = j>=300?"Excellent":j>=250?"Good":j>=200?"Average":"Below average";
       const color = j>=300?"#16a34a":j>=250?"#2563eb":j>=200?"#d97706":"#dc2626";
       setAggResult({aggregate:parseFloat(scaled.toFixed(1)), jamb:j, post:0, grade, color});
     }
@@ -107,6 +114,7 @@ export default function Home() {
 
   const toggleDark = () => { const d=!darkMode; setDarkMode(d); localStorage.setItem("darkMode",String(d)); };
   const filteredNews = activeCategory==="All" ? news : news.filter(n=>n.category===activeCategory);
+
   if (!authChecked) return null;
 
   const bg = darkMode ? "#0a0a0a" : "#f2f2f7";
@@ -123,29 +131,29 @@ export default function Home() {
   return (
     <div style={{minHeight:"100vh", backgroundColor:bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
 
-      {/* ── HEADER ── clean, compact, no overlap */}
+      {/* HEADER */}
       <div style={{background:"linear-gradient(160deg,#431407,#7c2d12,#c2410c,#ea580c)", padding:"16px 16px 20px", position:"relative", overflow:"hidden"}}>
         <div style={{position:"absolute", top:"-50px", right:"-50px", width:"150px", height:"150px", borderRadius:"50%", background:"rgba(255,255,255,0.05)"}} />
         <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
         <div style={{marginTop:"4px"}}>
-          <div style={{color:"rgba(255,255,255,0.65)", fontSize:"13px"}}>
-            {new Date().getHours()<12?"🌅 Good morning":"new Date().getHours()<17?🌤️ Good afternoon":"🌙 Good evening"}, {user?.name.split(" ")[0]}
+          <div style={{color:"rgba(255,255,255,0.7)", fontSize:"13px"}}>
+            {getGreeting()}, {user?.name.split(" ")[0]} 👋
           </div>
           <div style={{color:"rgba(255,255,255,0.75)", fontSize:"13px", marginTop:"3px"}}>
-            🎯 Target: <span style={{color:"#fde68a", fontWeight:"700"}}>{user?.target} pts</span>
-            {user?.institution ? ` · ${user.institution}` : ""}
+            Target: <span style={{color:"#fde68a", fontWeight:"700"}}>{user?.target} pts</span>
+            {user?.institution ? " · " + user.institution : ""}
           </div>
         </div>
       </div>
 
-      {/* ── BODY — NO negative margin overlap ── */}
+      {/* BODY */}
       <div style={{padding:"16px 16px 40px", display:"flex", flexDirection:"column", gap:"16px"}}>
 
-        {/* Quick links */}
+        {/* Quick links grid */}
         <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px"}}>
           {QUICK_LINKS.map((c,i) => (
             <Link key={i} href={c.href} style={{textDecoration:"none"}}>
-              <div style={{backgroundColor:cardBg, borderRadius:"16px", padding:"14px 10px", boxShadow:darkMode?"0 1px 6px rgba(0,0,0,0.5)":"0 1px 8px rgba(0,0,0,0.07)", textAlign:"center", border:`1px solid ${borderC}`, transition:"transform 0.15s, box-shadow 0.15s"}}>
+              <div style={{backgroundColor:cardBg, borderRadius:"16px", padding:"14px 10px", boxShadow:darkMode?"0 1px 6px rgba(0,0,0,0.5)":"0 1px 8px rgba(0,0,0,0.07)", textAlign:"center", border:`1px solid ${borderC}`}}>
                 <div style={{width:"42px", height:"42px", borderRadius:"12px", backgroundColor:`${c.color}18`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 8px", fontSize:"20px"}}>{c.icon}</div>
                 <div style={{fontWeight:"700", color:c.color, fontSize:"13px", lineHeight:"1.2"}}>{c.label}</div>
                 <div style={{fontSize:"10px", color:subText, marginTop:"3px"}}>{c.sub}</div>
@@ -164,7 +172,7 @@ export default function Home() {
               <div style={{width:"38px", height:"38px", borderRadius:"11px", backgroundColor:"#f59e0b18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px"}}>🧮</div>
               <div style={{textAlign:"left"}}>
                 <div style={{fontWeight:"700", color:textColor, fontSize:"14px"}}>Score Calculator</div>
-                <div style={{fontSize:"11px", color:subText}}>JAMB & Aggregate formula</div>
+                <div style={{fontSize:"11px", color:subText}}>JAMB and Aggregate formula</div>
               </div>
             </div>
             <div style={{fontSize:"12px", color:"#ea580c", fontWeight:"700"}}>{showCalc?"▲":"▼"}</div>
@@ -181,32 +189,32 @@ export default function Home() {
               </div>
               <div style={{display:"flex", flexDirection:"column", gap:"12px"}}>
                 <div>
-                  <label style={{fontSize:"12px", color:subText, display:"block", marginBottom:"6px", fontWeight:"600"}}>JAMB Score (0–400)</label>
+                  <label style={{fontSize:"12px", color:subText, display:"block", marginBottom:"6px", fontWeight:"600"}}>JAMB Score (0-400)</label>
                   <input type="number" min="0" max="400" placeholder="e.g. 285" value={jambScore} onChange={e=>setJambScore(e.target.value)} style={inputSt} />
                 </div>
                 {calcType==="aggregate" && (
                   <div>
-                    <label style={{fontSize:"12px", color:subText, display:"block", marginBottom:"6px", fontWeight:"600"}}>Post-UTME Score (0–100)</label>
+                    <label style={{fontSize:"12px", color:subText, display:"block", marginBottom:"6px", fontWeight:"600"}}>Post-UTME Score (0-100)</label>
                     <input type="number" min="0" max="100" placeholder="e.g. 72" value={postUtme} onChange={e=>setPostUtme(e.target.value)} style={inputSt} />
-                    <div style={{fontSize:"11px", color:"#ea580c", marginTop:"5px", fontWeight:"600"}}>Formula: (JAMB ÷ 8) + (Post-UTME ÷ 2)</div>
+                    <div style={{fontSize:"11px", color:"#ea580c", marginTop:"5px", fontWeight:"600"}}>Formula: (JAMB / 8) + (Post-UTME / 2)</div>
                   </div>
                 )}
-                {calcError && <div style={{padding:"10px 14px", backgroundColor:darkMode?"#2a0000":"#fff0f0", borderRadius:"10px", color:"#ef4444", fontSize:"13px"}}>⚠️ {calcError}</div>}
-                <button onClick={calcAggregate} style={{padding:"13px", borderRadius:"12px", border:"none", background:"linear-gradient(135deg,#c2410c,#ea580c)", color:"#fff", fontWeight:"700", fontSize:"14px", cursor:"pointer", boxShadow:"0 4px 12px rgba(234,88,12,0.3)"}}>
-                  Calculate →
+                {calcError && <div style={{padding:"10px 14px", backgroundColor:darkMode?"#2a0000":"#fff0f0", borderRadius:"10px", color:"#ef4444", fontSize:"13px"}}>Warning: {calcError}</div>}
+                <button onClick={calcAggregate} style={{padding:"13px", borderRadius:"12px", border:"none", background:"linear-gradient(135deg,#c2410c,#ea580c)", color:"#fff", fontWeight:"700", fontSize:"14px", cursor:"pointer"}}>
+                  Calculate
                 </button>
                 {aggResult && (
                   <div style={{padding:"16px", borderRadius:"14px", backgroundColor:darkMode?"#0a1a0a":"#f0fdf4", border:`1.5px solid ${aggResult.color}33`}}>
                     <div style={{textAlign:"center", marginBottom:"12px"}}>
-                      <div style={{fontSize:"40px", fontWeight:"900", color:aggResult.color, letterSpacing:"-1px"}}>{aggResult.aggregate}</div>
+                      <div style={{fontSize:"40px", fontWeight:"900", color:aggResult.color}}>{aggResult.aggregate}</div>
                       <div style={{fontSize:"13px", color:aggResult.color, fontWeight:"700", marginTop:"3px"}}>{aggResult.grade}</div>
                     </div>
                     {calcType==="aggregate" && (
                       <div style={{display:"flex", flexDirection:"column", gap:"6px"}}>
                         {[
-                          {label:"JAMB contribution", val:`${jambScore} ÷ 8 = ${aggResult.jamb}`},
-                          {label:"Post-UTME contribution", val:`${postUtme} ÷ 2 = ${aggResult.post}`},
-                          {label:"Total Aggregate", val:`${aggResult.aggregate}/100`},
+                          {label:"JAMB contribution", val:jambScore+" / 8 = "+aggResult.jamb},
+                          {label:"Post-UTME contribution", val:postUtme+" / 2 = "+aggResult.post},
+                          {label:"Total Aggregate", val:aggResult.aggregate+"/100"},
                         ].map((r,i) => (
                           <div key={i} style={{display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"7px 0", borderBottom:i<2?`1px solid ${borderC}`:"none"}}>
                             <span style={{color:subText}}>{r.label}</span>
@@ -236,9 +244,10 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <button onClick={()=>fetchNews(true)} style={{width:"30px", height:"30px", borderRadius:"8px", backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", border:"none", cursor:"pointer", fontSize:"14px", transition:"transform 0.3s", transform:refreshing?"rotate(180deg)":"rotate(0)"}}>🔄</button>
+              <button onClick={()=>fetchNews(true)} style={{width:"30px", height:"30px", borderRadius:"8px", backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", border:"none", cursor:"pointer", fontSize:"14px", transition:"transform 0.3s", transform:refreshing?"rotate(180deg)":"rotate(0)"}}>
+                🔄
+              </button>
             </div>
-            {/* Category chips */}
             <div style={{display:"flex", gap:"6px", overflowX:"auto", paddingBottom:"12px", scrollbarWidth:"none"}}>
               {CATEGORIES.map(cat => (
                 <button key={cat} onClick={()=>setActiveCategory(cat)} style={{flexShrink:0, padding:"6px 14px", borderRadius:"20px", border:"none", cursor:"pointer", fontSize:"12px", fontWeight:"600", backgroundColor:activeCategory===cat?"#ea580c":darkMode?"#2c2c2e":"#f2f2f7", color:activeCategory===cat?"#fff":subText, transition:"all 0.2s", whiteSpace:"nowrap"}}>
@@ -268,10 +277,8 @@ export default function Home() {
                   onTouchStart={()=>setPressedCard(i)} onTouchEnd={()=>setPressedCard(null)}>
                   <div style={{padding:"14px 18px", borderTop:i===0?"none":`1px solid ${borderC}`, display:"flex", gap:"12px", alignItems:"flex-start", backgroundColor:pressedCard===i?(darkMode?"#2c2c2e":"#f5f5f7"):"transparent", transition:"background 0.1s"}}>
                     <div style={{flex:1, minWidth:0}}>
-                      <div style={{fontSize:"11px", color:"#ea580c", fontWeight:"700", marginBottom:"4px", display:"flex", gap:"5px", alignItems:"center"}}>
-                        <span>{item.source}</span>
-                        <span style={{color:borderC}}>·</span>
-                        <span style={{color:subText, fontWeight:"500"}}>{item.time}</span>
+                      <div style={{fontSize:"11px", color:"#ea580c", fontWeight:"700", marginBottom:"4px"}}>
+                        {item.source} · <span style={{color:subText, fontWeight:"500"}}>{item.time}</span>
                       </div>
                       <div style={{fontSize:"13px", color:textColor, fontWeight:"700", lineHeight:"1.45", marginBottom:"6px", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden"}}>{item.title}</div>
                       <span style={{fontSize:"10px", color:subText, backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", padding:"2px 7px", borderRadius:"5px"}}>{item.category}</span>
@@ -286,19 +293,14 @@ export default function Home() {
               ))}
               <div style={{padding:"14px 18px", borderTop:`1px solid ${borderC}`, textAlign:"center"}}>
                 <button onClick={()=>fetchNews(true)} style={{background:"none", border:"none", color:"#ea580c", fontSize:"13px", fontWeight:"700", cursor:"pointer"}}>
-                  {refreshing ? "Refreshing..." : "Refresh news →"}
+                  {refreshing ? "Refreshing..." : "Refresh news"}
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      <style>{`
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-        *{-webkit-tap-highlight-color:transparent}
-        ::-webkit-scrollbar{display:none}
-      `}</style>
+      <style>{`*{-webkit-tap-highlight-color:transparent}::-webkit-scrollbar{display:none}`}</style>
     </div>
   );
 }

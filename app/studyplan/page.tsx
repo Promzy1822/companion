@@ -32,6 +32,7 @@ export default function StudyPlan() {
     const u = localStorage.getItem("companion_user");
     if (u) setUser(JSON.parse(u));
     setDarkMode(localStorage.getItem("darkMode") === "true");
+    if (typeof window === "undefined") return;
     const saved = localStorage.getItem("companion_study_plan");
     if (saved) { setPlan(JSON.parse(saved)); setGenerated(true); }
   }, []);

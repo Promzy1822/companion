@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import InstallBanner from "./components/InstallBanner";
+import InstallBanner from "./components/InstallBanner";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import StreakCard from "./components/StreakCard";

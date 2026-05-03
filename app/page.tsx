@@ -2,14 +2,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import InstallBanner from "./components/InstallBanner";
-import InstallBanner from "./components/InstallBanner";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import StreakCard from "./components/StreakCard";
 
 interface NewsItem { title:string; url:string; source:string; time:string; summary?:string; image?:string; category?:string; }
 interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; }
-
 const CATEGORIES = ["All","Education","Exams","Admissions","Tech","General"];
 const MOCK_IMAGES = [
   "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&q=80",
@@ -18,7 +16,6 @@ const MOCK_IMAGES = [
   "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80",
   "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&q=80",
 ];
-
 const QUICK_LINKS = [
   {href:"/ai", icon:"🤖", label:"Ask AI", sub:"24/7 tutor", color:"#ea580c"},
   {href:"/subjects?mode=learn", icon:"📚", label:"Learn", sub:"Video lessons", color:"#3b82f6"},
@@ -26,15 +23,12 @@ const QUICK_LINKS = [
   {href:"/mock", icon:"📝", label:"Mock Exam", sub:"Timed test", color:"#f59e0b"},
   {href:"/solver", icon:"🧮", label:"Solver", sub:"AI explains", color:"#10b981"},
   {href:"/studyplan", icon:"📅", label:"Study Plan", sub:"AI generated", color:"#ec4899"},
-];
-
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
   return "Good evening";
 }
-
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState<User|null>(null);
@@ -51,7 +45,6 @@ export default function Home() {
   const [authChecked, setAuthChecked] = useState(false);
   const [pressedCard, setPressedCard] = useState<number|null>(null);
   const router = useRouter();
-
   useEffect(() => {
     setDarkMode(localStorage.getItem("darkMode") === "true");
     const u = localStorage.getItem("companion_user");
@@ -60,7 +53,6 @@ export default function Home() {
     setAuthChecked(true);
     fetchNews();
   }, [router]);
-
   const fetchNews = useCallback(async (isRefresh=false) => {
     if (isRefresh) setRefreshing(true); else setNewsLoading(true);
     try {
@@ -77,7 +69,6 @@ export default function Home() {
       setNews(getFallback().map((item,i) => ({...item, image:MOCK_IMAGES[i%MOCK_IMAGES.length], summary:"Tap to read.", category:assignCategory(item.title)})));
     } finally { setNewsLoading(false); setRefreshing(false); }
   }, []);
-
   const assignCategory = (t:string) => {
     const l = t.toLowerCase();
     if (/exam|utme|waec|neco|result/.test(l)) return "Exams";
@@ -86,7 +77,6 @@ export default function Home() {
     if (/university|polytechnic|college|school/.test(l)) return "Education";
     return "General";
   };
-
   const getFallback = (): NewsItem[] => [
     {title:"JAMB 2025 UTME Registration Portal Now Open", url:"https://www.jamb.gov.ng", source:"JAMB Official", time:"2h ago"},
     {title:"JAMB Releases Updated Syllabus for 2025 UTME", url:"https://www.jamb.gov.ng", source:"JAMB Official", time:"5h ago"},
@@ -95,7 +85,6 @@ export default function Home() {
     {title:"CBT Centres: Approved JAMB Centres 2025", url:"#", source:"JAMB Guide", time:"2d ago"},
     {title:"OAU Cut-Off Marks for All Courses 2025", url:"#", source:"University News", time:"3d ago"},
   ];
-
   const calcAggregate = () => {
     setCalcError(""); setAggResult(null);
     const j = parseFloat(jambScore), p = parseFloat(postUtme);
@@ -112,13 +101,9 @@ export default function Home() {
       const color = j>=300?"#16a34a":j>=250?"#2563eb":j>=200?"#d97706":"#dc2626";
       setAggResult({aggregate:parseFloat(scaled.toFixed(1)), jamb:j, post:0, grade, color});
     }
-  };
-
   const toggleDark = () => { const d=!darkMode; setDarkMode(d); localStorage.setItem("darkMode",String(d)); };
   const filteredNews = activeCategory==="All" ? news : news.filter(n=>n.category===activeCategory);
-
   if (!authChecked) return null;
-
   const bg = darkMode ? "#0a0a0a" : "#f2f2f7";
   const cardBg = darkMode ? "#1c1c1e" : "#ffffff";
   const textColor = darkMode ? "#f2f2f7" : "#1c1c1e";
@@ -128,11 +113,8 @@ export default function Home() {
     width:"100%", padding:"13px 16px", borderRadius:"12px",
     border:`1.5px solid ${borderC}`, fontSize:"15px", outline:"none",
     backgroundColor: darkMode?"#2c2c2e":"#f2f2f7", color:textColor, boxSizing:"border-box"
-  };
-
   return (
     <div style={{minHeight:"100vh", backgroundColor:bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
-
       {/* HEADER */}
       <div style={{background:"linear-gradient(160deg,#431407,#7c2d12,#c2410c,#ea580c)", padding:"16px 16px 20px", position:"relative", overflow:"hidden"}}>
         <div style={{position:"absolute", top:"-50px", right:"-50px", width:"150px", height:"150px", borderRadius:"50%", background:"rgba(255,255,255,0.05)"}} />
@@ -144,13 +126,10 @@ export default function Home() {
           <div style={{color:"rgba(255,255,255,0.75)", fontSize:"13px", marginTop:"3px"}}>
             Target: <span style={{color:"#fde68a", fontWeight:"700"}}>{user?.target} pts</span>
             {user?.institution ? " · " + user.institution : ""}
-          </div>
         </div>
       </div>
-
       {/* BODY */}
       <div style={{padding:"16px 16px 40px", display:"flex", flexDirection:"column", gap:"16px"}}>
-
         {/* Quick links grid */}
         <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px"}}>
           {QUICK_LINKS.map((c,i) => (
@@ -162,11 +141,8 @@ export default function Home() {
               </div>
             </Link>
           ))}
-        </div>
-
         {/* Streak */}
         <StreakCard darkMode={darkMode} />
-
         {/* Calculator */}
         <div style={{backgroundColor:cardBg, borderRadius:"18px", overflow:"hidden", boxShadow:darkMode?"0 1px 6px rgba(0,0,0,0.5)":"0 1px 8px rgba(0,0,0,0.07)", border:`1px solid ${borderC}`}}>
           <button onClick={()=>{setShowCalc(!showCalc); setAggResult(null); setCalcError("");}} style={{width:"100%", padding:"16px 18px", background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
@@ -175,11 +151,9 @@ export default function Home() {
               <div style={{textAlign:"left"}}>
                 <div style={{fontWeight:"700", color:textColor, fontSize:"14px"}}>Score Calculator</div>
                 <div style={{fontSize:"11px", color:subText}}>JAMB and Aggregate formula</div>
-              </div>
             </div>
             <div style={{fontSize:"12px", color:"#ea580c", fontWeight:"700"}}>{showCalc?"▲":"▼"}</div>
           </button>
-
           {showCalc && (
             <div style={{padding:"0 18px 18px", borderTop:`1px solid ${borderC}`}}>
               <div style={{display:"flex", gap:"6px", margin:"14px 0", backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", borderRadius:"12px", padding:"4px"}}>
@@ -188,7 +162,6 @@ export default function Home() {
                     {t==="aggregate"?"Aggregate":"JAMB Only"}
                   </button>
                 ))}
-              </div>
               <div style={{display:"flex", flexDirection:"column", gap:"12px"}}>
                 <div>
                   <label style={{fontSize:"12px", color:subText, display:"block", marginBottom:"6px", fontWeight:"600"}}>JAMB Score (0-400)</label>
@@ -225,40 +198,24 @@ export default function Home() {
                         ))}
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-            </div>
           )}
-        </div>
-
         {/* News Feed */}
-        <div style={{backgroundColor:cardBg, borderRadius:"18px", overflow:"hidden", boxShadow:darkMode?"0 1px 6px rgba(0,0,0,0.5)":"0 1px 8px rgba(0,0,0,0.07)", border:`1px solid ${borderC}`}}>
           <div style={{padding:"16px 18px 0"}}>
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px"}}>
               <div style={{display:"flex", alignItems:"center", gap:"10px"}}>
                 <div style={{width:"34px", height:"34px", borderRadius:"10px", backgroundColor:"#ef444418", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px"}}>📰</div>
-                <div>
                   <div style={{fontWeight:"800", color:textColor, fontSize:"15px"}}>JAMB News</div>
                   <div style={{fontSize:"11px", color:"#22c55e", display:"flex", alignItems:"center", gap:"4px"}}>
                     <span style={{width:"5px", height:"5px", borderRadius:"50%", backgroundColor:"#22c55e", display:"inline-block"}}></span>
                     Live updates
-                  </div>
-                </div>
-              </div>
               <button onClick={()=>fetchNews(true)} style={{width:"30px", height:"30px", borderRadius:"8px", backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", border:"none", cursor:"pointer", fontSize:"14px", transition:"transform 0.3s", transform:refreshing?"rotate(180deg)":"rotate(0)"}}>
                 🔄
               </button>
-            </div>
             <div style={{display:"flex", gap:"6px", overflowX:"auto", paddingBottom:"12px", scrollbarWidth:"none"}}>
               {CATEGORIES.map(cat => (
                 <button key={cat} onClick={()=>setActiveCategory(cat)} style={{flexShrink:0, padding:"6px 14px", borderRadius:"20px", border:"none", cursor:"pointer", fontSize:"12px", fontWeight:"600", backgroundColor:activeCategory===cat?"#ea580c":darkMode?"#2c2c2e":"#f2f2f7", color:activeCategory===cat?"#fff":subText, transition:"all 0.2s", whiteSpace:"nowrap"}}>
                   {cat}
-                </button>
               ))}
-            </div>
-          </div>
-
           {newsLoading ? (
             <div style={{padding:"24px 18px", display:"flex", flexDirection:"column", gap:"14px"}}>
               {[1,2,3].map(i => (
@@ -266,11 +223,7 @@ export default function Home() {
                   <div style={{flex:1}}>
                     <div style={{height:"13px", borderRadius:"6px", backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", marginBottom:"8px", width:"90%"}} />
                     <div style={{height:"11px", borderRadius:"5px", backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", width:"55%"}} />
-                  </div>
                   <div style={{width:"68px", height:"68px", borderRadius:"12px", backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", flexShrink:0}} />
-                </div>
-              ))}
-            </div>
           ) : (
             <div>
               {(filteredNews.length ? filteredNews : news).map((item,i) => (
@@ -281,28 +234,15 @@ export default function Home() {
                     <div style={{flex:1, minWidth:0}}>
                       <div style={{fontSize:"11px", color:"#ea580c", fontWeight:"700", marginBottom:"4px"}}>
                         {item.source} · <span style={{color:subText, fontWeight:"500"}}>{item.time}</span>
-                      </div>
                       <div style={{fontSize:"13px", color:textColor, fontWeight:"700", lineHeight:"1.45", marginBottom:"6px", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden"}}>{item.title}</div>
                       <span style={{fontSize:"10px", color:subText, backgroundColor:darkMode?"#2c2c2e":"#f2f2f7", padding:"2px 7px", borderRadius:"5px"}}>{item.category}</span>
-                    </div>
                     {item.image && (
                       <div style={{width:"72px", height:"72px", borderRadius:"12px", overflow:"hidden", flexShrink:0}}>
                         <img src={item.image} alt="" style={{width:"100%", height:"100%", objectFit:"cover"}} onError={e=>{(e.target as HTMLImageElement).style.display="none";}} />
-                      </div>
-                    )}
-                  </div>
                 </a>
-              ))}
               <div style={{padding:"14px 18px", borderTop:`1px solid ${borderC}`, textAlign:"center"}}>
                 <button onClick={()=>fetchNews(true)} style={{background:"none", border:"none", color:"#ea580c", fontSize:"13px", fontWeight:"700", cursor:"pointer"}}>
                   {refreshing ? "Refreshing..." : "Refresh news"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
       <style>{`*{-webkit-tap-highlight-color:transparent}::-webkit-scrollbar{display:none}`}</style>
     </div>
   );
-}

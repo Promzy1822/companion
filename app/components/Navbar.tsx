@@ -5,25 +5,6 @@ import Link from "next/link";
 
 interface User { name:string; email:string; target:string; institution:string; }
 
-function CompanionLogo({ size = 36 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{stopColor:"#f97316"}}/>
-          <stop offset="100%" style={{stopColor:"#ea580c"}}/>
-        </linearGradient>
-      </defs>
-      <rect width="100" height="100" rx="22" fill="url(#logoGrad)"/>
-      <path d="M65 20 C65 20 35 18 28 50 C21 82 50 82 65 80" stroke="white" strokeWidth="11" strokeLinecap="round" fill="none"/>
-      <path d="M28 65 L20 78 L38 70" fill="white"/>
-      <path d="M52 42 L54 48 L60 50 L54 52 L52 58 L50 52 L44 50 L50 48 Z" fill="white"/>
-      <path d="M63 34 L64 37 L67 38 L64 39 L63 42 L62 39 L59 38 L62 37 Z" fill="white" opacity="0.85"/>
-      <path d="M71 28 L72 30 L74 31 L72 32 L71 34 L70 32 L68 31 L70 30 Z" fill="white" opacity="0.7"/>
-    </svg>
-  );
-}
-
 export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; onToggleDark:()=>void }) {
   const [user, setUser] = useState<User|null>(null);
   const [open, setOpen] = useState(false);
@@ -54,7 +35,7 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
   return (
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",position:"relative",zIndex:100}}>
       <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-        <CompanionLogo size={38} />
+        <div style={{width:"38px",height:"38px",borderRadius:"12px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",backdropFilter:"blur(8px)"}}>🎓</div>
         <div>
           <div style={{color:"#fff",fontWeight:"900",fontSize:"20px",letterSpacing:"-0.5px"}}>companion</div>
           <div style={{color:"rgba(255,255,255,0.55)",fontSize:"10px",letterSpacing:"1px",textTransform:"uppercase"}}>AI Study Assistant</div>
@@ -65,7 +46,6 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
         <button onClick={onToggleDark} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:"50%",width:"34px",height:"34px",fontSize:"15px",cursor:"pointer",backdropFilter:"blur(4px)"}}>
           {darkMode?"☀️":"🌙"}
         </button>
-
         {user ? (
           <div ref={dropRef} style={{position:"relative"}}>
             <button onClick={()=>setOpen(p=>!p)} style={{display:"flex",alignItems:"center",gap:"6px",background:"rgba(255,255,255,0.15)",border:"none",borderRadius:"20px",padding:"5px 10px 5px 5px",cursor:"pointer",backdropFilter:"blur(4px)"}}>
@@ -75,12 +55,11 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
               <span style={{color:"#fff",fontSize:"12px",fontWeight:"600"}}>{user.name.split(" ")[0]}</span>
               <span style={{color:"rgba(255,255,255,0.7)",fontSize:"10px"}}>{open?"▲":"▼"}</span>
             </button>
-
             {open && (
-              <div style={{position:"fixed",top:"70px",right:"16px",width:"250px",backgroundColor:"#fff",borderRadius:"20px",boxShadow:"0 16px 48px rgba(0,0,0,0.2),0 4px 12px rgba(0,0,0,0.08)",border:"1px solid #f0f0f0",overflow:"hidden",zIndex:9999,animation:"dropIn 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>
+              <div style={{position:"fixed",top:"70px",right:"16px",width:"250px",backgroundColor:"#fff",borderRadius:"20px",boxShadow:"0 16px 48px rgba(0,0,0,0.2)",border:"1px solid #f0f0f0",overflow:"hidden",zIndex:9999,animation:"dropIn 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>
                 <Link href="/profile" onClick={()=>setOpen(false)} style={{display:"block",padding:"18px 16px",background:"linear-gradient(135deg,#fff8f5,#fff)",borderBottom:"1px solid #f5f5f5",textDecoration:"none"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                    <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"linear-gradient(135deg,#fde68a,#f97316)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",fontWeight:"800",color:"#7c2d12",boxShadow:"0 4px 12px rgba(249,115,22,0.3)"}}>
+                    <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"linear-gradient(135deg,#fde68a,#f97316)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",fontWeight:"800",color:"#7c2d12"}}>
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -88,13 +67,12 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
                       <div style={{fontSize:"11px",color:"#999"}}>{user.email}</div>
                     </div>
                   </div>
-                  <div style={{marginTop:"10px",padding:"7px 12px",borderRadius:"10px",backgroundColor:"#fff8f5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{marginTop:"10px",padding:"7px 12px",borderRadius:"10px",backgroundColor:"#fff8f5",display:"flex",justifyContent:"space-between"}}>
                     <span style={{fontSize:"12px",color:"#666"}}>Target Score</span>
                     <span style={{fontSize:"14px",color:"#ea580c",fontWeight:"900"}}>{user.target} pts</span>
                   </div>
                   <div style={{fontSize:"11px",color:"#ea580c",marginTop:"6px",textAlign:"center",fontWeight:"600"}}>Tap to edit profile →</div>
                 </Link>
-
                 {[
                   {icon:"🏠",label:"Dashboard",href:"/"},
                   {icon:"🤖",label:"Ask AI",href:"/ai"},
@@ -110,7 +88,6 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
                     <span style={{marginLeft:"auto",color:"#ddd",fontSize:"14px"}}>›</span>
                   </Link>
                 ))}
-
                 <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"13px 16px",background:"none",border:"none",cursor:"pointer",borderTop:"1px solid #f0f0f0"}}>
                   <span style={{fontSize:"17px"}}>🚪</span>
                   <span style={{fontSize:"14px",color:"#ef4444",fontWeight:"700"}}>Log Out</span>
@@ -119,9 +96,7 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
             )}
           </div>
         ) : (
-          <Link href="/auth" style={{background:"rgba(255,255,255,0.2)",borderRadius:"20px",padding:"8px 16px",color:"#fff",fontSize:"13px",textDecoration:"none",fontWeight:"700",border:"1px solid rgba(255,255,255,0.3)"}}>
-            Sign Up
-          </Link>
+          <Link href="/auth" style={{background:"rgba(255,255,255,0.2)",borderRadius:"20px",padding:"8px 16px",color:"#fff",fontSize:"13px",textDecoration:"none",fontWeight:"700",border:"1px solid rgba(255,255,255,0.3)"}}>Sign Up</Link>
         )}
       </div>
       <style>{`@keyframes dropIn{from{opacity:0;transform:translateY(-10px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>

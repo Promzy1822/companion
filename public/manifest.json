@@ -8,14 +8,15 @@
   "background_color": "#ffffff",
   "theme_color": "#ea580c",
   "orientation": "portrait-primary",
-  "lang": "en-NG",
   "icons": [
-    {"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"maskable any"}
+    {"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"},
+    {"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
   ],
   "shortcuts": [
-    {"name":"Ask AI","url":"/ai","description":"Open AI tutor"},
-    {"name":"Mock Exam","url":"/mock","description":"Start mock exam"},
-    {"name":"Study Plan","url":"/studyplan","description":"View study plan"}
+    {"name":"Ask AI","url":"/ai"},
+    {"name":"Study Plan","url":"/studyplan"},
+    {"name":"Mock Exam","url":"/mock"}
   ],
-  "categories": ["education","productivity"]
+  "categories":["education","productivity"]
 }

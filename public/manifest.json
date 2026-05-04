@@ -1,5 +1,5 @@
 {
-  "name": "Companion - JAMB Study Assistant",
+  "name": "Companion - AI Study Assistant",
   "short_name": "Companion",
   "description": "AI-powered JAMB study assistant for Nigerian students",
   "start_url": "/",
@@ -10,12 +10,7 @@
   "orientation": "portrait-primary",
   "lang": "en-NG",
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
-    }
+    {"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"maskable any"}
   ],
   "shortcuts": [
     {"name":"Ask AI","url":"/ai","description":"Open AI tutor"},

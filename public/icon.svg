@@ -1,19 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#f97316"/>
-      <stop offset="100%" style="stop-color:#ea580c"/>
+      <stop offset="100%" style="stop-color:#c2410c"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fde68a"/>
+      <stop offset="100%" style="stop-color:#f97316"/>
     </linearGradient>
   </defs>
-  <rect width="100" height="100" rx="22" fill="url(#g1)"/>
-  <!-- C shape -->
-  <path d="M65 20 C65 20 35 18 28 50 C21 82 50 82 65 80" stroke="white" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+  <!-- C letter shape with chat bubble tail -->
+  <path d="M340 120 C340 120 200 110 155 256 C110 402 210 400 340 390" 
+        stroke="white" stroke-width="58" stroke-linecap="round" fill="none" opacity="0.95"/>
   <!-- Chat bubble tail -->
-  <path d="M28 65 L20 78 L38 70" fill="white"/>
-  <!-- Star sparkle big -->
-  <path d="M52 42 L54 48 L60 50 L54 52 L52 58 L50 52 L44 50 L50 48 Z" fill="white"/>
-  <!-- Star sparkle small -->
-  <path d="M63 34 L64 37 L67 38 L64 39 L63 42 L62 39 L59 38 L62 37 Z" fill="white" opacity="0.85"/>
-  <!-- Star sparkle tiny -->
-  <path d="M71 28 L72 30 L74 31 L72 32 L71 34 L70 32 L68 31 L70 30 Z" fill="white" opacity="0.7"/>
+  <path d="M162 340 L118 408 L210 370" fill="white" opacity="0.95"/>
+  <!-- Main sparkle star -->
+  <path d="M258 195 L272 232 L310 246 L272 260 L258 297 L244 260 L206 246 L244 232 Z" fill="url(#glow)"/>
+  <!-- Small sparkle -->
+  <path d="M316 158 L323 176 L342 183 L323 190 L316 208 L309 190 L290 183 L309 176 Z" fill="white" opacity="0.9"/>
+  <!-- Tiny sparkle -->
+  <path d="M362 122 L367 134 L380 139 L367 144 L362 156 L357 144 L344 139 L357 134 Z" fill="white" opacity="0.7"/>
 </svg>

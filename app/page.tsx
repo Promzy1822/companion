@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "./components/Navbar";
 import StreakCard from "./components/StreakCard";
 import InstallBanner from "./components/InstallBanner";
+import TodayStudyBanner from "./components/TodayStudyBanner";
 
 interface NewsItem { title:string; url:string; source:string; time:string; image?:string; category?:string; }
 interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; }
@@ -189,6 +190,9 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {/* Today study task */}
+        <TodayStudyBanner darkMode={darkMode} />
 
         {/* Streak section */}
         <div>

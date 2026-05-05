@@ -1,16 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#f97316"/>
-      <stop offset="100%" style="stop-color:#c2410c"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#c2410c"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
-  <!-- Graduation cap board -->
-  <polygon points="256,140 420,210 256,280 92,210" fill="white"/>
-  <!-- Cap top -->
-  <polygon points="256,280 256,350 340,315" fill="rgba(255,255,255,0.85)"/>
-  <!-- Tassel cord -->
-  <line x1="420" y1="210" x2="420" y2="300" stroke="white" stroke-width="14" stroke-linecap="round"/>
-  <circle cx="420" cy="310" r="16" fill="white"/>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <text x="256" y="320" font-size="280" text-anchor="middle" font-family="Apple Color Emoji,Noto Color Emoji,Segoe UI Emoji,sans-serif">🎓</text>
 </svg>

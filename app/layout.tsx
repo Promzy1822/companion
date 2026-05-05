@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           window.addEventListener('appinstalled', function() {
             window.deferredPrompt = null;
             localStorage.setItem('pwa_installed', '1');
-            console.log('PWA installed successfully');
+            console.log("PWA installed"); if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }
           });
         `}} />
       </body>

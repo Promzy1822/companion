@@ -2,10 +2,9 @@
   "name": "Companion - AI JAMB Study Assistant",
   "short_name": "Companion",
   "description": "AI-powered JAMB study assistant for Nigerian students",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#ffffff",
   "theme_color": "#ea580c",
   "orientation": "portrait-primary",
@@ -22,18 +21,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
+    }
+  ],
+  "screenshots": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
   ],
   "shortcuts": [
-    {"name":"Ask AI","short_name":"AI","url":"/ai","description":"Ask AI tutor"},
-    {"name":"Study Plan","short_name":"Plan","url":"/studyplan","description":"View study plan"},
-    {"name":"Mock Exam","short_name":"Mock","url":"/mock","description":"Take mock exam"}
+    {"name":"Ask AI","url":"/ai"},
+    {"name":"Study Plan","url":"/studyplan"},
+    {"name":"Mock Exam","url":"/mock"}
   ],
-  "categories": ["education", "productivity"]
+  "categories": ["education","productivity"]
 }

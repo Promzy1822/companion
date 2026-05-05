@@ -27,28 +27,26 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
 
   const logout = () => {
     localStorage.removeItem("companion_user");
-    setUser(null);
-    setOpen(false);
+    setUser(null); setOpen(false);
     router.push("/landing");
   };
 
   return (
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",position:"relative",zIndex:100}}>
       <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-        <div style={{width:"38px",height:"38px",borderRadius:"12px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",backdropFilter:"blur(8px)"}}>🎓</div>
+        <div style={{width:"40px",height:"40px",borderRadius:"12px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",backdropFilter:"blur(8px)"}}>🎓</div>
         <div>
           <div style={{color:"#fff",fontWeight:"900",fontSize:"20px",letterSpacing:"-0.5px"}}>companion</div>
           <div style={{color:"rgba(255,255,255,0.55)",fontSize:"10px",letterSpacing:"1px",textTransform:"uppercase"}}>AI Study Assistant</div>
         </div>
       </div>
-
       <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-        <button onClick={onToggleDark} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:"50%",width:"34px",height:"34px",fontSize:"15px",cursor:"pointer",backdropFilter:"blur(4px)"}}>
+        <button onClick={onToggleDark} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:"50%",width:"34px",height:"34px",fontSize:"15px",cursor:"pointer"}}>
           {darkMode?"☀️":"🌙"}
         </button>
         {user ? (
           <div ref={dropRef} style={{position:"relative"}}>
-            <button onClick={()=>setOpen(p=>!p)} style={{display:"flex",alignItems:"center",gap:"6px",background:"rgba(255,255,255,0.15)",border:"none",borderRadius:"20px",padding:"5px 10px 5px 5px",cursor:"pointer",backdropFilter:"blur(4px)"}}>
+            <button onClick={()=>setOpen(p=>!p)} style={{display:"flex",alignItems:"center",gap:"6px",background:"rgba(255,255,255,0.15)",border:"none",borderRadius:"20px",padding:"5px 10px 5px 5px",cursor:"pointer"}}>
               <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,#fde68a,#f97316)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:"800",color:"#7c2d12"}}>
                 {user.name.charAt(0).toUpperCase()}
               </div>
@@ -56,7 +54,7 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
               <span style={{color:"rgba(255,255,255,0.7)",fontSize:"10px"}}>{open?"▲":"▼"}</span>
             </button>
             {open && (
-              <div style={{position:"fixed",top:"70px",right:"16px",width:"250px",backgroundColor:"#fff",borderRadius:"20px",boxShadow:"0 16px 48px rgba(0,0,0,0.2)",border:"1px solid #f0f0f0",overflow:"hidden",zIndex:9999,animation:"dropIn 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>
+              <div style={{position:"fixed",top:"70px",right:"16px",width:"250px",backgroundColor:"#fff",borderRadius:"20px",boxShadow:"0 16px 48px rgba(0,0,0,0.2)",border:"1px solid #f0f0f0",overflow:"hidden",zIndex:9999,animation:"dropIn 0.2s ease"}}>
                 <Link href="/profile" onClick={()=>setOpen(false)} style={{display:"block",padding:"18px 16px",background:"linear-gradient(135deg,#fff8f5,#fff)",borderBottom:"1px solid #f5f5f5",textDecoration:"none"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
                     <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"linear-gradient(135deg,#fde68a,#f97316)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",fontWeight:"800",color:"#7c2d12"}}>
@@ -68,7 +66,7 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
                     </div>
                   </div>
                   <div style={{marginTop:"10px",padding:"7px 12px",borderRadius:"10px",backgroundColor:"#fff8f5",display:"flex",justifyContent:"space-between"}}>
-                    <span style={{fontSize:"12px",color:"#666"}}>Target Score</span>
+                    <span style={{fontSize:"12px",color:"#666"}}>Target</span>
                     <span style={{fontSize:"14px",color:"#ea580c",fontWeight:"900"}}>{user.target} pts</span>
                   </div>
                   <div style={{fontSize:"11px",color:"#ea580c",marginTop:"6px",textAlign:"center",fontWeight:"600"}}>Tap to edit profile →</div>
@@ -99,7 +97,7 @@ export default function Navbar({ darkMode, onToggleDark }: { darkMode:boolean; o
           <Link href="/auth" style={{background:"rgba(255,255,255,0.2)",borderRadius:"20px",padding:"8px 16px",color:"#fff",fontSize:"13px",textDecoration:"none",fontWeight:"700",border:"1px solid rgba(255,255,255,0.3)"}}>Sign Up</Link>
         )}
       </div>
-      <style>{`@keyframes dropIn{from{opacity:0;transform:translateY(-10px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
+      <style>{`@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
 }

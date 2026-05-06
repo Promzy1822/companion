@@ -33,15 +33,9 @@ function SolverContent() {
   }, []);
 
   const solveQuestion = async () => {
-  if (!question.trim()) return;
-  setLoading(true); 
-  setAnswer("");
-
-  let context = "";
-  if (year) context += ` from ${year} JAMB`;
-  if (topic) context += ` on the topic "${topic}"`;
-
-  const prompt = `You are an expert JAMB examiner. A Nigerian student needs help with this \( {subject || "JAMB"} question \){context}.
+    if (!question.trim()) return;
+    setLoading(true); setAnswer("");
+    const prompt = `You are an expert JAMB examiner. A Nigerian student needs help with this ${subject||"JAMB"} question${year?` from ${year} JAMB`:""}${topic?` on the topic "${topic}"`":""}.
 
 QUESTION: ${question}
 
@@ -61,40 +55,25 @@ Provide this EXACT format:
 **📝 Try this similar question:**
 [Give one similar JAMB-style question]`;
 
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt })
-    });
-    const data = await res.json();
-    const reply = data.reply || "Could not solve. Try again.";
-    setAnswer(reply);
-
-    const newH = [{ q: question, a: reply, subject: subject || "General", topic }, ...history].slice(0, 8);
-    setHistory(newH);
-    localStorage.setItem("solver_history", JSON.stringify(newH));
-  } catch {
-    setAnswer("Network error. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const res = await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:prompt})});
+      const data = await res.json();
+      const reply = data.reply || "Could not solve. Try again.";
+      setAnswer(reply);
+      const newH = [{q:question,a:reply,subject:subject||"General",topic},...history].slice(0,8);
+      setHistory(newH);
+      localStorage.setItem("solver_history",JSON.stringify(newH));
+    } catch { setAnswer("Network error. Please try again."); }
+    finally { setLoading(false); }
+  };
 
   const generateQuestion = async () => {
-  if (!subject && !searchParams.get("subject")) return;
+    if (!subject && !searchParams.get("subject")) return;
+    const subj = subject || searchParams.get("subject") || "Mathematics";
+    const top = topic || searchParams.get("topic") || "";
+    setLoading(true); setAnswer(""); setQuestion("");
 
-  const subj = subject || searchParams.get("subject") || "Mathematics";
-  const top = topic || searchParams.get("topic") || "";
-  setLoading(true); 
-  setAnswer(""); 
-  setQuestion("");
-
-  let extra = "";
-  if (year) extra += ` in the style of ${year}`;
-  if (top) extra += ` specifically on the topic "${top}"`;
-
-  const prompt = `Generate one realistic JAMB \( {subj} past question \){extra}. This is for a Nigerian student preparing for JAMB UTME.
+    const prompt = `Generate one realistic JAMB ${subj} past question${year?` in the style of ${year}`:""}${top?` specifically on the topic "${top}"`:""}. This is for a Nigerian student preparing for JAMB UTME.
 
 Format EXACTLY like this:
 QUESTION: [Full question with options A, B, C, D if multiple choice, OR short answer question]
@@ -109,20 +88,13 @@ TOPIC: [Exact JAMB syllabus topic this tests]
 
 YEAR_STYLE: [Which JAMB year this question style resembles]`;
 
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt })
-    });
-    const data = await res.json();
-    setAnswer(data.reply || "");
-  } catch {
-    setAnswer("Network error. Try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const res = await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:prompt})});
+      const data = await res.json();
+      setAnswer(data.reply||"");
+    } catch { setAnswer("Network error. Try again."); }
+    finally { setLoading(false); }
+  };
 
   if (!mounted) return null;
 

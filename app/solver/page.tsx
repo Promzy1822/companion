@@ -35,7 +35,13 @@ function SolverContent() {
   const solveQuestion = async () => {
     if (!question.trim()) return;
     setLoading(true); setAnswer("");
-    const prompt = `You are an expert JAMB examiner. A Nigerian student needs help with this ${subject || "JAMB"} question${year ? ` from ${year} JAMB` : ""}${topic ? ` on the topic "${topic}"` : ""}.`;
+   const prompt = `You are an expert JAMB examiner. A Nigerian student needs help with this ${subject || "JAMB"} question${year ? ` from ${year} JAMB` : ""}${topic ? ` on the topic "${topic}"` : ""}.
+
+QUESTION: ${question}
+
+Provide this EXACT format:
+- Answer: [the correct answer option]
+- Explanation: [step-by-step explanation]`;
 
 QUESTION: ${question}
 

@@ -25,7 +25,14 @@ function timeAgo(dateStr: string): string {
 }
 
 function cleanText(s: string): string {
-  return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\s+/g,' ').trim();
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 async function fetchRSS(url: string, sourceName: string): Promise<NewsItem[]> {
@@ -108,7 +115,6 @@ export async function GET() {
       if (r.status === 'fulfilled') all.push(...r.value);
     }
 
-    // Deduplicate
     const seen = new Set<string>();
     const unique = all.filter(item => {
       const key = item.title.toLowerCase().slice(0, 50);
@@ -117,7 +123,6 @@ export async function GET() {
       return true;
     });
 
-    // Filter relevant
     const relevant = unique.filter(item => {
       const t = item.title.toLowerCase();
       return /jamb|utme|admission|waec|neco|post.utme|university|polytechnic|education|result|cutoff|screening/.test(t);

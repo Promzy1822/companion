@@ -2,10 +2,15 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Companion - JAMB Study Assistant",
+  title: "Companion - AI JAMB Study Assistant",
   description: "AI-powered JAMB study assistant for Nigerian students.",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Companion" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Companion",
+  },
+  applicationName: "Companion",
 };
 
 export const viewport: Viewport = {
@@ -13,6 +18,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,30 +26,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="icon" href="/icon-192.png" type="image/png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Companion" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#ea580c" />
-        <meta name="msapplication-TileColor" content="#ea580c" />
+        <meta name="application-name" content="Companion" />
       </head>
-      <body style={{ margin:0, padding:0, WebkitFontSmoothing:"antialiased" } as React.CSSProperties}>
+      <body style={{margin:0,padding:0} as React.CSSProperties}>
         {children}
         <script dangerouslySetInnerHTML={{__html:`
-          let deferredPrompt;
-          window.addEventListener('beforeinstallprompt', (e) => {
+          window.deferredPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
-            deferredPrompt = e;
             window.deferredPrompt = e;
-            const banner = document.getElementById('pwa-banner');
-            if (banner) banner.style.display = 'flex';
           });
-          window.addEventListener('appinstalled', () => {
-            const banner = document.getElementById('pwa-banner');
-            if (banner) banner.style.display = 'none';
+          window.addEventListener('appinstalled', function() {
+            window.deferredPrompt = null;
+            localStorage.setItem('pwa_installed','1');
           });
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js')
+                .then(function(reg) { console.log('SW registered'); })
+                .catch(function(err) { console.log('SW failed:', err); });
+            });
+          }
         `}} />
       </body>
     </html>

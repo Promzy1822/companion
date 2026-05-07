@@ -4,7 +4,7 @@
   "description": "AI Study Assistant",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ea580c",
+  "background_color": "#ffffff",
   "theme_color": "#ea580c",
   "orientation": "portrait-primary",
   "icons": [

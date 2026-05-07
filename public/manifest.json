@@ -1,26 +1,36 @@
-"icons": [
-  {
-    "src": "/icon-192.png",
-    "sizes": "192x192",
-    "type": "image/png",
-    "purpose": "any maskable"
-  },
-  {
-    "src": "/icon-512.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "any maskable"
-  },
-  {
-    "src": "/icon-384.png",
-    "sizes": "384x384",
-    "type": "image/png",
-    "purpose": "any maskable"
-  },
-  {
-    "src": "/icon-128.png",
-    "sizes": "128x128",
-    "type": "image/png",
-    "purpose": "any maskable"
-  }
-]
+{
+  "name": "Companion",
+  "short_name": "Companion",
+  "description": "AI Study Assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ea580c",
+  "theme_color": "#ea580c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

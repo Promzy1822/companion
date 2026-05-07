@@ -33,34 +33,12 @@ function SolverContent() {
   }, []);
 
   const solveQuestion = async () => {
-    if (!question.trim()) return;
-    setLoading(true); setAnswer("");
-   const prompt = `You are an expert JAMB examiner. A Nigerian student needs help with this ${subject || "JAMB"} question${year ? ` from ${year} JAMB` : ""}${topic ? ` on the topic "${topic}"` : ""}.
+  if (!question.trim()) return;
 
-QUESTION: ${question}
+  setLoading(true);
+  setAnswer("");
 
-Provide this EXACT format:
-- Answer: [the correct answer option]
-- Explanation: [step-by-step explanation]`;
-
-QUESTION: ${question}
-
-Provide this EXACT format:
-
-**✅ Correct Answer:** [State answer clearly]
-
-**📖 Why this is correct:**
-[Explain the concept with Nigerian student examples]
-
-**❌ Why other options are wrong:**
-[Explain each wrong option if multiple choice]
-
-const solveQuestion = async () => {
-    if (!question.trim()) return;
-    setLoading(true); 
-    setAnswer("");
-    
-    const prompt = `You are an expert JAMB examiner. A Nigerian student needs help with this ${subject || "JAMB"} question${year ? ` from ${year} JAMB` : ""}${topic ? ` on the topic "${topic}"` : ""}.
+  const prompt = `You are an expert JAMB examiner. A Nigerian student needs help with this ${subject || "JAMB"} question${year ? ` from ${year} JAMB` : ""}${topic ? ` on the topic "${topic}"` : ""}.
 
 QUESTION: ${question}
 
@@ -80,25 +58,42 @@ Provide this EXACT format:
 **📝 Try this similar question:**
 [Give one similar JAMB-style question]`;
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt })
-      });
-      const data = await res.json();
-      const reply = data.reply || "Could not solve. Try again.";
-      setAnswer(reply);
-      const newH = [{ q: question, a: reply, subject: subject || "General", topic }, ...history].slice(0, 8);
-      setHistory(newH);
-      localStorage.setItem("solver_history", JSON.stringify(newH));
-    } catch { 
-      setAnswer("Network error. Please try again."); 
-    } finally { 
-      setLoading(false); 
-    }
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: prompt })
+    });
+
+    const data = await res.json();
+
+    const reply = data.reply || "Could not solve. Try again.";
+
+    setAnswer(reply);
+
+    const newH = [
+      {
+        q: question,
+        a: reply,
+        subject: subject || "General",
+        topic
+      },
+      ...history
+    ].slice(0, 8);
+
+    setHistory(newH);
+
+    localStorage.setItem(
+      "solver_history",
+      JSON.stringify(newH)
+    );
+
+  } catch {
+    setAnswer("Network error. Please try again.");
+  } finally {
+    setLoading(false);
+  }
 };
-  };
 
  const generateQuestion = async () => {
     if (!subject && !searchParams.get("subject")) return;

@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-<link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#ea580c" />
 
 export const metadata: Metadata = {
   title: "Companion - AI JAMB Study Assistant",

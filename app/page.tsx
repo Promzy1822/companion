@@ -2,354 +2,417 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Navbar from "./components/Navbar";
-import StreakCard from "./components/StreakCard";
-import InstallBanner from "./components/InstallBanner";
 
+interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; deadline?:string; selfRating?:string; }
 interface NewsItem { title:string; url:string; source:string; time:string; image?:string; category?:string; }
-interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; }
+interface StreakData { current:number; longest:number; lastStudied:string; totalDays:number; }
 
-const CATEGORIES = ["All","Education","Exams","Admissions","Tech","General"];
 const MOCK_IMAGES = [
   "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&q=80",
   "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=400&q=80",
-  "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=400&q=80",
   "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80",
   "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&q=80",
+  "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=400&q=80",
 ];
 
-const QUICK_LINKS = [
-  {href:"/ai",icon:"🤖",label:"Ask AI",sub:"24/7 tutor",color:"#ea580c",shadow:"rgba(234,88,12,0.25)"},
-  {href:"/subjects?mode=learn",icon:"📚",label:"Learn",sub:"Video lessons",color:"#3b82f6",shadow:"rgba(59,130,246,0.25)"},
-  {href:"/subjects?mode=practice",icon:"✏️",label:"Practice",sub:"Past questions",color:"#8b5cf6",shadow:"rgba(139,92,246,0.25)"},
-  {href:"/mock",icon:"📝",label:"Mock Exam",sub:"Timed test",color:"#f59e0b",shadow:"rgba(245,158,11,0.25)"},
-  {href:"/solver",icon:"🧮",label:"Solver",sub:"AI explains",color:"#10b981",shadow:"rgba(16,185,129,0.25)"},
-  {href:"/studyplan",icon:"📅",label:"Study Plan",sub:"AI generated",color:"#ec4899",shadow:"rgba(236,72,153,0.25)"},
-];
+function getDaysToJAMB(deadline?:string) {
+  if (deadline) {
+    const diff = new Date(deadline).getTime() - Date.now();
+    const d = Math.ceil(diff/86400000);
+    if (d>0) return d;
+  }
+  return Math.ceil((new Date(`April 15,${new Date().getFullYear()+1}`).getTime()-Date.now())/86400000);
+}
 
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+  if (h<12) return "Good morning"; if (h<17) return "Good afternoon"; return "Good evening";
 }
 
 function assignCategory(t:string) {
-  const l = t.toLowerCase();
+  const l=t.toLowerCase();
   if (/exam|utme|waec|neco|result/.test(l)) return "Exams";
   if (/admission|cutoff|screening|post-utme/.test(l)) return "Admissions";
-  if (/tech|ai|digital|online/.test(l)) return "Tech";
-  if (/university|polytechnic|college|school/.test(l)) return "Education";
+  if (/tech|ai|digital/.test(l)) return "Tech";
+  if (/university|polytechnic|school/.test(l)) return "Education";
   return "General";
 }
 
-function getFallback(): NewsItem[] {
-  return [
-    {title:"JAMB 2025 UTME Registration Portal Now Open — Apply Before Deadline",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"2h ago"},
-    {title:"JAMB Releases Updated Syllabus for 2025 UTME Examination",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"5h ago"},
-    {title:"UNILAG Post-UTME Screening 2025: Dates and Requirements",url:"#",source:"UNILAG Info",time:"1d ago"},
-    {title:"How to Score 300+ in JAMB: Proven Study Strategies",url:"#",source:"Education Guide",time:"1d ago"},
-    {title:"CBT Centres: Full List of Approved JAMB Centres 2025",url:"#",source:"JAMB Guide",time:"2d ago"},
-    {title:"OAU Cut-Off Marks for All Courses 2025 Released",url:"#",source:"University News",time:"3d ago"},
-  ];
-}
+const NAV_ITEMS = [
+  {icon:"🏠",label:"Home",href:"/",active:true},
+  {icon:"🤖",label:"Ask AI",href:"/ai"},
+  {icon:"📚",label:"Learn",href:"/subjects?mode=learn"},
+  {icon:"✏️",label:"Practice",href:"/subjects?mode=practice"},
+  {icon:"📝",label:"Mock Exam",href:"/mock"},
+  {icon:"📅",label:"Study Plan",href:"/studyplan"},
+  {icon:"🧮",label:"Solver",href:"/solver"},
+  {icon:"👤",label:"Profile",href:"/profile"},
+];
 
 export default function Home() {
-  const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState<User|null>(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [streak, setStreak] = useState<StreakData>({current:0,longest:0,lastStudied:"",totalDays:0});
+  const [studyPlan, setStudyPlan] = useState<any[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [showCalc, setShowCalc] = useState(false);
-  const [calcType, setCalcType] = useState<"jamb"|"aggregate">("aggregate");
-  const [jambScore, setJambScore] = useState("");
-  const [postUtme, setPostUtme] = useState("");
-  const [aggResult, setAggResult] = useState<null|{aggregate:number;jamb:number;post:number;grade:string;color:string}>(null);
-  const [calcError, setCalcError] = useState("");
-  const [authChecked, setAuthChecked] = useState(false);
-  const [pressedCard, setPressedCard] = useState<number|null>(null);
-  const [hoveredLink, setHoveredLink] = useState<number|null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [checkedIn, setCheckedIn] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    setDarkMode(localStorage.getItem("darkMode") === "true");
+  useEffect(()=>{
+    setMounted(true);
+    setDarkMode(localStorage.getItem("darkMode")==="true");
     const u = localStorage.getItem("companion_user");
     if (!u) { router.replace("/landing"); return; }
     setUser(JSON.parse(u));
-    setAuthChecked(true);
+    const s = localStorage.getItem("study_streak");
+    if (s) {
+      const sd:StreakData = JSON.parse(s);
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now()-86400000).toDateString();
+      if (sd.lastStudied!==today&&sd.lastStudied!==yesterday) sd.current=0;
+      setStreak(sd);
+      setCheckedIn(sd.lastStudied===today);
+    }
+    const sp = localStorage.getItem("companion_study_plan");
+    if (sp) setStudyPlan(JSON.parse(sp));
     fetchNews();
-  }, [router]);
+  },[router]);
 
-  const fetchNews = useCallback(async (isRefresh=false) => {
-    if (isRefresh) setRefreshing(true); else setNewsLoading(true);
+  const fetchNews = useCallback(async(isRefresh=false)=>{
+    if(isRefresh) setRefreshing(true); else setNewsLoading(true);
     try {
-      const res = await fetch("/api/news", {cache:"no-store"});
+      const res = await fetch("/api/news",{cache:"no-store"});
       const data = await res.json();
-      const enriched = (data.news || getFallback()).map((item:NewsItem, i:number) => ({
-        ...item,
-        image: MOCK_IMAGES[i % MOCK_IMAGES.length],
-        category: assignCategory(item.title),
-      }));
-      setNews(enriched);
-    } catch {
-      setNews(getFallback().map((item,i) => ({...item, image:MOCK_IMAGES[i%MOCK_IMAGES.length], category:assignCategory(item.title)})));
-    } finally {
-      setNewsLoading(false);
-      if (isRefresh) setTimeout(() => setRefreshing(false), 600);
-    }
-  }, []);
+      const enriched = (data.news||[]).map((item:NewsItem,i:number)=>({...item,image:MOCK_IMAGES[i%MOCK_IMAGES.length],category:assignCategory(item.title)}));
+      setNews(enriched.length?enriched:getFallback());
+    } catch { setNews(getFallback()); }
+    finally { setNewsLoading(false); setRefreshing(false); }
+  },[]);
 
-  const calcAggregate = () => {
-    setCalcError(""); setAggResult(null);
-    const j = parseFloat(jambScore), p = parseFloat(postUtme);
-    if (isNaN(j)||j<0||j>400) { setCalcError("Enter valid JAMB score (0-400)"); return; }
-    if (calcType==="aggregate") {
-      if (isNaN(p)||p<0||p>100) { setCalcError("Enter valid Post-UTME score (0-100)"); return; }
-      const jP=j/8, pP=p/2, agg=jP+pP;
-      const grade=agg>=70?"Excellent 🔥":agg>=55?"Good ✅":agg>=45?"Average ⚠️":"Below average ❌";
-      const color=agg>=70?"#16a34a":agg>=55?"#2563eb":agg>=45?"#d97706":"#dc2626";
-      setAggResult({aggregate:parseFloat(agg.toFixed(2)),jamb:parseFloat(jP.toFixed(2)),post:parseFloat(pP.toFixed(2)),grade,color});
-    } else {
-      const scaled=(j/400)*100;
-      const grade=j>=300?"Excellent 🔥":j>=250?"Good ✅":j>=200?"Average ⚠️":"Below average ❌";
-      const color=j>=300?"#16a34a":j>=250?"#2563eb":j>=200?"#d97706":"#dc2626";
-      setAggResult({aggregate:parseFloat(scaled.toFixed(1)),jamb:j,post:0,grade,color});
-    }
+  const getFallback=():NewsItem[]=>[
+    {title:"JAMB 2025 UTME Registration Portal Now Open",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"2h ago",image:MOCK_IMAGES[0],category:"Exams"},
+    {title:"JAMB Releases Updated Syllabus for 2025 UTME",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"5h ago",image:MOCK_IMAGES[1],category:"Exams"},
+    {title:"Post-UTME 2025: Universities Begin Screening",url:"#",source:"Education News",time:"1d ago",image:MOCK_IMAGES[2],category:"Admissions"},
+    {title:"How to Score 300+ in JAMB: Proven Strategies",url:"#",source:"Study Guide",time:"2d ago",image:MOCK_IMAGES[3],category:"Education"},
+  ];
+
+  const checkIn=()=>{
+    const today=new Date().toDateString();
+    const yesterday=new Date(Date.now()-86400000).toDateString();
+    const newCurrent=streak.lastStudied===yesterday?streak.current+1:1;
+    const updated={current:newCurrent,longest:Math.max(streak.longest,newCurrent),lastStudied:today,totalDays:streak.totalDays+1};
+    setStreak(updated); setCheckedIn(true);
+    localStorage.setItem("study_streak",JSON.stringify(updated));
   };
 
-  const toggleDark = () => { const d=!darkMode; setDarkMode(d); localStorage.setItem("darkMode",String(d)); };
-  const filteredNews = activeCategory==="All" ? news : news.filter(n=>n.category===activeCategory);
-  if (!authChecked) return null;
-
-  const bg = darkMode ? "#0a0a0a" : "#f0f0f5";
-  const cardBg = darkMode ? "#1c1c1e" : "#ffffff";
-  const textColor = darkMode ? "#f2f2f7" : "#1c1c1e";
-  const subText = darkMode ? "#98989d" : "#6e6e73";
-  const borderC = darkMode ? "#2c2c2e" : "#e5e5ea";
-  const inputSt: React.CSSProperties = {
-    width:"100%",padding:"13px 16px",borderRadius:"12px",
-    border:`1.5px solid ${borderC}`,fontSize:"15px",outline:"none",
-    backgroundColor:darkMode?"#2c2c2e":"#f5f5f7",color:textColor,boxSizing:"border-box"
+  const getTodayTask=()=>{
+    const today=new Date().toISOString().split("T")[0];
+    for(const w of studyPlan){for(const d of w.days||[]){if(d.date===today&&d.type!=="rest")return d;}}
+    return null;
   };
+
+  const getProgress=()=>{
+    const all=studyPlan.flatMap(w=>(w.days||[]).filter((d:any)=>d.type!=="rest"));
+    const done=all.filter((d:any)=>d.done).length;
+    return all.length?Math.round((done/all.length)*100):0;
+  };
+
+  const toggleDark=()=>{ const d=!darkMode; setDarkMode(d); localStorage.setItem("darkMode",String(d)); };
+  const daysLeft=getDaysToJAMB(user?.deadline);
+  const todayTask=getTodayTask();
+  const progress=getProgress();
+
+  if(!mounted) return null;
+
+  const D=darkMode;
+  const bg=D?"#0f0f0f":"#f2f3f7";
+  const cardBg=D?"#1a1a2e":"#ffffff";
+  const darkCard=D?"#16213e":"#1e2a4a";
+  const textPrimary=D?"#f0f0f0":"#1a1a2a";
+  const textSub=D?"#8888a0":"#6b7280";
+  const borderC=D?"#2a2a3e":"#e5e7eb";
+  const accentOrange="#ea580c";
+  const accentGold="#f59e0b";
 
   return (
-    <div style={{minHeight:"100vh",backgroundColor:bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+    <div style={{minHeight:"100vh",backgroundColor:bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",position:"relative"}}>
 
-      {/* HEADER — with depth */}
-      <div style={{background:"linear-gradient(160deg,#3b0d02,#7c2d12,#c2410c,#ea580c,#fb923c)",padding:"20px 16px 28px",position:"relative",overflow:"hidden",boxShadow:"0 8px 32px rgba(194,65,12,0.4)"}}>
-        {/* Decorative circles */}
-        <div style={{position:"absolute",top:"-60px",right:"-60px",width:"220px",height:"220px",borderRadius:"50%",background:"rgba(255,255,255,0.06)"}} />
-        <div style={{position:"absolute",bottom:"-40px",left:"-40px",width:"160px",height:"160px",borderRadius:"50%",background:"rgba(255,255,255,0.04)"}} />
-        <div style={{position:"absolute",top:"20px",left:"50%",transform:"translateX(-50%)",width:"80px",height:"80px",borderRadius:"50%",background:"rgba(255,255,255,0.03)"}} />
-        <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
-        <div style={{position:"relative"}}>
-          <div style={{color:"rgba(255,255,255,0.65)",fontSize:"13px",marginBottom:"4px"}}>
-            {getGreeting()}, {user?.name.split(" ")[0]} 👋
-          </div>
-          <div style={{color:"rgba(255,255,255,0.8)",fontSize:"13px",marginTop:"2px"}}>
-            {"Target: "}<span style={{color:"#fde68a",fontWeight:"800"}}>{user?.target}{" pts"}</span>
-            {user?.institution ? " · "+user.institution : ""}
+      {/* SIDEBAR OVERLAY */}
+      {sidebarOpen&&(
+        <div style={{position:"fixed",inset:0,zIndex:200,display:"flex"}}>
+          <div style={{position:"absolute",inset:0,backgroundColor:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)"}} onClick={()=>setSidebarOpen(false)}/>
+          <div style={{position:"relative",width:"280px",height:"100%",backgroundColor:D?"#0d0d1a":"#ffffff",boxShadow:"8px 0 32px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column",zIndex:1}}>
+            {/* Sidebar header */}
+            <div style={{padding:"24px 20px",background:"linear-gradient(135deg,#431407,#c2410c,#ea580c)",position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:"-20px",right:"-20px",width:"100px",height:"100px",borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
+              <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px"}}>
+                <div style={{width:"40px",height:"40px",borderRadius:"12px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px"}}>🎓</div>
+                <div>
+                  <div style={{color:"#fff",fontWeight:"900",fontSize:"18px"}}>companion</div>
+                  <div style={{color:"rgba(255,255,255,0.6)",fontSize:"10px",letterSpacing:"1px",textTransform:"uppercase"}}>AI Study Assistant</div>
+                </div>
+              </div>
+              {user&&(
+                <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",borderRadius:"12px",backgroundColor:"rgba(255,255,255,0.12)"}}>
+                  <div style={{width:"36px",height:"36px",borderRadius:"50%",background:"linear-gradient(135deg,#fde68a,#f97316)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",fontWeight:"800",color:"#7c2d12"}}>
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{color:"#fff",fontWeight:"700",fontSize:"13px"}}>{user.name}</div>
+                    <div style={{color:"rgba(255,255,255,0.6)",fontSize:"11px"}}>{user.course}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Nav items */}
+            <div style={{flex:1,overflowY:"auto",padding:"12px"}}>
+              {NAV_ITEMS.map((item,i)=>(
+                <Link key={i} href={item.href} onClick={()=>setSidebarOpen(false)} style={{display:"flex",alignItems:"center",gap:"14px",padding:"13px 16px",borderRadius:"12px",marginBottom:"4px",textDecoration:"none",backgroundColor:item.active?(D?"rgba(234,88,12,0.15)":"rgba(234,88,12,0.08)"):"transparent",border:item.active?`1px solid rgba(234,88,12,0.3)`:"1px solid transparent"}}>
+                  <span style={{fontSize:"20px",width:"24px",textAlign:"center"}}>{item.icon}</span>
+                  <span style={{fontSize:"14px",fontWeight:item.active?"700":"500",color:item.active?accentOrange:textPrimary}}>{item.label}</span>
+                  {item.active&&<div style={{marginLeft:"auto",width:"6px",height:"6px",borderRadius:"50%",backgroundColor:accentOrange}}/>}
+                </Link>
+              ))}
+            </div>
+
+            <div style={{padding:"16px",borderTop:`1px solid ${borderC}`}}>
+              <button onClick={()=>{localStorage.removeItem("companion_user");router.replace("/landing");}} style={{width:"100%",padding:"12px",borderRadius:"12px",border:`1px solid ${borderC}`,backgroundColor:"transparent",color:"#ef4444",fontWeight:"700",fontSize:"14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+                🚪 Log Out
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* TOP NAV BAR */}
+      <div style={{position:"sticky",top:0,zIndex:100,backgroundColor:D?"rgba(15,15,15,0.95)":"rgba(242,243,247,0.95)",backdropFilter:"blur(12px)",borderBottom:`1px solid ${borderC}`,padding:"12px 16px",display:"flex",alignItems:"center",gap:"12px"}}>
+        <button onClick={()=>setSidebarOpen(true)} style={{width:"36px",height:"36px",borderRadius:"10px",backgroundColor:D?"#1a1a2e":"#fff",border:`1px solid ${borderC}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",color:textPrimary,boxShadow:D?"none":"0 1px 4px rgba(0,0,0,0.06)"}}>☰</button>
+
+        <div style={{flex:1,display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{width:"28px",height:"28px",borderRadius:"8px",background:"linear-gradient(135deg,#f97316,#c2410c)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px"}}>🎓</div>
+          <span style={{fontWeight:"800",color:textPrimary,fontSize:"16px"}}>companion</span>
+        </div>
+
+        <button onClick={toggleDark} style={{width:"36px",height:"36px",borderRadius:"10px",backgroundColor:D?"#1a1a2e":"#fff",border:`1px solid ${borderC}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",boxShadow:D?"none":"0 1px 4px rgba(0,0,0,0.06)"}}>
+          {D?"☀️":"🌙"}
+        </button>
+
+        <Link href="/profile" style={{width:"36px",height:"36px",borderRadius:"50%",background:"linear-gradient(135deg,#fde68a,#f97316)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"15px",fontWeight:"800",color:"#7c2d12",textDecoration:"none",boxShadow:"0 2px 8px rgba(234,88,12,0.3)"}}>
+          {user?.name?.charAt(0).toUpperCase()||"?"}
+        </Link>
       </div>
 
-      <div style={{padding:"20px 16px 80px",display:"flex",flexDirection:"column",gap:"20px"}}>
+      {/* MAIN CONTENT */}
+      <div style={{padding:"16px",paddingBottom:"32px",display:"flex",flexDirection:"column",gap:"16px"}}>
 
-        {/* Quick links — 3D card effect */}
+        {/* WELCOME HERO CARD — like BrainLolly's dark card */}
+        <div style={{borderRadius:"20px",overflow:"hidden",background:"linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#1e3a5f 100%)",padding:"24px",position:"relative",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
+          <div style={{position:"absolute",top:"-30px",right:"-30px",width:"140px",height:"140px",borderRadius:"50%",background:"rgba(234,88,12,0.1)"}}/>
+          <div style={{position:"absolute",bottom:"-20px",left:"-20px",width:"100px",height:"100px",borderRadius:"50%",background:"rgba(249,115,22,0.08)"}}/>
+          <div style={{position:"relative"}}>
+            <div style={{color:"rgba(255,255,255,0.55)",fontSize:"13px",marginBottom:"6px"}}>{getGreeting()} 👋</div>
+            <div style={{color:"#fff",fontWeight:"900",fontSize:"22px",letterSpacing:"-0.5px",marginBottom:"4px"}}>{user?.name}</div>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"16px"}}>
+              <span style={{fontSize:"13px"}}>🎓</span>
+              <span style={{color:"rgba(255,255,255,0.65)",fontSize:"13px"}}>{user?.course} · {user?.institution}</span>
+            </div>
+
+            {/* Stats row */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"16px"}}>
+              {[
+                {label:"Days to JAMB",value:daysLeft,icon:"⏰",color:"#f59e0b"},
+                {label:"Study Streak",value:`${streak.current}d`,icon:"🔥",color:"#ea580c"},
+                {label:"Progress",value:`${progress}%`,icon:"📊",color:"#22c55e"},
+              ].map((s,i)=>(
+                <div key={i} style={{backgroundColor:"rgba(255,255,255,0.08)",borderRadius:"12px",padding:"10px",textAlign:"center",border:"1px solid rgba(255,255,255,0.1)"}}>
+                  <div style={{fontSize:"14px",marginBottom:"3px"}}>{s.icon}</div>
+                  <div style={{color:s.color,fontWeight:"900",fontSize:"16px",letterSpacing:"-0.5px"}}>{s.value}</div>
+                  <div style={{color:"rgba(255,255,255,0.45)",fontSize:"9px",marginTop:"1px",textTransform:"uppercase",letterSpacing:"0.3px"}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Target badge */}
+            <div style={{display:"inline-flex",alignItems:"center",gap:"6px",padding:"6px 14px",borderRadius:"20px",backgroundColor:"rgba(234,88,12,0.2)",border:"1px solid rgba(234,88,12,0.4)"}}>
+              <span style={{color:"#fde68a",fontSize:"13px"}}>🎯</span>
+              <span style={{color:"#fde68a",fontSize:"13px",fontWeight:"700"}}>Target: {user?.target} pts</span>
+            </div>
+
+            {/* Check in button */}
+            <div style={{marginTop:"14px"}}>
+              {!checkedIn?(
+                <button onClick={checkIn} style={{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"700",fontSize:"14px",cursor:"pointer",boxShadow:"0 4px 12px rgba(234,88,12,0.4)"}}>
+                  ✅ Mark Today as Studied
+                </button>
+              ):(
+                <div style={{padding:"10px 14px",borderRadius:"12px",backgroundColor:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",textAlign:"center"}}>
+                  <span style={{color:"#22c55e",fontWeight:"700",fontSize:"13px"}}>🎉 Studied today! Come back tomorrow</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* QUICK STATS ROW — like BrainLolly's 4 stat cards */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+          {[
+            {icon:"📝",label:"Mock Exams",value:streak.totalDays||0,sub:"Completed",color:"#3b82f6",bg:D?"#1e3a5f":"#eff6ff",href:"/mock"},
+            {icon:"⭐",label:"Best Streak",value:`${streak.longest}d`,sub:"Days",color:"#f59e0b",bg:D?"#2a1f0a":"#fffbeb",href:"/studyplan"},
+            {icon:"📅",label:"Study Plan",value:studyPlan.length?`${studyPlan.length}wk`:"None",sub:studyPlan.length?"Active":"Not set",color:"#8b5cf6",bg:D?"#1e1a2e":"#f5f3ff",href:"/studyplan"},
+            {icon:"🏛️",label:"Subjects",value:user?.subjects?.length||0,sub:"Selected",color:"#10b981",bg:D?"#0a1f1a":"#ecfdf5",href:"/subjects?mode=practice"},
+          ].map((s,i)=>(
+            <Link key={i} href={s.href} style={{textDecoration:"none"}}>
+              <div style={{backgroundColor:s.bg,borderRadius:"16px",padding:"16px",border:`1px solid ${s.color}22`,display:"flex",alignItems:"center",gap:"12px",boxShadow:D?"none":"0 1px 4px rgba(0,0,0,0.05)",transition:"transform 0.15s"}}>
+                <div style={{width:"44px",height:"44px",borderRadius:"12px",backgroundColor:`${s.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",flexShrink:0}}>{s.icon}</div>
+                <div>
+                  <div style={{fontSize:"20px",fontWeight:"900",color:s.color,letterSpacing:"-0.5px"}}>{s.value}</div>
+                  <div style={{fontSize:"12px",fontWeight:"600",color:textPrimary,marginTop:"1px"}}>{s.label}</div>
+                  <div style={{fontSize:"10px",color:textSub,marginTop:"1px"}}>{s.sub}</div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* TODAY'S TASK — like BrainLolly's exam card */}
         <div>
-          <div style={{fontSize:"11px",fontWeight:"700",color:subText,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"12px"}}>Quick Access</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px"}}>
-            {QUICK_LINKS.map((c,i) => (
-              <Link key={i} href={c.href} style={{textDecoration:"none"}}
-                onMouseEnter={()=>setHoveredLink(i)} onMouseLeave={()=>setHoveredLink(null)}
-                onTouchStart={()=>setHoveredLink(i)} onTouchEnd={()=>setHoveredLink(null)}>
-                <div style={{
-                  backgroundColor:cardBg, borderRadius:"18px", padding:"16px 10px",
-                  textAlign:"center", border:`1px solid ${borderC}`,
-                  boxShadow: hoveredLink===i
-                    ? `0 8px 24px ${c.shadow}, 0 2px 8px rgba(0,0,0,0.08)`
-                    : darkMode
-                    ? "0 2px 8px rgba(0,0,0,0.4)"
-                    : `0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)`,
-                  transform: hoveredLink===i ? "translateY(-3px) scale(1.02)" : "translateY(0) scale(1)",
-                  transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-                }}>
-                  <div style={{
-                    width:"44px",height:"44px",borderRadius:"14px",
-                    background:`linear-gradient(135deg,${c.color}22,${c.color}44)`,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    margin:"0 auto 10px",fontSize:"22px",
-                    boxShadow:`0 4px 12px ${c.shadow}`,
-                  }}>{c.icon}</div>
-                  <div style={{fontWeight:"800",color:c.color,fontSize:"13px",lineHeight:"1.2"}}>{c.label}</div>
-                  <div style={{fontSize:"10px",color:subText,marginTop:"3px"}}>{c.sub}</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+            <span style={{fontSize:"12px",fontWeight:"700",color:textSub,letterSpacing:"1px",textTransform:"uppercase"}}>Today's Task</span>
+            <Link href="/studyplan" style={{fontSize:"12px",color:accentOrange,fontWeight:"700",textDecoration:"none"}}>View Plan →</Link>
+          </div>
+          {todayTask?(
+            <div style={{backgroundColor:cardBg,borderRadius:"16px",overflow:"hidden",boxShadow:D?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)",border:`1px solid ${borderC}`}}>
+              <div style={{padding:"14px 16px",background:"linear-gradient(135deg,#c2410c,#ea580c)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                  <span style={{fontSize:"14px"}}>📌</span>
+                  <span style={{color:"#fff",fontWeight:"700",fontSize:"13px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Today's Study</span>
+                </div>
+                {todayTask.done&&<span style={{color:"#fff",fontSize:"12px",fontWeight:"700"}}>✓ Done</span>}
+              </div>
+              <div style={{padding:"16px"}}>
+                <div style={{fontSize:"17px",fontWeight:"800",color:textPrimary,marginBottom:"4px"}}>{todayTask.topic}</div>
+                <div style={{fontSize:"13px",color:accentOrange,fontWeight:"600",marginBottom:"10px"}}>{todayTask.subject}</div>
+                <div style={{display:"flex",gap:"8px"}}>
+                  <Link href="/ai" style={{flex:1,padding:"10px",borderRadius:"10px",background:"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",fontWeight:"700",fontSize:"13px",textAlign:"center",textDecoration:"none"}}>Ask AI</Link>
+                  <Link href={`/solver?subject=${encodeURIComponent(todayTask.subject)}&topic=${encodeURIComponent(todayTask.topic)}`} style={{flex:1,padding:"10px",borderRadius:"10px",background:"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"700",fontSize:"13px",textAlign:"center",textDecoration:"none"}}>Practice</Link>
+                </div>
+              </div>
+            </div>
+          ):(
+            <div style={{backgroundColor:cardBg,borderRadius:"16px",padding:"24px",textAlign:"center",boxShadow:D?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)",border:`1px solid ${borderC}`}}>
+              <div style={{fontSize:"36px",marginBottom:"8px"}}>📅</div>
+              <div style={{fontSize:"15px",fontWeight:"700",color:textPrimary,marginBottom:"4px"}}>No study plan yet</div>
+              <div style={{fontSize:"13px",color:textSub,marginBottom:"14px"}}>Generate an AI study plan tailored to your subjects</div>
+              <Link href="/studyplan" style={{display:"inline-block",padding:"10px 24px",borderRadius:"20px",background:"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"700",fontSize:"13px",textDecoration:"none"}}>Generate Plan →</Link>
+            </div>
+          )}
+        </div>
+
+        {/* QUICK ACCESS GRID */}
+        <div>
+          <div style={{fontSize:"12px",fontWeight:"700",color:textSub,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"10px"}}>Quick Access</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"8px"}}>
+            {[
+              {icon:"🤖",label:"Ask AI",href:"/ai",color:"#ea580c"},
+              {icon:"📚",label:"Learn",href:"/subjects?mode=learn",color:"#3b82f6"},
+              {icon:"✏️",label:"Practice",href:"/subjects?mode=practice",color:"#8b5cf6"},
+              {icon:"🧮",label:"Solver",href:"/solver",color:"#10b981"},
+            ].map((c,i)=>(
+              <Link key={i} href={c.href} style={{textDecoration:"none"}}>
+                <div style={{backgroundColor:cardBg,borderRadius:"14px",padding:"14px 8px",textAlign:"center",boxShadow:D?"0 1px 6px rgba(0,0,0,0.3)":"0 1px 6px rgba(0,0,0,0.06)",border:`1px solid ${borderC}`}}>
+                  <div style={{width:"38px",height:"38px",borderRadius:"11px",backgroundColor:`${c.color}18`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:"18px"}}>{c.icon}</div>
+                  <div style={{fontWeight:"700",color:c.color,fontSize:"11px"}}>{c.label}</div>
                 </div>
               </Link>
             ))}
           </div>
         </div>
 
-        {/* Streak section */}
+        {/* STREAK CALENDAR */}
         <div>
-          <div style={{fontSize:"11px",fontWeight:"700",color:subText,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"12px"}}>Your Progress</div>
-          <StreakCard darkMode={darkMode} />
-        </div>
-
-        {/* Calculator */}
-        <div>
-          <div style={{fontSize:"11px",fontWeight:"700",color:subText,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"12px"}}>Tools</div>
-          <div style={{backgroundColor:cardBg,borderRadius:"20px",overflow:"hidden",boxShadow:darkMode?"0 2px 12px rgba(0,0,0,0.4)":"0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)",border:`1px solid ${borderC}`}}>
-            <button onClick={()=>{setShowCalc(!showCalc);setAggResult(null);setCalcError("");}} style={{width:"100%",padding:"18px 20px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
-                <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#f59e0b22,#f59e0b44)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",boxShadow:"0 4px 12px rgba(245,158,11,0.2)"}}>🧮</div>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontWeight:"800",color:textColor,fontSize:"15px"}}>Score Calculator</div>
-                  <div style={{fontSize:"12px",color:subText}}>JAMB and Aggregate formula</div>
-                </div>
-              </div>
-              <div style={{width:"28px",height:"28px",borderRadius:"8px",backgroundColor:showCalc?"#ea580c":darkMode?"#2c2c2e":"#f2f2f7",display:"flex",alignItems:"center",justifyContent:"center",color:showCalc?"#fff":"#ea580c",fontSize:"11px",fontWeight:"700",transition:"all 0.2s"}}>
-                {showCalc?"▲":"▼"}
-              </div>
-            </button>
-
-            {showCalc && (
-              <div style={{padding:"0 20px 20px",borderTop:`1px solid ${borderC}`}}>
-                <div style={{display:"flex",gap:"6px",margin:"16px 0",backgroundColor:darkMode?"#2c2c2e":"#f2f2f7",borderRadius:"12px",padding:"4px"}}>
-                  {(["aggregate","jamb"] as const).map(t=>(
-                    <button key={t} onClick={()=>{setCalcType(t);setAggResult(null);setCalcError("");}} style={{flex:1,padding:"10px",borderRadius:"9px",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:"700",backgroundColor:calcType===t?"#ea580c":"transparent",color:calcType===t?"#fff":subText,transition:"all 0.2s"}}>
-                      {t==="aggregate"?"Aggregate":"JAMB Only"}
-                    </button>
-                  ))}
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
-                  <div>
-                    <label style={{fontSize:"12px",color:subText,display:"block",marginBottom:"7px",fontWeight:"600"}}>JAMB Score (0-400)</label>
-                    <input type="number" min="0" max="400" placeholder="e.g. 285" value={jambScore} onChange={e=>setJambScore(e.target.value)} style={inputSt} />
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+            <span style={{fontSize:"12px",fontWeight:"700",color:textSub,letterSpacing:"1px",textTransform:"uppercase"}}>Study Streak</span>
+            <span style={{fontSize:"13px",color:accentOrange,fontWeight:"700"}}>🔥 {streak.current} days</span>
+          </div>
+          <div style={{backgroundColor:cardBg,borderRadius:"16px",padding:"16px",boxShadow:D?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)",border:`1px solid ${borderC}`}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px",marginBottom:"12px"}}>
+              {Array.from({length:7},(_,i)=>{
+                const d=new Date(); d.setDate(d.getDate()-d.getDay()+i);
+                const isToday=i===new Date().getDay();
+                const studied=streak.lastStudied&&new Date(streak.lastStudied).getDay()===i&&new Date(streak.lastStudied)>=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+                return (
+                  <div key={i} style={{textAlign:"center"}}>
+                    <div style={{fontSize:"10px",color:isToday?accentOrange:textSub,fontWeight:isToday?"700":"400",marginBottom:"4px"}}>
+                      {["S","M","T","W","T","F","S"][i]}
+                    </div>
+                    <div style={{aspectRatio:"1",borderRadius:"8px",backgroundColor:studied?accentOrange:isToday?D?"#2a1810":"#fff8f5":"transparent",border:isToday?`2px solid ${accentOrange}`:studied?"none":`1px solid ${borderC}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px",fontWeight:"700",color:studied?"#fff":isToday?accentOrange:textSub}}>
+                      {d.getDate()}
+                    </div>
                   </div>
-                  {calcType==="aggregate" && (
-                    <div>
-                      <label style={{fontSize:"12px",color:subText,display:"block",marginBottom:"7px",fontWeight:"600"}}>Post-UTME Score (0-100)</label>
-                      <input type="number" min="0" max="100" placeholder="e.g. 72" value={postUtme} onChange={e=>setPostUtme(e.target.value)} style={inputSt} />
-                      <div style={{fontSize:"11px",color:"#ea580c",marginTop:"5px",fontWeight:"600"}}>Formula: (JAMB / 8) + (Post-UTME / 2)</div>
-                    </div>
-                  )}
-                  {calcError && <div style={{padding:"10px 14px",backgroundColor:darkMode?"#2a0000":"#fff0f0",borderRadius:"10px",color:"#ef4444",fontSize:"13px"}}>{calcError}</div>}
-                  <button onClick={calcAggregate} style={{padding:"14px",borderRadius:"14px",border:"none",background:"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"700",fontSize:"15px",cursor:"pointer",boxShadow:"0 4px 16px rgba(234,88,12,0.35)"}}>
-                    Calculate →
-                  </button>
-                  {aggResult && (
-                    <div style={{padding:"18px",borderRadius:"16px",backgroundColor:darkMode?"#0a1a0a":"#f0fdf4",border:`1.5px solid ${aggResult.color}44`,boxShadow:`0 4px 16px ${aggResult.color}18`}}>
-                      <div style={{textAlign:"center",marginBottom:"14px"}}>
-                        <div style={{fontSize:"44px",fontWeight:"900",color:aggResult.color,letterSpacing:"-2px"}}>{aggResult.aggregate}</div>
-                        <div style={{fontSize:"14px",color:aggResult.color,fontWeight:"700",marginTop:"4px"}}>{aggResult.grade}</div>
-                      </div>
-                      {calcType==="aggregate" && (
-                        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-                          {[
-                            {label:"JAMB contribution",val:`${jambScore} ÷ 8 = ${aggResult.jamb}`},
-                            {label:"Post-UTME contribution",val:`${postUtme} ÷ 2 = ${aggResult.post}`},
-                            {label:"Total Aggregate",val:`${aggResult.aggregate}/100`},
-                          ].map((r,i)=>(
-                            <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:"13px",padding:"8px 0",borderBottom:i<2?`1px solid ${borderC}`:"none"}}>
-                              <span style={{color:subText}}>{r.label}</span>
-                              <span style={{color:textColor,fontWeight:"700"}}>{r.val}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* News Feed — premium */}
-        <div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}>
-            <div style={{fontSize:"11px",fontWeight:"700",color:subText,letterSpacing:"1px",textTransform:"uppercase"}}>JAMB News</div>
-            {/* Aesthetic refresh button */}
-            <button onClick={()=>fetchNews(true)} disabled={refreshing} style={{display:"flex",alignItems:"center",gap:"6px",padding:"7px 14px",borderRadius:"20px",border:"none",background:refreshing?"linear-gradient(135deg,#2c2c2e,#3a3a3c)":"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontSize:"12px",fontWeight:"700",cursor:refreshing?"not-allowed":"pointer",boxShadow:refreshing?"none":"0 3px 10px rgba(234,88,12,0.3)",transition:"all 0.3s"}}>
-              <span style={{display:"inline-block",animation:refreshing?"spin 0.8s linear infinite":"none",fontSize:"13px"}}>🔄</span>
-              <span>{refreshing?"Updating...":"Refresh"}</span>
-            </button>
-          </div>
-
-          <div style={{backgroundColor:cardBg,borderRadius:"20px",overflow:"hidden",boxShadow:darkMode?"0 2px 12px rgba(0,0,0,0.4)":"0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)",border:`1px solid ${borderC}`}}>
-            {/* Live indicator */}
-            <div style={{padding:"14px 18px",borderBottom:`1px solid ${borderC}`,display:"flex",alignItems:"center",gap:"10px",background:darkMode?"linear-gradient(135deg,#1c1c1e,#2a1810)":"linear-gradient(135deg,#fff8f5,#fff)"}}>
-              <div style={{width:"8px",height:"8px",borderRadius:"50%",backgroundColor:"#22c55e",boxShadow:"0 0 0 3px rgba(34,197,94,0.2)",animation:"pulse 2s infinite"}} />
-              <span style={{fontSize:"13px",fontWeight:"700",color:textColor}}>Live JAMB Updates</span>
-              <span style={{marginLeft:"auto",fontSize:"11px",color:subText}}>{news.length} stories</span>
+                );
+              })}
             </div>
-
-            {/* Category chips */}
-            <div style={{padding:"12px 18px",borderBottom:`1px solid ${borderC}`,display:"flex",gap:"6px",overflowX:"auto",scrollbarWidth:"none"}}>
-              {CATEGORIES.map(cat=>(
-                <button key={cat} onClick={()=>setActiveCategory(cat)} style={{flexShrink:0,padding:"6px 14px",borderRadius:"20px",border:"none",cursor:"pointer",fontSize:"12px",fontWeight:"600",backgroundColor:activeCategory===cat?"#ea580c":darkMode?"#2c2c2e":"#f2f2f7",color:activeCategory===cat?"#fff":subText,transition:"all 0.2s",boxShadow:activeCategory===cat?"0 3px 10px rgba(234,88,12,0.3)":"none"}}>
-                  {cat}
-                </button>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
+              {[{l:"Current",v:`${streak.current}d`},{l:"Best",v:`${streak.longest}d`},{l:"Total",v:`${streak.totalDays}d`}].map((s,i)=>(
+                <div key={i} style={{backgroundColor:D?"#0a0a1a":"#f8f8f8",borderRadius:"10px",padding:"10px",textAlign:"center",border:`1px solid ${borderC}`}}>
+                  <div style={{fontSize:"16px",fontWeight:"900",color:textPrimary}}>{s.v}</div>
+                  <div style={{fontSize:"10px",color:textSub,marginTop:"2px"}}>{s.l}</div>
+                </div>
               ))}
             </div>
+          </div>
+        </div>
 
-            {/* Refresh loading bar */}
-            {refreshing && (
-              <div style={{height:"3px",backgroundColor:darkMode?"#2c2c2e":"#f0f0f0",overflow:"hidden"}}>
-                <div style={{height:"100%",width:"40%",background:"linear-gradient(90deg,transparent,#ea580c,transparent)",animation:"shimmer 1s infinite"}} />
-              </div>
-            )}
-
-            {newsLoading ? (
-              <div style={{padding:"20px 18px",display:"flex",flexDirection:"column",gap:"16px"}}>
+        {/* NEWS FEED */}
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+              <span style={{fontSize:"12px",fontWeight:"700",color:textSub,letterSpacing:"1px",textTransform:"uppercase"}}>JAMB News</span>
+              <div style={{width:"6px",height:"6px",borderRadius:"50%",backgroundColor:"#22c55e",animation:"pulse 2s infinite"}}/>
+            </div>
+            <button onClick={()=>fetchNews(true)} disabled={refreshing} style={{display:"flex",alignItems:"center",gap:"5px",padding:"5px 12px",borderRadius:"16px",border:"none",background:refreshing?"#ccc":"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontSize:"11px",fontWeight:"700",cursor:refreshing?"not-allowed":"pointer",boxShadow:refreshing?"none":"0 2px 8px rgba(234,88,12,0.3)"}}>
+              <span style={{display:"inline-block",animation:refreshing?"spin 0.8s linear infinite":"none"}}>🔄</span>
+              {refreshing?"Updating...":"Refresh"}
+            </button>
+          </div>
+          <div style={{backgroundColor:cardBg,borderRadius:"16px",overflow:"hidden",boxShadow:D?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)",border:`1px solid ${borderC}`}}>
+            {refreshing&&<div style={{height:"3px",overflow:"hidden"}}><div style={{height:"100%",width:"40%",background:"linear-gradient(90deg,transparent,#ea580c,transparent)",animation:"shimmer 1s infinite"}}/></div>}
+            {newsLoading?(
+              <div style={{padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
                 {[1,2,3].map(i=>(
                   <div key={i} style={{display:"flex",gap:"12px",animation:"shimmerFade 1.5s infinite"}}>
                     <div style={{flex:1}}>
-                      <div style={{height:"14px",borderRadius:"7px",backgroundColor:darkMode?"#2c2c2e":"#f0f0f0",marginBottom:"8px",width:"90%"}} />
-                      <div style={{height:"12px",borderRadius:"6px",backgroundColor:darkMode?"#2c2c2e":"#f0f0f0",width:"55%"}} />
+                      <div style={{height:"13px",borderRadius:"6px",backgroundColor:D?"#2a2a3e":"#f0f0f0",marginBottom:"8px",width:"90%"}}/>
+                      <div style={{height:"11px",borderRadius:"5px",backgroundColor:D?"#2a2a3e":"#f0f0f0",width:"55%"}}/>
                     </div>
-                    <div style={{width:"72px",height:"72px",borderRadius:"12px",backgroundColor:darkMode?"#2c2c2e":"#f0f0f0",flexShrink:0}} />
+                    <div style={{width:"68px",height:"68px",borderRadius:"12px",backgroundColor:D?"#2a2a3e":"#f0f0f0",flexShrink:0}}/>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div>
-                {(filteredNews.length ? filteredNews : news).map((item,i)=>(
-                  <a key={i} href={item.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none",display:"block"}}
-                    onMouseDown={()=>setPressedCard(i)} onMouseUp={()=>setPressedCard(null)}
-                    onTouchStart={()=>setPressedCard(i)} onTouchEnd={()=>setPressedCard(null)}>
-                    <div style={{padding:"14px 18px",borderTop:i===0?"none":`1px solid ${borderC}`,display:"flex",gap:"12px",alignItems:"flex-start",backgroundColor:pressedCard===i?(darkMode?"#2c2c2e":"#f5f5f7"):"transparent",transition:"background 0.1s"}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:"11px",color:"#ea580c",fontWeight:"700",marginBottom:"4px",display:"flex",alignItems:"center",gap:"5px"}}>
-                          <span style={{width:"5px",height:"5px",borderRadius:"50%",backgroundColor:"#ea580c",display:"inline-block",flexShrink:0}} />
-                          {item.source}
-                          <span style={{color:borderC}}>·</span>
-                          <span style={{color:subText,fontWeight:"500"}}>{item.time}</span>
-                        </div>
-                        <div style={{fontSize:"14px",color:textColor,fontWeight:"700",lineHeight:"1.45",marginBottom:"8px",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title}</div>
-                        <span style={{fontSize:"10px",color:subText,backgroundColor:darkMode?"#2c2c2e":"#f2f2f7",padding:"3px 8px",borderRadius:"6px",fontWeight:"600"}}>{item.category}</span>
-                      </div>
-                      {item.image && (
-                        <div style={{width:"76px",height:"76px",borderRadius:"14px",overflow:"hidden",flexShrink:0,boxShadow:"0 2px 8px rgba(0,0,0,0.12)"}}>
-                          <img src={item.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{(e.target as HTMLImageElement).style.display="none";}} />
-                        </div>
-                      )}
-                    </div>
-                  </a>
-                ))}
-                <div style={{padding:"14px 18px",borderTop:`1px solid ${borderC}`,textAlign:"center",background:darkMode?"linear-gradient(135deg,#1c1c1e,#2a1810)":"linear-gradient(135deg,#fff8f5,#fff)"}}>
-                  <button onClick={()=>fetchNews(true)} style={{background:"none",border:"none",color:"#ea580c",fontSize:"13px",fontWeight:"700",cursor:"pointer"}}>
-                    {refreshing ? "Updating..." : "Load fresh news →"}
-                  </button>
-                </div>
-              </div>
+            ):(
+              news.map((item,i)=>(
+                <a key={i} href={item.url} target="_blank" rel="noopener noreferrer" style={{display:"flex",gap:"12px",padding:"14px 16px",borderTop:i===0?"none":`1px solid ${borderC}`,textDecoration:"none",alignItems:"flex-start"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:"11px",color:accentOrange,fontWeight:"700",marginBottom:"4px"}}>{item.source} · <span style={{color:textSub,fontWeight:"400"}}>{item.time}</span></div>
+                    <div style={{fontSize:"13px",color:textPrimary,fontWeight:"600",lineHeight:"1.45",marginBottom:"6px",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title}</div>
+                    <span style={{fontSize:"10px",color:textSub,backgroundColor:D?"#2a2a3e":"#f2f2f7",padding:"2px 8px",borderRadius:"6px",fontWeight:"600"}}>{item.category}</span>
+                  </div>
+                  {item.image&&<div style={{width:"72px",height:"72px",borderRadius:"12px",overflow:"hidden",flexShrink:0,boxShadow:"0 2px 8px rgba(0,0,0,0.12)"}}>
+                    <img src={item.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{(e.target as HTMLImageElement).style.display="none";}}/>
+                  </div>}
+                </a>
+              ))
             )}
           </div>
         </div>
+
       </div>
 
-      <InstallBanner />
       <style>{`
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}

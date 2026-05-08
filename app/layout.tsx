@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/icon-192.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Companion" />
@@ -31,15 +31,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ margin: 0, padding: 0 } as React.CSSProperties}>
         {children}
-        <script dangerouslySetInnerHTML={{__html:`
-          window.deferredPrompt=null;
-          window.addEventListener('beforeinstallprompt',function(e){
-            e.preventDefault();window.deferredPrompt=e;
+        <script dangerouslySetInnerHTML={{__html: `
+          window.deferredPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault(); window.deferredPrompt = e;
           });
-          window.addEventListener('appinstalled',function(){
-            window.deferredPrompt=null;localStorage.setItem('pwa_installed','1');
+          window.addEventListener('appinstalled', function() {
+            window.deferredPrompt = null; localStorage.setItem('pwa_installed','1');
           });
-          if('serviceWorker' in navigator){
+          if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(function(){});
           }
         `}} />

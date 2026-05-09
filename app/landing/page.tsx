@@ -53,7 +53,7 @@ export default function Landing() {
         {/* Nav */}
         <div style={{padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <img src="/icon-192.png" alt="Companion" width={32} height={32} style={{borderRadius:"9px"}}/>
+            <span style={{fontSize:"26px"}}>🎓</span>
             <span style={{color:"#fff",fontWeight:"900",fontSize:"18px"}}>companion</span>
           </div>
           <Link href="/auth" style={{color:"rgba(255,255,255,0.9)",fontSize:"13px",textDecoration:"none",padding:"7px 16px",border:"1px solid rgba(255,255,255,0.4)",borderRadius:"20px",fontWeight:"600"}}>

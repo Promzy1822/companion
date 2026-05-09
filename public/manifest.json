@@ -17,6 +17,5 @@
     {"name": "Ask AI", "url": "/ai"},
     {"name": "Study Plan", "url": "/studyplan"},
     {"name": "Mock Exam", "url": "/mock"}
-  ],
-  "categories": ["education", "productivity"]
+  ]
 }

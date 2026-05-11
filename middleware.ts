@@ -1,28 +1,37 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = [
-  '/landing',
-  '/auth',
-  '/signup',
-  '/api/news',
-  '/api/chat',
-];
+// Routes that don't need authentication
+const PUBLIC_ROUTES = ['/landing', '/auth', '/api'];
+const STATIC_EXTENSIONS = ['.png', '.jpg', '.svg', '.ico', '.json', '.txt', '.js', '.css'];
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+  // Allow static files and Next.js internals
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
     return NextResponse.next();
   }
 
-  // Simple auth check (you can expand later)
-  const token = request.cookies.get('auth_token')?.value;
-  const user = request.cookies.get('companion_user')?.value;
+  // Allow files with known extensions
+  if (STATIC_EXTENSIONS.some(ext => pathname.endsWith(ext))) {
+    return NextResponse.next();
+  }
 
-  if (!token && !user && !pathname.startsWith('/')) {
-    return NextResponse.redirect(new URL('/auth', request.url));
+  // Allow public routes
+  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+
+  // For protected routes, check auth cookie
+  // We can't verify localStorage from middleware (server-side)
+  // so we use a simple cookie set on login
+  const authCookie = req.cookies.get('companion_auth');
+
+  if (!authCookie || !authCookie.value || authCookie.value.length < 10) {
+    // Redirect to landing if no auth cookie
+    const url = req.nextUrl.clone();
+    url.pathname = '/landing';
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
@@ -30,6 +39,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png|manifest.json).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icon|manifest).*)',
   ],
 };

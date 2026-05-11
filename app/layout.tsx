@@ -13,8 +13,7 @@ export const viewport: Viewport = {
   themeColor: "#ea580c",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5, // Fixed: don't block zoom (accessibility)
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -32,13 +31,56 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ margin: 0, padding: 0 } as React.CSSProperties}>
         {children}
         <script dangerouslySetInnerHTML={{__html: `
+          // Run storage migration on every load
+          (function() {
+            try {
+              var version = parseInt(localStorage.getItem('companion_storage_version') || '1');
+              if (version < 2) {
+                var userStr = localStorage.getItem('companion_user');
+                if (userStr) {
+                  var user = JSON.parse(userStr);
+                  if (user.password && !user.passwordHash) {
+                    var salted = "companion_salt_2025_" + user.password;
+                    var hash = 0;
+                    for (var i = 0; i < salted.length; i++) {
+                      var char = salted.charCodeAt(i);
+                      hash = ((hash << 5) - hash) + char;
+                      hash = hash & hash;
+                    }
+                    user.passwordHash = Math.abs(hash).toString(16) +
+                      Math.abs(hash * 2654435761).toString(16) +
+                      Math.abs(hash ^ 0xdeadbeef).toString(16);
+                    delete user.password;
+                    localStorage.setItem('companion_user', JSON.stringify(user));
+                  }
+                }
+                localStorage.setItem('companion_storage_version', '2');
+              }
+            } catch(e) {}
+          })();
+
+          // PWA install
           window.deferredPrompt = null;
           window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault(); window.deferredPrompt = e;
+            e.preventDefault();
+            window.deferredPrompt = e;
           });
           window.addEventListener('appinstalled', function() {
-            window.deferredPrompt = null; localStorage.setItem('pwa_installed','1');
+            window.deferredPrompt = null;
+            localStorage.setItem('pwa_installed', '1');
           });
+
+          // Set auth cookie if user exists
+          try {
+            var u = localStorage.getItem('companion_user');
+            if (u) {
+              var d = new Date();
+              d.setFullYear(d.getFullYear() + 1);
+              document.cookie = 'companion_auth=authenticated; expires=' + d.toUTCString() + '; path=/; SameSite=Lax';
+            }
+          } catch(e) {}
+
+          // Service worker
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(function(){});
           }

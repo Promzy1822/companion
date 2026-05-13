@@ -4,22 +4,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../lib/cutoffs";
 import { getSubjectCombo, getFullSubjects } from "../lib/subjectCombinations";
-import { hashPassword, verifyPassword, validateEmail, validatePassword, createSafeUser, sanitizeInput } from "../lib/auth";
+import { hashPassword, verifyPassword, validateEmail, validatePassword } from "../lib/auth";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
 const CC: Record<string,string> = {"Very High":"#dc2626","High":"#ea580c","Moderate":"#2563eb","Low":"#16a34a"};
-
-function setAuthCookie() {
-  // Set a simple auth cookie so middleware can detect login
-  const expires = new Date();
-  expires.setFullYear(expires.getFullYear() + 1);
-  document.cookie = `companion_auth=authenticated; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-}
-
-function clearAuthCookie() {
-  document.cookie = 'companion_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-}
 
 export default function Auth() {
   const router = useRouter();
@@ -36,16 +25,13 @@ export default function Auth() {
 
   useEffect(() => {
     const u = localStorage.getItem("companion_user");
-    if (u) { setAuthCookie(); router.replace("/"); }
+    if (u) router.replace("/");
   }, [router]);
 
   useEffect(() => {
     if (form.institution && form.course && form.institution !== "Other" && form.course !== "Other") {
       const c = getCutoff(form.institution, form.course);
-      setRec({
-        text: getSmartRecommendation(form.institution, form.course),
-        minJamb: c.minJamb, recommendedJamb: c.recommendedJamb, competition: c.competition
-      });
+      setRec({ text: getSmartRecommendation(form.institution, form.course), minJamb: c.minJamb, recommendedJamb: c.recommendedJamb, competition: c.competition });
       update("target", String(c.recommendedJamb));
     } else setRec(null);
     setFlex([]);
@@ -54,8 +40,7 @@ export default function Auth() {
   const update = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
   const combo = form.course ? getSubjectCombo(form.course) : null;
   const prob = rec && form.institution !== "Other" && form.course !== "Other"
-    ? getAdmissionProbability(parseInt(form.target), getCutoff(form.institution, form.course))
-    : null;
+    ? getAdmissionProbability(parseInt(form.target), getCutoff(form.institution, form.course)) : null;
 
   const toggleFlex = (s: string) => {
     if (!combo) return;
@@ -64,41 +49,29 @@ export default function Auth() {
     setFlex(p => [...p, s]); setError("");
   };
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     setError("");
     if (!form.email.trim() || !form.password.trim()) { setError("Fill all fields"); return; }
-    if (!validateEmail(form.email)) { setError("Enter a valid email address"); return; }
-
+    if (!validateEmail(form.email)) { setError("Enter a valid email"); return; }
     setLoading(true);
     try {
       const saved = localStorage.getItem("companion_user");
       if (!saved) { setError("No account found. Please sign up."); return; }
-
       const user = JSON.parse(saved);
       const emailMatch = user.email === form.email.toLowerCase().trim();
-
-      // Support both old plaintext passwords and new hashed ones
+      // Support hashed AND legacy plaintext passwords
       const passwordMatch = user.passwordHash
         ? verifyPassword(form.password, user.passwordHash)
-        : user.password === form.password; // legacy fallback
-
-      if (!emailMatch || !passwordMatch) {
-        setError("Wrong email or password.");
-        return;
-      }
-
-      // Upgrade to hashed password if still plaintext
+        : user.password === form.password;
+      if (!emailMatch || !passwordMatch) { setError("Wrong email or password."); return; }
+      // Upgrade plaintext to hash silently
       if (!user.passwordHash) {
         user.passwordHash = hashPassword(form.password);
         delete user.password;
         localStorage.setItem("companion_user", JSON.stringify(user));
       }
-
-      setAuthCookie();
       router.replace("/");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const next = () => {
@@ -112,54 +85,45 @@ export default function Auth() {
       if (!form.course) { setError("Select course"); return; }
     }
     if (step === 2 && combo && flex.length < combo.flexibleCount) {
-      setError("Select " + (combo.flexibleCount - flex.length) + " more subject(s)");
-      return;
+      setError("Select " + (combo.flexibleCount - flex.length) + " more subject(s)"); return;
     }
     setStep(s => s + 1);
   };
 
-  const signup = async () => {
+  const signup = () => {
     if (!form.deadline) { setError("Select exam date"); return; }
-    setLoading(true);
-    try {
-      const subjects = getFullSubjects(form.course, flex);
-      const cutoff = form.institution !== "Other" && form.course !== "Other"
-        ? getCutoff(form.institution, form.course) : null;
-
-      // Create safe user with hashed password
-      const safeUser = createSafeUser({
-        ...form,
-        subjects,
-        cutoffData: cutoff,
-        recommendation: rec?.text || null,
-      });
-
-      localStorage.setItem("companion_user", JSON.stringify(safeUser));
-      setAuthCookie();
-      router.replace("/");
-    } finally {
-      setLoading(false);
-    }
+    const subjects = getFullSubjects(form.course, flex);
+    const cutoff = form.institution !== "Other" && form.course !== "Other"
+      ? getCutoff(form.institution, form.course) : null;
+    // Store with hashed password — never plaintext
+    const safeUser = {
+      name: form.name.trim(),
+      email: form.email.toLowerCase().trim(),
+      passwordHash: hashPassword(form.password),
+      institution: form.institution,
+      course: form.course,
+      subjects,
+      target: form.target,
+      deadline: form.deadline,
+      selfRating: form.selfRating,
+      cutoffData: cutoff,
+      recommendation: rec?.text || null,
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem("companion_user", JSON.stringify(safeUser));
+    router.replace("/");
   };
 
-  const inp: React.CSSProperties = {
-    width:"100%", padding:"13px 16px", borderRadius:"12px",
-    border:"1.5px solid #e8e8e8", fontSize:"14px", outline:"none",
-    backgroundColor:"#fafafa", boxSizing:"border-box", color:"#1a1a1a"
-  };
-  const lbl: React.CSSProperties = {
-    fontSize:"13px", fontWeight:"600", color:"#555", display:"block", marginBottom:"6px"
-  };
+  const inp: React.CSSProperties = { width:"100%", padding:"13px 16px", borderRadius:"12px", border:"1.5px solid #e8e8e8", fontSize:"14px", outline:"none", backgroundColor:"#fafafa", boxSizing:"border-box", color:"#1a1a1a" };
+  const lbl: React.CSSProperties = { fontSize:"13px", fontWeight:"600", color:"#555", display:"block", marginBottom:"6px" };
 
   return (
     <div style={{minHeight:"100vh",backgroundColor:"#fff",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
       <div style={{background:"linear-gradient(135deg,#7c2d12,#c2410c,#ea580c)",padding:"24px 24px 28px",textAlign:"center",position:"relative"}}>
         <Link href="/landing" style={{position:"absolute",left:"20px",top:"24px",color:"rgba(255,255,255,0.7)",textDecoration:"none",fontSize:"13px",padding:"6px 12px",borderRadius:"10px",backgroundColor:"rgba(255,255,255,0.1)"}}>← Back</Link>
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"10px"}}>
-          <span style={{fontSize:"48px"}}>🎓</span>
-          <div style={{color:"#fff",fontWeight:"900",fontSize:"22px"}}>companion</div>
-          <div style={{color:"rgba(255,255,255,0.7)",fontSize:"13px"}}>AI JAMB Study Assistant</div>
-        </div>
+        <div style={{fontSize:"40px"}}>🎓</div>
+        <div style={{color:"#fff",fontWeight:"900",fontSize:"22px",marginTop:"8px"}}>companion</div>
+        <div style={{color:"rgba(255,255,255,0.7)",fontSize:"13px"}}>AI JAMB Study Assistant</div>
       </div>
 
       <div style={{display:"flex",margin:"20px 20px 0",borderRadius:"14px",overflow:"hidden",border:"1.5px solid #e8e8e8"}}>
@@ -196,47 +160,27 @@ export default function Auth() {
                 <div>
                   <label style={lbl}>Password</label>
                   <input style={inp} type="password" placeholder="Min 6 characters" value={form.password} onChange={e=>update("password",e.target.value)}/>
-                  <div style={{fontSize:"11px",color:"#999",marginTop:"4px"}}>🔒 Your password is securely hashed before saving</div>
+                  <div style={{fontSize:"11px",color:"#16a34a",marginTop:"4px"}}>🔒 Password is securely hashed before saving</div>
                 </div>
-                <div><label style={lbl}>Target Institution</label>
-                  <select style={inp} value={form.institution} onChange={e=>update("institution",e.target.value)}>
-                    <option value="">Select...</option>{INSTITUTIONS.map(i=><option key={i}>{i}</option>)}
-                  </select>
-                </div>
-                <div><label style={lbl}>Desired Course</label>
-                  <select style={inp} value={form.course} onChange={e=>update("course",e.target.value)}>
-                    <option value="">Select...</option>{COURSES.map(c=><option key={c}>{c}</option>)}
-                  </select>
-                </div>
+                <div><label style={lbl}>Target Institution</label><select style={inp} value={form.institution} onChange={e=>update("institution",e.target.value)}><option value="">Select...</option>{INSTITUTIONS.map(i=><option key={i}>{i}</option>)}</select></div>
+                <div><label style={lbl}>Desired Course</label><select style={inp} value={form.course} onChange={e=>update("course",e.target.value)}><option value="">Select...</option>{COURSES.map(c=><option key={c}>{c}</option>)}</select></div>
                 {rec&&(
                   <div style={{borderRadius:"14px",overflow:"hidden",border:"1.5px solid #fed7aa"}}>
                     <div style={{padding:"14px",background:"linear-gradient(135deg,#fff8f5,#fff7ed)"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                        <span style={{fontSize:"16px"}}>🤖</span>
-                        <span style={{fontWeight:"800",color:"#c2410c",fontSize:"13px"}}>AI Admission Insight</span>
-                        <span style={{marginLeft:"auto",fontSize:"11px",fontWeight:"700",color:CC[rec.competition],backgroundColor:CC[rec.competition]+"15",padding:"3px 8px",borderRadius:"8px"}}>{rec.competition}</span>
+                        <span style={{fontSize:"16px"}}>🤖</span><span style={{fontWeight:"800",color:"#c2410c",fontSize:"13px"}}>AI Admission Insight</span>
+                        <span style={{marginLeft:"auto",fontSize:"11px",fontWeight:"700",color:CC[rec.competition],backgroundColor:`${CC[rec.competition]}15`,padding:"3px 8px",borderRadius:"8px"}}>{rec.competition}</span>
                       </div>
                       <p style={{fontSize:"12px",color:"#555",margin:"0 0 10px",lineHeight:"1.5"}}>{rec.text}</p>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-                        <div style={{padding:"10px",borderRadius:"10px",backgroundColor:"#fff",border:"1px solid #fecaca",textAlign:"center"}}>
-                          <div style={{fontSize:"11px",color:"#999"}}>Minimum</div>
-                          <div style={{fontSize:"20px",fontWeight:"900",color:"#dc2626"}}>{rec.minJamb}</div>
-                        </div>
-                        <div style={{padding:"10px",borderRadius:"10px",backgroundColor:"#fff",border:"1px solid #86efac",textAlign:"center"}}>
-                          <div style={{fontSize:"11px",color:"#999"}}>Recommended</div>
-                          <div style={{fontSize:"20px",fontWeight:"900",color:"#16a34a"}}>{rec.recommendedJamb}</div>
-                        </div>
+                        <div style={{padding:"10px",borderRadius:"10px",backgroundColor:"#fff",border:"1px solid #fecaca",textAlign:"center"}}><div style={{fontSize:"11px",color:"#999"}}>Minimum</div><div style={{fontSize:"20px",fontWeight:"900",color:"#dc2626"}}>{rec.minJamb}</div></div>
+                        <div style={{padding:"10px",borderRadius:"10px",backgroundColor:"#fff",border:"1px solid #86efac",textAlign:"center"}}><div style={{fontSize:"11px",color:"#999"}}>Recommended</div><div style={{fontSize:"20px",fontWeight:"900",color:"#16a34a"}}>{rec.recommendedJamb}</div></div>
                       </div>
                     </div>
                     {prob&&(
                       <div style={{padding:"12px 14px",backgroundColor:"#fff"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",marginBottom:"6px"}}>
-                          <span style={{color:"#666",fontWeight:"600"}}>Chance with target {form.target}</span>
-                          <span style={{fontWeight:"800",color:prob.color}}>{prob.label}</span>
-                        </div>
-                        <div style={{height:"7px",borderRadius:"4px",backgroundColor:"#f0f0f0",overflow:"hidden"}}>
-                          <div style={{height:"100%",width:prob.percent+"%",backgroundColor:prob.color,transition:"width 0.5s"}}/>
-                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",marginBottom:"6px"}}><span style={{color:"#666",fontWeight:"600"}}>Chance with target {form.target}</span><span style={{fontWeight:"800",color:prob.color}}>{prob.label}</span></div>
+                        <div style={{height:"7px",borderRadius:"4px",backgroundColor:"#f0f0f0",overflow:"hidden"}}><div style={{height:"100%",width:`${prob.percent}%`,backgroundColor:prob.color,transition:"width 0.5s"}}/></div>
                       </div>
                     )}
                   </div>
@@ -247,13 +191,11 @@ export default function Auth() {
             {step===2&&combo&&(
               <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
                 <h2 style={{fontSize:"20px",fontWeight:"800",margin:"0 0 4px",color:"#1a1a1a"}}>JAMB Subjects</h2>
-                <p style={{fontSize:"13px",color:"#999",margin:0}}>Based on JAMB brochure for {form.course}</p>
                 <div style={{padding:"10px 12px",borderRadius:"10px",backgroundColor:"#eff6ff",border:"1px solid #bfdbfe",fontSize:"12px",color:"#1d4ed8",fontWeight:"600"}}>📋 {combo.note}</div>
                 <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                   {["English Language",...combo.fixed].map(s=>(
                     <div key={s} style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",borderRadius:"10px",backgroundColor:"#f0fdf4",border:"1px solid #86efac"}}>
-                      <span>✅</span><span style={{fontSize:"13px",color:"#166534",fontWeight:"700"}}>{s}</span>
-                      <span style={{marginLeft:"auto",fontSize:"11px",color:"#16a34a"}}>Fixed</span>
+                      <span>✅</span><span style={{fontSize:"13px",color:"#166534",fontWeight:"700"}}>{s}</span><span style={{marginLeft:"auto",fontSize:"11px",color:"#16a34a"}}>Fixed</span>
                     </div>
                   ))}
                 </div>
@@ -261,15 +203,9 @@ export default function Auth() {
                   <div>
                     <div style={{fontSize:"12px",fontWeight:"700",color:"#555",marginBottom:"8px"}}>Choose {combo.flexibleCount} more:</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
-                      {combo.flexible.map((s:string)=>{
-                        const sel=flex.includes(s);
-                        const max=!sel&&flex.length>=combo.flexibleCount;
-                        return <button key={s} onClick={()=>toggleFlex(s)} style={{padding:"9px 13px",borderRadius:"20px",fontSize:"13px",cursor:max?"not-allowed":"pointer",border:sel?"2px solid #ea580c":"1.5px solid #e0e0e0",backgroundColor:sel?"#fff8f5":max?"#fafafa":"#fff",color:sel?"#ea580c":max?"#ccc":"#555",fontWeight:sel?"700":"400",opacity:max?0.5:1}}>{s}</button>;
-                      })}
+                      {combo.flexible.map((s:string)=>{const sel=flex.includes(s);const max=!sel&&flex.length>=combo.flexibleCount;return(<button key={s} onClick={()=>toggleFlex(s)} style={{padding:"9px 13px",borderRadius:"20px",fontSize:"13px",cursor:max?"not-allowed":"pointer",border:sel?"2px solid #ea580c":"1.5px solid #e0e0e0",backgroundColor:sel?"#fff8f5":max?"#fafafa":"#fff",color:sel?"#ea580c":max?"#ccc":"#555",fontWeight:sel?"700":"400",opacity:max?0.5:1}}>{s}</button>);})}
                     </div>
-                    <div style={{marginTop:"8px",fontSize:"13px",color:flex.length===combo.flexibleCount?"#16a34a":"#ea580c",fontWeight:"700"}}>
-                      {flex.length}/{combo.flexibleCount} {flex.length===combo.flexibleCount?"✓ Complete!":""}
-                    </div>
+                    <div style={{marginTop:"8px",fontSize:"13px",color:flex.length===combo.flexibleCount?"#16a34a":"#ea580c",fontWeight:"700"}}>{flex.length}/{combo.flexibleCount} {flex.length===combo.flexibleCount?"✓ Complete!":""}</div>
                   </div>
                 )}
               </div>
@@ -297,11 +233,10 @@ export default function Auth() {
             )}
 
             {error&&<div style={{marginTop:"12px",padding:"10px 14px",backgroundColor:"#fff0f0",border:"1px solid #ffcccc",borderRadius:"10px",color:"#cc0000",fontSize:"13px"}}>⚠️ {error}</div>}
-
             <div style={{marginTop:"20px",display:"flex",gap:"12px"}}>
               {step>1&&<button onClick={()=>{setStep(s=>s-1);setError("");}} style={{flex:1,padding:"14px",borderRadius:"30px",border:"1.5px solid #ea580c",backgroundColor:"#fff",color:"#ea580c",fontWeight:"700",fontSize:"15px",cursor:"pointer"}}>← Back</button>}
               <button onClick={step<3?next:signup} disabled={loading} style={{flex:2,padding:"14px",borderRadius:"30px",border:"none",background:loading?"#ccc":"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"800",fontSize:"15px",cursor:loading?"not-allowed":"pointer",boxShadow:"0 4px 16px rgba(234,88,12,0.35)"}}>
-                {loading?"Please wait...":step<3?"Continue →":"🚀 Start Studying!"}
+                {step<3?"Continue →":"🚀 Start Studying!"}
               </button>
             </div>
             <p style={{textAlign:"center",marginTop:"14px",fontSize:"13px",color:"#999"}}>

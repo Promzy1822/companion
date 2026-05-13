@@ -1,9 +1,4 @@
-// Simple client-side auth helpers
-// We use a basic hash for password storage (not bcrypt - no server needed)
-// This prevents plain-text passwords in localStorage
-
 export function hashPassword(password: string): string {
-  // Simple deterministic hash - much better than plaintext
   let hash = 0;
   const salted = "companion_salt_2025_" + password;
   for (let i = 0; i < salted.length; i++) {
@@ -11,7 +6,6 @@ export function hashPassword(password: string): string {
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash;
   }
-  // Convert to hex string with extra mixing
   const h1 = Math.abs(hash).toString(16).padStart(8, '0');
   const h2 = Math.abs(hash * 2654435761).toString(16).padStart(8, '0');
   const h3 = Math.abs(hash ^ 0xdeadbeef).toString(16).padStart(8, '0');
@@ -20,16 +14,6 @@ export function hashPassword(password: string): string {
 
 export function verifyPassword(password: string, hashed: string): boolean {
   return hashPassword(password) === hashed;
-}
-
-export function sanitizeInput(input: string): string {
-  return input
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;')
-    .trim();
 }
 
 export function validateEmail(email: string): boolean {
@@ -42,22 +26,11 @@ export function validatePassword(password: string): { valid: boolean; message: s
   return { valid: true, message: "" };
 }
 
-export interface SafeUser {
-  name: string;
-  email: string;
-  passwordHash: string; // never store plain password
-  institution: string;
-  course: string;
-  subjects: string[];
-  target: string;
-  deadline: string;
-  selfRating: string;
-  cutoffData?: any;
-  recommendation?: string;
-  createdAt: string;
+export function sanitizeInput(input: string): string {
+  return input.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').trim();
 }
 
-export function createSafeUser(formData: any): SafeUser {
+export function createSafeUser(formData: any) {
   return {
     name: sanitizeInput(formData.name || ''),
     email: sanitizeInput(formData.email || '').toLowerCase(),

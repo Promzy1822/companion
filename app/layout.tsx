@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AppProvider } from "./context/AppContext";
 
 export const metadata: Metadata = {
   title: "Companion - AI JAMB Study Assistant",
@@ -13,7 +14,7 @@ export const viewport: Viewport = {
   themeColor: "#ea580c",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5, // Fixed: don't block zoom (accessibility)
+  maximumScale: 5,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,9 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#ea580c" />
       </head>
       <body style={{ margin: 0, padding: 0 } as React.CSSProperties}>
-        {children}
+        <AppProvider>
+          {children}
+        </AppProvider>
         <script dangerouslySetInnerHTML={{__html: `
-          // Run storage migration on every load
           (function() {
             try {
               var version = parseInt(localStorage.getItem('companion_storage_version') || '1');
@@ -58,29 +60,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }
             } catch(e) {}
           })();
-
-          // PWA install
           window.deferredPrompt = null;
           window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault();
-            window.deferredPrompt = e;
+            e.preventDefault(); window.deferredPrompt = e;
           });
-          window.addEventListener('appinstalled', function() {
-            window.deferredPrompt = null;
-            localStorage.setItem('pwa_installed', '1');
-          });
-
-          // Set auth cookie if user exists
-          try {
-            var u = localStorage.getItem('companion_user');
-            if (u) {
-              var d = new Date();
-              d.setFullYear(d.getFullYear() + 1);
-              document.cookie = 'companion_auth=authenticated; expires=' + d.toUTCString() + '; path=/; SameSite=Lax';
-            }
-          } catch(e) {}
-
-          // Service worker
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(function(){});
           }

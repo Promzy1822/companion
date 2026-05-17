@@ -121,8 +121,8 @@ export default function Auth() {
     <div style={{minHeight:"100vh",backgroundColor:"#fff",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
       <div style={{background:"linear-gradient(135deg,#7c2d12,#c2410c,#ea580c)",padding:"24px 24px 28px",textAlign:"center",position:"relative"}}>
         <Link href="/landing" style={{position:"absolute",left:"20px",top:"24px",color:"rgba(255,255,255,0.7)",textDecoration:"none",fontSize:"13px",padding:"6px 12px",borderRadius:"10px",backgroundColor:"rgba(255,255,255,0.1)"}}>← Back</Link>
-        <div style={{fontSize:"40px"}}>🎓</div>
-        <div style={{color:"#fff",fontWeight:"900",fontSize:"22px",marginTop:"8px"}}>companion</div>
+        <img src="/icon-192.png" alt="Companion" width={64} height={64} style={{borderRadius:"18px",margin:"0 auto",display:"block",boxShadow:"0 8px 24px rgba(0,0,0,0.3)"}} />
+        <div style={{color:"#fff",fontWeight:"900",fontSize:"22px",marginTop:"12px"}}>companion</div>
         <div style={{color:"rgba(255,255,255,0.7)",fontSize:"13px"}}>AI JAMB Study Assistant</div>
       </div>
 

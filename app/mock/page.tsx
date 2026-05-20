@@ -1,4 +1,5 @@
 "use client";
+import { Progress } from "../lib/progress";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -108,6 +109,8 @@ Return ONLY a valid JSON array, no other text:
     const newHistory = [{score,total:questions.length,jambEquivalent:jambEq,date:new Date().toLocaleDateString()},...history].slice(0,10);
     localStorage.setItem("mock_history", JSON.stringify(newHistory));
     setMockHistory(newHistory);
+    // Sync with streak
+    Progress.recordActivity("mock", { correct: score, total: questions.length });
   };
 
   const formatTime = (s:number) => `${Math.floor(s/60).toString().padStart(2,"0")}:${(s%60).toString().padStart(2,"0")}`;

@@ -1,295 +1,403 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Send, Paperclip, Sun, Moon, Sparkles, X, RotateCcw } from "lucide-react";
+import { C, D, palette } from "../lib/design";
 
-interface Message { role: "user" | "assistant"; content: string; timestamp: string; }
-interface ChatSession { id: string; title: string; messages: Message[]; date: string; }
-interface User { name: string; target: string; institution: string; course: string; subjects: string[]; }
+interface Message { role: "user" | "assistant"; content: string; id: number; }
 
-const SUGGESTIONS = [
-  "Solve a quadratic equation from JAMB 2023",
-  "Explain photosynthesis for JAMB Biology",
-  "What are the cut-off marks for UNILAG Medicine?",
-  "Calculate my aggregate: JAMB 280, Post-UTME 65",
-  "Give me 5 JAMB English past questions on comprehension",
-  "What is the CAPS admission process step by step?",
+const QUICK_ACTIONS = [
+  { label: "Solve a question",   prompt: "Help me solve this JAMB question: "  },
+  { label: "Explain a topic",    prompt: "Explain this JAMB topic in detail: " },
+  { label: "Generate questions", prompt: "Give me 5 JAMB past questions on: "  },
+  { label: "Build study plan",   prompt: "Create a 2-week study plan for: "    },
 ];
 
-function getSessionId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
-
-function buildSystemPrompt(user: User | null): string {
-  return `You are Companion AI — an expert JAMB UTME and Nigerian university admissions assistant built for Nigerian students.
-
-Your expertise covers:
-- All JAMB subjects and syllabi (Mathematics, English Language, Physics, Chemistry, Biology, Government, Economics, Literature, Geography, CRS/IRS)
-- JAMB past questions 2000–2024 with step-by-step solutions
-- Nigerian university cut-off marks (UNILAG, UI, OAU, UNIBEN, UNILORIN, UNN, ABU, LASU, UNIPORT, FUTO)
-- JAMB CAPS admission process, Post-UTME screening, aggregate calculation: (JAMB/8) + (Post-UTME/2)
-- Change of institution/course procedure, Direct Entry requirements
-- WAEC/NECO O'Level requirements
-
-Student: ${user ? `${user.name} | Target: ${user.target}/400 | ${user.course} at ${user.institution} | Subjects: ${user.subjects?.join(", ")}` : "Guest"}
-
-Rules: Give detailed accurate answers. Show all working steps. Use Nigerian context. Be encouraging. Format clearly.`;
-}
-
 export default function AIChat() {
-  const [input, setInput] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState("");
-  const [mounted, setMounted] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [input,        setInput]        = useState("");
+  const [darkMode,     setDarkMode]     = useState(false);
+  const [messages,     setMessages]     = useState<Message[]>([
+    { role: "assistant", id: 0, content: "Hello! I'm **Companion AI** 🎓\n\nI'm your personal JAMB study assistant. I can help you:\n- 🧮 Solve past questions with step-by-step explanations\n- 📖 Explain difficult topics clearly\n- 📅 Build personalised study plans\n- 📊 Identify your weak areas\n\nWhat would you like to work on today?" },
+  ]);
+  const [loading,      setLoading]      = useState(false);
+  const [attachment,   setAttachment]   = useState<File | null>(null);
+  const [focused,      setFocused]      = useState(false);
+  const [mounted,      setMounted]      = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+  const inputRef       = useRef<HTMLInputElement>(null);
+  let   msgIdRef       = useRef(1);
 
   useEffect(() => {
     setMounted(true);
-    setDarkMode(localStorage.getItem("darkMode") === "true");
-    const u = localStorage.getItem("companion_user");
-    if (u) setUser(JSON.parse(u));
-    const saved = localStorage.getItem("chat_sessions");
-    if (saved) setSessions(JSON.parse(saved));
-    setCurrentSessionId(getSessionId());
-    setMessages([]);
+    const dm = localStorage.getItem("darkMode") === "true";
+    setDarkMode(dm);
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  const saveSession = (msgs: Message[], id: string) => {
-    if (msgs.length < 2) return;
-    const all: ChatSession[] = JSON.parse(localStorage.getItem("chat_sessions") || "[]");
-    const firstUser = msgs.find(m => m.role === "user");
-    const session: ChatSession = { id, messages: msgs, title: firstUser ? firstUser.content.slice(0, 55) : "Chat", date: new Date().toLocaleDateString("en-NG", { day: "numeric", month: "short" }) };
-    const idx = all.findIndex(s => s.id === id);
-    if (idx >= 0) all[idx] = session; else all.unshift(session);
-    const trimmed = all.slice(0, 25);
-    localStorage.setItem("chat_sessions", JSON.stringify(trimmed));
-    setSessions(trimmed);
+  const toggleDark = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    localStorage.setItem("darkMode", String(next));
   };
 
-  const send = async (text: string) => {
-    if (!text.trim() || loading) return;
-    const userMsg: Message = { role: "user", content: text, timestamp: new Date().toISOString() };
+  const sendMessage = async (text: string) => {
+    const t = text.trim();
+    if (!t || loading) return;
+
+    const userMsg: Message = { role: "user", id: msgIdRef.current++, content: t };
     const newMsgs = [...messages, userMsg];
     setMessages(newMsgs);
     setInput("");
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    setAttachment(null);
     setLoading(true);
+
     try {
-      const history = newMsgs.slice(-12).map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, systemPrompt: buildSystemPrompt(user), history: history.slice(0, -1) }) });
-      const data = await res.json();
-      const reply = data.reply || "Sorry, I could not get a response. Please try again.";
-      const aiMsg: Message = { role: "assistant", content: reply, timestamp: new Date().toISOString() };
-      const final = [...newMsgs, aiMsg];
-      setMessages(final);
-      saveSession(final, currentSessionId);
+      const res  = await fetch("/api/chat", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ message: t }),
+      });
+      const data  = await res.json();
+      const reply = data.reply || data.error || "Sorry, I couldn't get a response. Please try again.";
+      setMessages([...newMsgs, { role: "assistant", id: msgIdRef.current++, content: reply }]);
     } catch {
-      setMessages([...newMsgs, { role: "assistant", content: "Network error. Please check your connection.", timestamp: new Date().toISOString() }]);
-    } finally { setLoading(false); }
+      setMessages([...newMsgs, { role: "assistant", id: msgIdRef.current++, content: "Network error. Please check your connection and try again." }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input.trim()); }
-  };
-
-  const autoResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    e.target.style.height = "auto";
-    e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
-  };
-
-  const newChat = () => { setCurrentSessionId(getSessionId()); setMessages([]); setShowHistory(false); };
-  const loadSession = (s: ChatSession) => { setMessages(s.messages); setCurrentSessionId(s.id); setShowHistory(false); };
-  const deleteSession = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const updated = sessions.filter(s => s.id !== id);
-    setSessions(updated); localStorage.setItem("chat_sessions", JSON.stringify(updated));
-  };
+  const handleSend = () => sendMessage(input || (attachment ? `[Attached: ${attachment.name}]` : ""));
+  const clearChat  = () => { setMessages([messages[0]]); setInput(""); };
 
   if (!mounted) return null;
 
-  const D = darkMode;
-  const bg = D ? "#212121" : "#ffffff";
-  const textPrimary = D ? "#ececec" : "#0d0d0d";
-  const textSub = D ? "#8e8ea0" : "#6e6e80";
-  const border = D ? "#383838" : "#e5e5e5";
-  const inputBg = D ? "#2f2f2f" : "#f4f4f4";
-  const headerBg = D ? "#171717" : "#ffffff";
+  const T = palette(darkMode);
+
+  // ── Design tokens for the AI chat workspace ──────────────────
+  const bg       = darkMode ? "#0D0D0F" : "#F8F9FB";
+  const chatBg   = darkMode ? "#0D0D0F" : "#F8F9FB";
+  const headerBg = darkMode
+    ? "rgba(18,18,22,0.92)"
+    : "rgba(255,255,255,0.92)";
+  const aiBubBg   = darkMode ? "#1E1E24" : "#FFFFFF";
+  const aiBubBord = darkMode ? "#2A2A35" : "#E8EAED";
+  const userBubBg = C.primary;
+  const inputAreaBg = darkMode ? "rgba(18,18,22,0.95)" : "rgba(255,255,255,0.95)";
+  const inputBg     = darkMode ? "#1E1E24" : "#F1F3F5";
+  const inputBord   = focused
+    ? C.primary
+    : (darkMode ? "#2A2A35" : "#E0E3E8");
+
+  const userName = (() => {
+    try { return JSON.parse(localStorage.getItem("companion_user") || "{}").name || ""; } catch { return ""; }
+  })();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", backgroundColor: bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+    <div style={{
+      display: "flex", flexDirection: "column",
+      height: "100dvh",
+      background: chatBg,
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      overflow: "hidden",
+    }}>
 
-      {/* HEADER */}
-      <div style={{ backgroundColor: headerBg, borderBottom: `1px solid ${border}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px", position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(12px)" }}>
-        {/* BACK BUTTON — this was missing before */}
-        <button onClick={() => router.push("/")} style={{ width: "34px", height: "34px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: textSub, fontSize: "18px", backgroundColor: D ? "#2a2a2a" : "#f0f0f0", border: "none", cursor: "pointer", flexShrink: 0 }}>
-          ←
-        </button>
+      {/* ── Header — minimal, translucent ─────────────────────── */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: headerBg,
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: `1px solid ${darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+        padding: "12px 16px",
+        display: "flex", alignItems: "center", gap: "12px",
+      }}>
+        {/* Back */}
+        <Link href="/" style={{
+          width: 36, height: 36, borderRadius: "50%",
+          border: `1px solid ${darkMode ? "#2A2A35" : "#E8EAED"}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          textDecoration: "none", flexShrink: 0,
+          background: darkMode ? "#1E1E24" : "#fff",
+        }}>
+          <ArrowLeft size={16} color={T.sub} strokeWidth={2} />
+        </Link>
 
-        <img src="/icon-192.png" alt="Companion" width={30} height={30} style={{ borderRadius: "8px", flexShrink: 0 }} />
-
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: "700", color: textPrimary, fontSize: "15px", lineHeight: "1.2" }}>Companion AI</div>
-          <div style={{ fontSize: "11px", color: "#22c55e", display: "flex", alignItems: "center", gap: "3px" }}>
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "#22c55e", display: "inline-block" }} />
-            JAMB & Admissions Expert
+        {/* AI identity */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: "12px",
+            background: `linear-gradient(135deg, ${C.primary}, #42A5F5)`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+            boxShadow: `0 2px 10px rgba(24,119,242,0.35)`,
+          }}>
+            <Sparkles size={17} color="#fff" strokeWidth={1.8} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "15px", color: T.text, letterSpacing: "-0.2px" }}>
+              Companion AI
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#31A24C" }} />
+              <span style={{ fontSize: "11px", color: T.sub }}>JAMB expert · always available</span>
+            </div>
           </div>
         </div>
 
-        <button onClick={() => setShowHistory(!showHistory)} style={{ width: "34px", height: "34px", borderRadius: "8px", backgroundColor: D ? "#2a2a2a" : "#f0f0f0", border: "none", cursor: "pointer", color: textSub, fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>🕐</button>
-        <button onClick={newChat} style={{ width: "34px", height: "34px", borderRadius: "8px", backgroundColor: D ? "#2a2a2a" : "#f0f0f0", border: "none", cursor: "pointer", color: textSub, fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>✏️</button>
-        <button onClick={() => { const d = !D; setDarkMode(d); localStorage.setItem("darkMode", String(d)); }} style={{ width: "34px", height: "34px", borderRadius: "8px", backgroundColor: D ? "#2a2a2a" : "#f0f0f0", border: "none", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>{D ? "☀️" : "🌙"}</button>
+        {/* Controls */}
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          {messages.length > 1 && (
+            <button onClick={clearChat} style={{
+              width: 34, height: 34, borderRadius: "50%", border: "none",
+              background: darkMode ? "#1E1E24" : "#F1F3F5",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+            }}>
+              <RotateCcw size={14} color={T.sub} strokeWidth={2} />
+            </button>
+          )}
+          <button onClick={toggleDark} style={{
+            width: 34, height: 34, borderRadius: "50%", border: "none",
+            background: darkMode ? "#1E1E24" : "#F1F3F5",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer",
+          }}>
+            {darkMode
+              ? <Sun  size={14} color={T.sub} strokeWidth={2} />
+              : <Moon size={14} color={T.sub} strokeWidth={2} />}
+          </button>
+        </div>
       </div>
 
-      {/* HISTORY DRAWER */}
-      {showHistory && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" }}>
-          <div style={{ flex: 1, background: "rgba(0,0,0,0.5)" }} onClick={() => setShowHistory(false)} />
-          <div style={{ backgroundColor: headerBg, borderRadius: "20px 20px 0 0", maxHeight: "70vh", display: "flex", flexDirection: "column", boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
-            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontWeight: "800", color: textPrimary, fontSize: "16px" }}>Chat History</span>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button onClick={newChat} style={{ padding: "8px 16px", borderRadius: "20px", border: "none", background: "linear-gradient(135deg,#c2410c,#ea580c)", color: "#fff", fontWeight: "700", fontSize: "13px", cursor: "pointer" }}>+ New</button>
-                <button onClick={() => setShowHistory(false)} style={{ padding: "8px 14px", borderRadius: "20px", border: `1px solid ${border}`, backgroundColor: "transparent", color: textSub, fontSize: "13px", cursor: "pointer" }}>Close</button>
+      {/* ── Messages ─────────────────────────────────────────── */}
+      <div style={{
+        flex: 1, overflowY: "auto",
+        padding: "80px 16px 20px",
+        display: "flex", flexDirection: "column", gap: "6px",
+      }}>
+
+        {messages.map((m, i) => {
+          const isUser = m.role === "user";
+          const isLast = i === messages.length - 1;
+          return (
+            <div
+              key={m.id}
+              style={{
+                display: "flex",
+                justifyContent: isUser ? "flex-end" : "flex-start",
+                alignItems: "flex-end",
+                gap: "8px",
+                marginBottom: isLast ? "4px" : "2px",
+                animation: "fadeUp 0.2s ease both",
+              }}
+            >
+              {/* AI avatar */}
+              {!isUser && (
+                <div style={{
+                  width: 28, height: 28, borderRadius: "9px", flexShrink: 0,
+                  background: `linear-gradient(135deg, ${C.primary}, #42A5F5)`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(24,119,242,0.25)",
+                  marginBottom: "2px",
+                }}>
+                  <Sparkles size={13} color="#fff" strokeWidth={1.8} />
+                </div>
+              )}
+
+              {/* Bubble */}
+              <div style={{
+                maxWidth: "80%",
+                padding: isUser ? "11px 15px" : "13px 16px",
+                borderRadius: isUser
+                  ? "18px 18px 4px 18px"
+                  : "4px 18px 18px 18px",
+                background: isUser ? userBubBg : aiBubBg,
+                border: isUser ? "none" : `1px solid ${aiBubBord}`,
+                color: isUser ? "#fff" : T.text,
+                fontSize: "14px", lineHeight: "1.65",
+                boxShadow: isUser
+                  ? `0 2px 12px rgba(24,119,242,0.3)`
+                  : (darkMode ? "0 1px 4px rgba(0,0,0,0.4)" : "0 1px 8px rgba(0,0,0,0.07)"),
+              }}>
+                <ReactMarkdown>{m.content}</ReactMarkdown>
               </div>
+
+              {/* User avatar */}
+              {isUser && userName && (
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                  background: "linear-gradient(135deg,#fde68a,#f59e0b)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "12px", fontWeight: 800, color: "#7c2d12",
+                  marginBottom: "2px",
+                }}>
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
-            <div style={{ overflowY: "auto", padding: "12px", flex: 1 }}>
-              {sessions.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 20px", color: textSub }}>
-                  <div style={{ fontSize: "32px", marginBottom: "8px" }}>💬</div>
-                  <div>No history yet</div>
-                </div>
-              ) : sessions.map(s => (
-                <div key={s.id} onClick={() => loadSession(s)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", borderRadius: "12px", marginBottom: "6px", cursor: "pointer", backgroundColor: s.id === currentSessionId ? (D ? "#2a1810" : "#fff8f5") : D ? "#1e1e1e" : "#f5f5f5", border: s.id === currentSessionId ? "1.5px solid #ea580c" : `1px solid ${border}` }}>
-                  <img src="/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: "8px", flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "13px", fontWeight: "600", color: textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</div>
-                    <div style={{ fontSize: "11px", color: textSub, marginTop: "2px" }}>{s.date} · {s.messages.length} msgs</div>
-                  </div>
-                  <button onClick={e => deleteSession(s.id, e)} style={{ width: "26px", height: "26px", borderRadius: "50%", border: "none", background: D ? "#444" : "#eee", color: "#ef4444", cursor: "pointer", fontSize: "14px", flexShrink: 0 }}>×</button>
-                </div>
+          );
+        })}
+
+        {/* Typing indicator */}
+        {loading && (
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", animation: "fadeUp 0.2s ease both" }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "9px", flexShrink: 0,
+              background: `linear-gradient(135deg, ${C.primary}, #42A5F5)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Sparkles size={13} color="#fff" strokeWidth={1.8} />
+            </div>
+            <div style={{
+              padding: "13px 18px", borderRadius: "4px 18px 18px 18px",
+              background: aiBubBg, border: `1px solid ${aiBubBord}`,
+              display: "flex", gap: "5px", alignItems: "center",
+              boxShadow: darkMode ? "0 1px 4px rgba(0,0,0,0.4)" : "0 1px 8px rgba(0,0,0,0.07)",
+            }}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{
+                  width: 7, height: 7, borderRadius: "50%",
+                  background: C.primary,
+                  animation: `typingDot 1.2s ease-in-out ${i * 0.18}s infinite`,
+                }} />
               ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* MESSAGES */}
-      <div style={{ flex: 1, overflowY: "auto", backgroundColor: bg }}>
-        {messages.length === 0 && (
-          <div style={{ maxWidth: "680px", margin: "0 auto", padding: "40px 20px" }}>
-            <div style={{ textAlign: "center", marginBottom: "32px" }}>
-              <img src="/icon-192.png" alt="Companion" width={64} height={64} style={{ borderRadius: "18px", margin: "0 auto 14px", display: "block", boxShadow: "0 8px 24px rgba(234,88,12,0.3)" }} />
-              <h2 style={{ fontSize: "22px", fontWeight: "700", color: textPrimary, margin: "0 0 6px" }}>How can I help you today?</h2>
-              <p style={{ fontSize: "14px", color: textSub, margin: 0 }}>Ask me anything about JAMB, past questions, or university admissions</p>
+        {/* Quick action chips — only on fresh conversation */}
+        {messages.length === 1 && !loading && (
+          <div style={{ marginTop: "16px" }}>
+            <div style={{ fontSize: "12px", color: T.muted, textAlign: "center", marginBottom: "12px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+              Try asking
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              {SUGGESTIONS.map((s, i) => (
-                <button key={i} onClick={() => send(s)} style={{ padding: "14px 16px", borderRadius: "14px", border: `1px solid ${border}`, backgroundColor: D ? "#2a2a2a" : "#f7f7f8", cursor: "pointer", textAlign: "left", fontSize: "13px", color: textPrimary, lineHeight: "1.4", fontWeight: "500" }}>
-                  {s}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              {QUICK_ACTIONS.map((a, i) => (
+                <button key={i} onClick={() => { setInput(a.prompt); inputRef.current?.focus(); }} style={{
+                  padding: "12px 14px", borderRadius: "12px",
+                  border: `1px solid ${darkMode ? "#2A2A35" : "#E8EAED"}`,
+                  background: darkMode ? "#1E1E24" : "#fff",
+                  cursor: "pointer", textAlign: "left",
+                  transition: "border-color 0.15s, box-shadow 0.15s",
+                  boxShadow: darkMode ? "none" : "0 1px 4px rgba(0,0,0,0.05)",
+                }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: T.text, lineHeight: 1.4 }}>{a.label}</div>
+                  <div style={{ fontSize: "11px", color: T.muted, marginTop: "3px" }}>Tap to start</div>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px" }}>
-          {messages.map((m, i) => (
-            <div key={i} style={{ marginBottom: "24px", display: "flex", gap: "14px", alignItems: "flex-start", flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
-              <div style={{ width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                {m.role === "assistant" ? (
-                  <img src="/icon-192.png" alt="AI" width={32} height={32} style={{ borderRadius: "50%" }} />
-                ) : (
-                  <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg,#fde68a,#f97316)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "800", color: "#7c2d12" }}>
-                    {user?.name?.charAt(0) || "U"}
-                  </div>
-                )}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {m.role === "user" ? (
-                  <div style={{ display: "inline-block", maxWidth: "90%", float: "right", padding: "10px 16px", borderRadius: "18px 18px 4px 18px", backgroundColor: D ? "#2f2f2f" : "#f4f4f4", color: textPrimary, fontSize: "15px", lineHeight: "1.6", boxShadow: D ? "0 1px 4px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.07)" }}>
-                    {m.content}
-                    <div style={{ clear: "both" }} />
-                  </div>
-                ) : (
-                  <div style={{ color: textPrimary, fontSize: "15px", lineHeight: "1.75" }}>
-                    <ReactMarkdown components={{
-                      p: ({ children }) => <p style={{ margin: "0 0 14px", lineHeight: "1.75" }}>{children}</p>,
-                      strong: ({ children }) => <strong style={{ fontWeight: "700", color: D ? "#fff" : "#000" }}>{children}</strong>,
-                      h1: ({ children }) => <h1 style={{ fontSize: "20px", fontWeight: "800", margin: "20px 0 10px", color: textPrimary }}>{children}</h1>,
-                      h2: ({ children }) => <h2 style={{ fontSize: "17px", fontWeight: "700", margin: "16px 0 8px", color: textPrimary }}>{children}</h2>,
-                      h3: ({ children }) => <h3 style={{ fontSize: "15px", fontWeight: "700", margin: "14px 0 6px", color: textPrimary }}>{children}</h3>,
-                      ul: ({ children }) => <ul style={{ paddingLeft: "22px", margin: "8px 0 14px" }}>{children}</ul>,
-                      ol: ({ children }) => <ol style={{ paddingLeft: "22px", margin: "8px 0 14px" }}>{children}</ol>,
-                      li: ({ children }) => <li style={{ margin: "5px 0", lineHeight: "1.65" }}>{children}</li>,
-                      code: ({ children, className }) => className ? (
-                        <pre style={{ backgroundColor: D ? "#1a1a1a" : "#f4f4f5", borderRadius: "12px", padding: "16px", overflow: "auto", fontSize: "13px", margin: "12px 0", border: `1px solid ${border}` }}>
-                          <code style={{ color: D ? "#e5e7eb" : "#1a1a1a", fontFamily: "monospace" }}>{children}</code>
-                        </pre>
-                      ) : (
-                        <code style={{ backgroundColor: D ? "#2a2a2a" : "#f0f0f0", padding: "2px 7px", borderRadius: "5px", fontSize: "13px", fontFamily: "monospace", color: D ? "#fb923c" : "#c2410c" }}>{children}</code>
-                      ),
-                      blockquote: ({ children }) => <blockquote style={{ borderLeft: "3px solid #ea580c", paddingLeft: "16px", margin: "12px 0", color: textSub, fontStyle: "italic", backgroundColor: D ? "#2a1810" : "#fff8f5", borderRadius: "0 8px 8px 0", padding: "12px 16px" }}>{children}</blockquote>,
-                    }}>{m.content}</ReactMarkdown>
-                    <div style={{ fontSize: "11px", color: textSub, marginTop: "6px" }}>
-                      {new Date(m.timestamp).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {loading && (
-            <div style={{ marginBottom: "24px", display: "flex", gap: "14px", alignItems: "flex-start" }}>
-              <img src="/icon-192.png" alt="AI" width={32} height={32} style={{ borderRadius: "50%", flexShrink: 0 }} />
-              <div style={{ display: "flex", gap: "5px", alignItems: "center", padding: "14px 0" }}>
-                {[0, 1, 2].map(i => <div key={i} style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#ea580c", animation: "dot 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />)}
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* INPUT */}
-      <div style={{ backgroundColor: bg, padding: "12px 16px 24px", borderTop: `1px solid ${border}` }}>
-        <div style={{ maxWidth: "680px", margin: "0 auto" }}>
-          <div style={{ position: "relative", backgroundColor: inputBg, borderRadius: "16px", border: `1.5px solid ${border}`, display: "flex", alignItems: "flex-end", overflow: "hidden" }}>
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={autoResize}
-              onKeyDown={handleKey}
-              placeholder="Ask about JAMB, past questions, admissions..."
-              rows={1}
-              style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "14px 16px", fontSize: "15px", color: textPrimary, resize: "none", fontFamily: "inherit", lineHeight: "1.6", maxHeight: "160px", boxSizing: "border-box" }}
+      {/* ── Attachment preview ────────────────────────────────── */}
+      {attachment && (
+        <div style={{
+          margin: "0 16px 8px",
+          padding: "9px 14px",
+          background: darkMode ? "#1E1E24" : C.primaryLight,
+          border: `1px solid ${C.primary}44`,
+          borderRadius: "10px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Paperclip size={13} color={C.primary} strokeWidth={2} />
+            <span style={{ fontSize: "13px", color: C.primary, fontWeight: 600 }}>{attachment.name}</span>
+          </div>
+          <button onClick={() => setAttachment(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+            <X size={14} color={T.muted} strokeWidth={2} />
+          </button>
+        </div>
+      )}
+
+      {/* ── Input area — glassy, premium ─────────────────────── */}
+      <div style={{
+        padding: "12px 16px 20px",
+        background: inputAreaBg,
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderTop: `1px solid ${darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+      }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: "8px",
+          background: inputBg,
+          borderRadius: "24px",
+          padding: "8px 8px 8px 14px",
+          border: `1.5px solid ${inputBord}`,
+          transition: "border-color 0.2s, box-shadow 0.2s",
+          boxShadow: focused ? `0 0 0 3px rgba(24,119,242,0.12)` : "none",
+        }}>
+          {/* Attach */}
+          <label style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Paperclip size={17} color={T.muted} strokeWidth={1.8} />
+            <input
+              type="file"
+              style={{ display: "none" }}
+              accept="image/*,.pdf,.doc,.docx"
+              onChange={e => setAttachment(e.target.files?.[0] || null)}
             />
-            <button
-              onClick={() => send(input.trim())}
-              disabled={loading || !input.trim()}
-              style={{ margin: "8px", width: "36px", height: "36px", borderRadius: "10px", border: "none", flexShrink: 0, cursor: loading || !input.trim() ? "not-allowed" : "pointer", background: loading || !input.trim() ? (D ? "#333" : "#d1d1d6") : "linear-gradient(135deg,#c2410c,#ea580c)", color: loading || !input.trim() ? (D ? "#555" : "#999") : "#fff", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", boxShadow: (!loading && input.trim()) ? "0 2px 8px rgba(234,88,12,0.4)" : "none" }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
-            </button>
-          </div>
-          <div style={{ textAlign: "center", marginTop: "8px", fontSize: "11px", color: D ? "#444" : "#c0c0c0" }}>
-            Companion AI · Llama 4 Scout · JAMB & Nigerian Admissions Expert
-          </div>
+          </label>
+
+          {/* Text input */}
+          <input
+            ref={inputRef}
+            style={{
+              flex: 1, background: "none", border: "none", outline: "none",
+              fontSize: "15px", color: T.text,
+              padding: "4px 0",
+              fontFamily: "inherit",
+            }}
+            placeholder="Ask anything about JAMB…"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
+          />
+
+          {/* Send button */}
+          <button
+            onClick={handleSend}
+            disabled={loading || (!input.trim() && !attachment)}
+            style={{
+              width: 38, height: 38, borderRadius: "50%", border: "none",
+              background: loading || (!input.trim() && !attachment)
+                ? (darkMode ? "#2A2A35" : "#E8EAED")
+                : C.primary,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+              cursor: loading || (!input.trim() && !attachment) ? "not-allowed" : "pointer",
+              transition: "background 0.2s, box-shadow 0.2s",
+              boxShadow: !loading && input.trim() ? `0 2px 10px rgba(24,119,242,0.4)` : "none",
+            }}
+          >
+            <Send size={16} color="#fff" strokeWidth={2} style={{ transform: "translateX(1px)" }} />
+          </button>
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: "8px" }}>
+          <span style={{ fontSize: "10px", color: T.muted }}>
+            AI can make mistakes. Always verify important facts.
+          </span>
         </div>
       </div>
 
       <style>{`
-        @keyframes dot{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-5px);opacity:1}}
-        ::-webkit-scrollbar{width:0}
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0);   }
+        }
+        @keyframes typingDot {
+          0%,60%,100% { opacity: 0.3; transform: scale(0.8); }
+          30%          { opacity: 1;   transform: scale(1.2); }
+        }
       `}</style>
     </div>
   );

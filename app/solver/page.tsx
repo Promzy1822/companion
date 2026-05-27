@@ -3,111 +3,118 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import { ArrowLeft, Lightbulb, Dices } from "lucide-react";
+import Navbar from "../components/Navbar";
+import BottomNav from "../components/BottomNav";
+import { C, palette } from "../lib/design";
 
-const SUBJECTS = ["English Language","Mathematics","Physics","Chemistry","Biology","Government","Economics","Literature in English","Geography","CRS","Commerce","Agricultural Science","Further Mathematics"];
-const YEARS = ["2024","2023","2022","2021","2020","2019","2018","2017","2016","2015","2014","2013","2012","2010"];
+const SUBJECTS = ["English Language","Mathematics","Physics","Chemistry","Biology","Government","Economics","Literature in English","Geography","CRS","Commerce"];
+const YEARS    = ["2024","2023","2022","2021","2020","2019","2018","2017","2016","2015"];
 
 function SolverContent() {
-  const searchParams = useSearchParams();
-  const [question, setQuestion] = useState("");
-  const [subject, setSubject] = useState(searchParams.get("subject")||"");
-  const [year, setYear] = useState("");
-  const [topic, setTopic] = useState(searchParams.get("topic")||"");
-  const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"type"|"generate">("generate");
-  const [darkMode, setDarkMode] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const params  = useSearchParams();
+  const [dark,  setDark]    = useState(false);
+  const [mode,  setMode]    = useState<"type"|"generate">("type");
+  const [q,     setQ]       = useState(params.get("question") || "");
+  const [sub,   setSub]     = useState(params.get("subject")  || "");
+  const [year,  setYear]    = useState("");
+  const [ans,   setAns]     = useState("");
+  const [load,  setLoad]    = useState(false);
+  const [hist,  setHist]    = useState<{q:string;a:string;subject:string}[]>([]);
+  const [ready, setReady]   = useState(false);
 
-  useEffect(()=>{
-    setMounted(true);
-    setDarkMode(localStorage.getItem("darkMode")==="true");
-    if (searchParams.get("topic") && searchParams.get("subject")) {
-      setTimeout(()=>generateQuestion(), 600);
-    }
-  },[]);
+  useEffect(() => {
+    setDark(localStorage.getItem("darkMode") === "true");
+    try { setHist(JSON.parse(localStorage.getItem("solver_history")||"[]").slice(0,5)); } catch {}
+    setReady(true);
+  }, []);
 
-  const solveQuestion = async () => {
-    if (!question.trim()) return;
-    setLoading(true); setAnswer("");
-    const subjectStr = subject || "JAMB";
-    const yearStr = year ? " from " + year + " JAMB" : "";
-    const topicStr = topic ? " on the topic " + topic : "";
-    const prompt = "You are an expert JAMB examiner. A Nigerian student needs help with this " + subjectStr + " question" + yearStr + topicStr + ".\n\nQUESTION: " + question + "\n\nProvide:\n**Correct Answer:** State clearly\n**Why correct:** Explain with Nigerian context\n**Why others wrong:** Each wrong option\n**Key concept:** JAMB syllabus topic\n**Similar question:** One practice question";
+  const solve = async () => {
+    if (!q.trim()) return;
+    setLoad(true); setAns("");
+    const prompt = `You are an expert JAMB examiner. Help this Nigerian student with this ${sub||"JAMB"} question${year ? ` from ${year}` : ""}.\n\nQUESTION: ${q}\n\nProvide:\n**✅ Correct Answer:** [answer]\n**📖 Explanation:** [clear explanation]\n**❌ Why others are wrong:** [for MCQ]\n**💡 Key Concept:** [memory tip]\n**📝 Similar question:** [practice question]`;
     try {
-      const res = await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:prompt})});
+      const res  = await fetch("/api/chat", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({message:prompt}) });
       const data = await res.json();
-      setAnswer(data.reply||"Could not solve. Try again.");
-    } catch { setAnswer("Network error. Please try again."); }
-    finally { setLoading(false); }
+      const reply = data.reply || "Could not solve. Please try again.";
+      setAns(reply);
+      const newH = [{q,a:reply,subject:sub||"General"},...hist].slice(0,5);
+      setHist(newH);
+      localStorage.setItem("solver_history", JSON.stringify(newH));
+    } catch { setAns("Network error."); }
+    finally { setLoad(false); }
   };
 
-  const generateQuestion = async () => {
-    const subj = subject || searchParams.get("subject") || "Mathematics";
-    const top = topic || searchParams.get("topic") || "";
-    setLoading(true); setAnswer(""); setQuestion("");
-    const topicStr = top ? " specifically on the topic " + top : "";
-    const yearStr = year ? " in the style of " + year : "";
-    const prompt = "Generate one realistic JAMB " + subj + " past question" + yearStr + topicStr + " for a Nigerian student.\n\nFormat exactly:\nQUESTION: [Full question with options A, B, C, D]\n\nANSWER: [Correct option]\n\nWORKING: [Step by step]\n\nEXPLANATION: [Why correct]\n\nTOPIC: [JAMB syllabus topic]";
+  const generate = async () => {
+    if (!sub) return;
+    setLoad(true); setQ(""); setAns("");
+    const prompt = `Generate one realistic JAMB ${sub} past question${year ? ` (${year} style)` : ""}.\n\nFormat:\nQUESTION: [full question + options A,B,C,D]\nANSWER: [correct answer + explanation]\nTOPIC: [JAMB syllabus topic]`;
     try {
-      const res = await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:prompt})});
+      const res  = await fetch("/api/chat", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({message:prompt}) });
       const data = await res.json();
-      setAnswer(data.reply||"");
-    } catch { setAnswer("Network error. Try again."); }
-    finally { setLoading(false); }
+      setAns(data.reply || "");
+    } catch { setAns("Network error."); }
+    finally { setLoad(false); }
   };
 
-  if (!mounted) return null;
+  if (!ready) return null;
 
-  const bg=darkMode?"#0a0a0a":"#f0f0f5";
-  const cardBg=darkMode?"#1c1c1e":"#fff";
-  const textColor=darkMode?"#f2f2f7":"#1c1c1e";
-  const subText=darkMode?"#98989d":"#6e6e73";
-  const borderC=darkMode?"#2c2c2e":"#e5e5ea";
-  const inputBg=darkMode?"#2c2c2e":"#f5f5f7";
-  const inp:React.CSSProperties={width:"100%",padding:"12px 14px",borderRadius:"12px",border:"1.5px solid "+borderC,fontSize:"14px",outline:"none",backgroundColor:inputBg,color:textColor,boxSizing:"border-box"};
+  const T   = palette(dark);
+  const inp: React.CSSProperties = {
+    width:"100%", padding:"12px 14px", borderRadius:"10px",
+    border:`1.5px solid ${T.border}`, fontSize:"14px", outline:"none",
+    background:T.s2, color:T.text, boxSizing:"border-box", fontFamily:"inherit",
+  };
 
   return (
-    <div style={{minHeight:"100vh",backgroundColor:bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
-      <div style={{background:"linear-gradient(135deg,#3b0d02,#7c2d12,#c2410c,#ea580c)",padding:"20px 16px 24px",boxShadow:"0 4px 20px rgba(194,65,12,0.3)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}>
-          <Link href="/" style={{width:"34px",height:"34px",borderRadius:"10px",backgroundColor:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:"16px",textDecoration:"none"}}>←</Link>
+    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+      <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
+
+      {/* Header */}
+      <div style={{ background:dark?"linear-gradient(135deg,#1A2A4A,#1877F2)":"linear-gradient(135deg,#1877F2,#0C5FD1)", padding:"20px 20px 28px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"16px" }}>
+          <Link href="/" style={{ width:34, height:34, borderRadius:"10px", backgroundColor:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", textDecoration:"none" }}>
+            <ArrowLeft size={16} color="#fff" strokeWidth={2} />
+          </Link>
           <div>
-            <div style={{color:"#fff",fontWeight:"800",fontSize:"18px"}}>Question Solver</div>
-            <div style={{color:"rgba(255,255,255,0.7)",fontSize:"12px"}}>{topic ? "Topic: "+topic : "AI explains every answer"}</div>
+            <div style={{ color:"#fff", fontWeight:800, fontSize:"18px" }}>Question Solver</div>
+            <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px" }}>AI explains every answer in detail</div>
           </div>
         </div>
-        <div style={{display:"flex",gap:"8px",backgroundColor:"rgba(255,255,255,0.12)",borderRadius:"12px",padding:"4px"}}>
-          {(["generate","type"] as const).map(m=>(
-            <button key={m} onClick={()=>{setMode(m);setAnswer("");setQuestion("");}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",cursor:"pointer",fontWeight:"700",fontSize:"13px",backgroundColor:mode===m?"#fff":"transparent",color:mode===m?"#ea580c":"rgba(255,255,255,0.8)",transition:"all 0.2s"}}>
-              {m==="generate"?"🎲 Generate":"📝 Type Question"}
-            </button>
-          ))}
+        {/* Mode toggle */}
+        <div style={{ display:"flex", gap:"8px", background:"rgba(255,255,255,0.12)", borderRadius:"12px", padding:"4px" }}>
+          {(["type","generate"] as const).map(m=>{
+            const Icon = m==="type" ? Lightbulb : Dices;
+            return (
+              <button key={m} onClick={()=>{setMode(m);setAns("");setQ("");}} style={{
+                flex:1, padding:"9px", borderRadius:"9px", border:"none", cursor:"pointer",
+                fontWeight:700, fontSize:"13px",
+                background:mode===m?"#fff":"transparent",
+                color:mode===m?C.primary:"rgba(255,255,255,0.75)",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:"6px",
+                transition:"all 0.2s",
+              }}>
+                <Icon size={14} strokeWidth={2} />
+                {m==="type"?"Type Question":"Generate Question"}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"14px"}}>
-        {topic&&(
-          <div style={{padding:"12px 16px",borderRadius:"14px",backgroundColor:darkMode?"#1a1a0a":"#fffbeb",border:"1px solid #fde68a",display:"flex",gap:"10px",alignItems:"center"}}>
-            <span style={{fontSize:"16px"}}>📅</span>
+      <div style={{ padding:"16px 14px 100px" }}>
+        {/* Input card */}
+        <div style={{ background:T.surface, borderRadius:"16px", padding:"20px", border:`1px solid ${T.border}`, marginBottom:"14px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px", marginBottom:"14px" }}>
             <div>
-              <div style={{fontSize:"13px",fontWeight:"700",color:"#92400e"}}>From your Study Plan</div>
-              <div style={{fontSize:"12px",color:"#78350f"}}>Topic: {topic} · Subject: {subject}</div>
-            </div>
-          </div>
-        )}
-
-        <div style={{backgroundColor:cardBg,borderRadius:"20px",padding:"18px",boxShadow:darkMode?"0 2px 12px rgba(0,0,0,0.4)":"0 4px 20px rgba(0,0,0,0.08)",border:"1px solid "+borderC}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"}}>
-            <div>
-              <label style={{fontSize:"12px",fontWeight:"600",color:subText,display:"block",marginBottom:"6px"}}>Subject</label>
-              <select style={inp} value={subject} onChange={e=>setSubject(e.target.value)}>
+              <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Subject</label>
+              <select style={inp} value={sub} onChange={e=>setSub(e.target.value)}>
                 <option value="">Any subject</option>
                 {SUBJECTS.map(s=><option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label style={{fontSize:"12px",fontWeight:"600",color:subText,display:"block",marginBottom:"6px"}}>JAMB Year</label>
+              <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Year</label>
               <select style={inp} value={year} onChange={e=>setYear(e.target.value)}>
                 <option value="">Any year</option>
                 {YEARS.map(y=><option key={y}>{y}</option>)}
@@ -115,65 +122,86 @@ function SolverContent() {
             </div>
           </div>
 
-          {topic&&(
-            <div style={{marginBottom:"12px"}}>
-              <label style={{fontSize:"12px",fontWeight:"600",color:subText,display:"block",marginBottom:"6px"}}>Topic</label>
-              <input style={inp} value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Quadratic Equations"/>
-            </div>
-          )}
-
-          {mode==="type"?(
+          {mode==="type" ? (
             <>
-              <label style={{fontSize:"12px",fontWeight:"600",color:subText,display:"block",marginBottom:"6px"}}>Paste your question</label>
-              <textarea value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Type or paste a JAMB question here with options A, B, C, D..." style={{...inp,minHeight:"120px",resize:"vertical" as const,fontFamily:"inherit",lineHeight:"1.5"}}/>
-              <button onClick={solveQuestion} disabled={loading||!question.trim()} style={{width:"100%",marginTop:"12px",padding:"14px",borderRadius:"14px",border:"none",background:loading||!question.trim()?"#ccc":"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"800",fontSize:"15px",cursor:loading||!question.trim()?"not-allowed":"pointer"}}>
-                {loading?"Solving...":"Solve This Question →"}
+              <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Paste your question here</label>
+              <textarea value={q} onChange={e=>setQ(e.target.value)} placeholder="Type or paste a JAMB question, including options A, B, C, D…"
+                style={{ ...inp, minHeight:"110px", resize:"vertical", lineHeight:"1.5" }} />
+              <button onClick={solve} disabled={load||!q.trim()} style={{
+                width:"100%", marginTop:"12px", padding:"13px", borderRadius:"10px", border:"none",
+                background:load||!q.trim()?"#ccc":C.primary, color:"#fff",
+                fontWeight:700, fontSize:"14px", cursor:load||!q.trim()?"not-allowed":"pointer",
+              }}>
+                {load ? "Solving…" : "Solve This Question →"}
               </button>
             </>
-          ):(
+          ) : (
             <>
-              <p style={{fontSize:"13px",color:subText,margin:"0 0 12px",lineHeight:"1.5"}}>
-                {topic ? "AI will generate a JAMB question on " + topic : "Select a subject and generate a JAMB question."}
+              <p style={{ fontSize:"13px", color:T.sub, margin:"0 0 12px", lineHeight:"1.5" }}>
+                Select a subject and let AI generate a realistic JAMB practice question.
               </p>
-              <button onClick={generateQuestion} disabled={loading||(!subject&&!searchParams.get("subject"))} style={{width:"100%",padding:"14px",borderRadius:"14px",border:"none",background:loading?"#ccc":"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"800",fontSize:"15px",cursor:"pointer"}}>
-                {loading?"🤖 Generating...":"🎲 Generate Question"}
+              <button onClick={generate} disabled={load||!sub} style={{
+                width:"100%", padding:"13px", borderRadius:"10px", border:"none",
+                background:load||!sub?"#ccc":C.primary, color:"#fff",
+                fontWeight:700, fontSize:"14px", cursor:load||!sub?"not-allowed":"pointer",
+              }}>
+                {load ? "Generating…" : "Generate Question"}
               </button>
-              {!subject&&!searchParams.get("subject")&&<p style={{fontSize:"12px",color:"#ea580c",marginTop:"6px",textAlign:"center"}}>Select a subject first</p>}
+              {!sub && <p style={{ fontSize:"12px", color:C.danger, marginTop:"8px", textAlign:"center" }}>Select a subject first</p>}
             </>
           )}
         </div>
 
-        {(loading||answer)&&(
-          <div style={{backgroundColor:cardBg,borderRadius:"20px",padding:"18px",boxShadow:darkMode?"0 2px 12px rgba(0,0,0,0.4)":"0 4px 20px rgba(0,0,0,0.08)",border:"1px solid "+borderC}}>
-            <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px",paddingBottom:"12px",borderBottom:"1px solid "+borderC}}>
-              <span style={{fontSize:"22px"}}>🎓</span>
-              <div style={{fontWeight:"700",color:textColor,fontSize:"15px"}}>AI Explanation</div>
+        {/* Answer */}
+        {(load||ans) && (
+          <div style={{ background:T.surface, borderRadius:"16px", padding:"20px", border:`1px solid ${T.border}`, marginBottom:"14px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"14px" }}>
+              <div style={{ width:36, height:36, borderRadius:"10px", background:C.primaryLight, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <Lightbulb size={17} color={C.primary} strokeWidth={1.8} />
+              </div>
+              <div style={{ fontWeight:700, color:T.text, fontSize:"15px" }}>AI Explanation</div>
             </div>
-            {loading?(
-              <div style={{display:"flex",gap:"5px",alignItems:"center",padding:"8px 0"}}>
-                {[0,1,2].map(i=><div key={i} style={{width:"8px",height:"8px",borderRadius:"50%",backgroundColor:"#ea580c",animation:"bounce 1.2s infinite",animationDelay:i*0.15+"s"}}/>)}
+            {load ? (
+              <div style={{ display:"flex", gap:"5px", padding:"8px 0" }}>
+                {[0,1,2].map(i=><div key={i} style={{ width:8, height:8, borderRadius:"50%", background:C.primary, animation:`typingDot 1.2s infinite ${i*0.15}s` }} />)}
               </div>
-            ):(
-              <div style={{fontSize:"14px",color:textColor,lineHeight:"1.7"}}>
-                <ReactMarkdown>{answer}</ReactMarkdown>
+            ) : (
+              <div style={{ fontSize:"14px", color:T.text, lineHeight:"1.7" }}>
+                <ReactMarkdown>{ans}</ReactMarkdown>
               </div>
-            )}
-            {answer&&(
-              <button onClick={generateQuestion} style={{width:"100%",marginTop:"14px",padding:"12px",borderRadius:"12px",border:"1.5px solid "+borderC,backgroundColor:"transparent",color:subText,fontWeight:"600",fontSize:"13px",cursor:"pointer"}}>
-                Generate Another →
-              </button>
             )}
           </div>
         )}
+
+        {/* History */}
+        {hist.length > 0 && !ans && (
+          <div style={{ background:T.surface, borderRadius:"16px", border:`1px solid ${T.border}`, overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+            <div style={{ padding:"14px 18px", borderBottom:`1px solid ${T.border}`, fontSize:"12px", fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:"1px" }}>
+              Recent Questions
+            </div>
+            {hist.map((h,i)=>(
+              <button key={i} onClick={()=>{setQ(h.q);setAns(h.a);setMode("type");setSub(h.subject);}} style={{
+                width:"100%", textAlign:"left", padding:"12px 18px",
+                border:"none", borderBottom:i<hist.length-1?`1px solid ${T.border}`:"none",
+                background:"transparent", cursor:"pointer",
+              }}>
+                <div style={{ fontSize:"11px", color:C.primary, fontWeight:600, marginBottom:"3px" }}>{h.subject}</div>
+                <div style={{ fontSize:"13px", color:T.text, fontWeight:500, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{h.q}</div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}`}</style>
+
+      <BottomNav darkMode={dark} />
+      <style>{`@keyframes typingDot{0%,60%,100%{opacity:.3;transform:scale(.8)}30%{opacity:1;transform:scale(1.2)}}`}</style>
     </div>
   );
 }
 
 export default function Solver() {
   return (
-    <Suspense fallback={<div style={{minHeight:"100vh",backgroundColor:"#f0f0f5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",color:"#666"}}>Loading...</div>}>
+    <Suspense fallback={<div style={{minHeight:"100vh",background:"#F0F2F5",display:"flex",alignItems:"center",justifyContent:"center",color:"#65676B",fontFamily:"Arial"}}>Loading…</div>}>
       <SolverContent />
     </Suspense>
   );

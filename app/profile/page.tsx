@@ -2,203 +2,276 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, User, Mail, Building2, BookOpen, Target, Calendar, Star, LogOut, Moon, Sun, ChevronRight, Edit3, Shield, Bell } from "lucide-react";
+import Navbar from "../components/Navbar";
+import BottomNav from "../components/BottomNav";
+import { C, palette } from "../lib/design";
 
-const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
-const COURSES = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
-interface User { name:string; email:string; target:string; institution:string; course:string; subjects:string[]; deadline:string; selfRating:string; }
-interface AlarmSettings { studyReminder:boolean; studyTime:string; morningMotivation:boolean; morningTime:string; examCountdown:boolean; }
+interface UserData { name:string; email:string; institution:string; course:string; subjects:string[]; target:string; deadline:string; selfRating:string; createdAt?:string; }
 
 export default function Profile() {
-  const [user, setUser] = useState<User|null>(null);
+  const [user,    setUser]    = useState<UserData | null>(null);
+  const [dark,    setDark]    = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<User>>({});
-  const [alarms, setAlarms] = useState<AlarmSettings>({studyReminder:false,studyTime:"19:00",morningMotivation:false,morningTime:"07:00",examCountdown:false});
-  const [darkMode, setDarkMode] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [form,    setForm]    = useState<Partial<UserData>>({});
+  const [saved,   setSaved]   = useState(false);
+  const [ready,   setReady]   = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
-    setDarkMode(localStorage.getItem("darkMode")==="true");
+    const dm = localStorage.getItem("darkMode") === "true";
+    setDark(dm);
     const u = localStorage.getItem("companion_user");
     if (!u) { router.replace("/landing"); return; }
-    const parsed = JSON.parse(u); setUser(parsed); setEditForm(parsed);
-    const sa = localStorage.getItem("alarm_settings");
-    if (sa) setAlarms(JSON.parse(sa));
-  }, []);
+    const parsed = JSON.parse(u);
+    setUser(parsed);
+    setForm(parsed);
+    setReady(true);
+  }, [router]);
+
+  const toggleDark = () => {
+    const n = !dark;
+    setDark(n);
+    localStorage.setItem("darkMode", String(n));
+    document.documentElement.setAttribute("data-dark", String(n));
+  };
 
   const saveProfile = () => {
-    const updated = {...user,...editForm};
-    localStorage.setItem("companion_user",JSON.stringify(updated));
-    setUser(updated as User); setEditing(false); setSaved(true);
-    setTimeout(()=>setSaved(false),2500);
+    if (!user) return;
+    const updated = { ...user, ...form };
+    localStorage.setItem("companion_user", JSON.stringify(updated));
+    setUser(updated);
+    setEditing(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   };
 
-  const saveAlarms = (a: AlarmSettings) => {
-    setAlarms(a); localStorage.setItem("alarm_settings",JSON.stringify(a));
-    if ((a.studyReminder||a.morningMotivation)&&"Notification" in window) Notification.requestPermission();
+  const logout = () => {
+    localStorage.removeItem("companion_user");
+    router.replace("/landing");
   };
 
-  if (!mounted) return null;
+  if (!ready || !user) return null;
 
-  const D = darkMode;
-  const bg = D?"#0a0a0a":"#f2f2f7";
-  const card = D?"#1c1c1e":"#fff";
-  const text = D?"#f2f2f7":"#1c1c1e";
-  const sub = D?"#98989d":"#6e6e73";
-  const border = D?"#2c2c2e":"#e5e5ea";
-  const inp:React.CSSProperties = {width:"100%",padding:"12px 14px",borderRadius:"12px",border:`1.5px solid ${border}`,fontSize:"14px",outline:"none",backgroundColor:D?"#2c2c2e":"#fafafa",color:text,boxSizing:"border-box"};
-  const lbl:React.CSSProperties = {fontSize:"12px",color:sub,display:"block",marginBottom:"6px",fontWeight:"600"};
-  const RATINGS = ["","😰 Not ready","😐 Just started","😊 Making progress","🔥 Almost ready"];
+  const T = palette(dark);
 
-  const Toggle = ({on,onToggle}:{on:boolean;onToggle:()=>void}) => (
-    <div onClick={onToggle} style={{width:"44px",height:"24px",borderRadius:"12px",backgroundColor:on?"#ea580c":D?"#3a3a3c":"#d0d0d0",cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
-      <div style={{position:"absolute",top:"2px",left:on?"22px":"2px",width:"20px",height:"20px",borderRadius:"50%",backgroundColor:"#fff",transition:"left 0.2s",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
-    </div>
-  );
+  const inp: React.CSSProperties = {
+    width:"100%", padding:"12px 14px", borderRadius:"10px",
+    border:`1.5px solid ${T.border}`, fontSize:"14px", outline:"none",
+    background:T.s2, color:T.text, boxSizing:"border-box", fontFamily:"inherit",
+    transition:"border-color 0.15s",
+  };
+
+  const daysLeft = user.deadline
+    ? Math.max(0, Math.ceil((new Date(user.deadline).getTime() - Date.now()) / 86400000))
+    : null;
+
+  const PREP_LABELS = ["","Not ready","Just started","Making progress","Almost ready"];
 
   return (
-    <div style={{minHeight:"100vh",backgroundColor:bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",paddingBottom:"40px"}}>
+    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+      <Navbar darkMode={dark} onToggleDark={toggleDark} />
 
-      {/* Header with back button */}
-      <div style={{background:"linear-gradient(135deg,#431407,#7c2d12,#c2410c,#ea580c)",padding:"20px 20px 48px",position:"relative",overflow:"hidden",textAlign:"center"}}>
-        <div style={{position:"absolute",top:"-40px",right:"-40px",width:"160px",height:"160px",borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
-        <button onClick={()=>router.push("/")} style={{position:"absolute",left:"16px",top:"20px",width:"36px",height:"36px",borderRadius:"10px",backgroundColor:"rgba(255,255,255,0.15)",border:"none",cursor:"pointer",color:"#fff",fontSize:"18px",display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
-        <img src="/icon-192.png" alt="Companion" width={28} height={28} style={{borderRadius:"8px",position:"absolute",right:"16px",top:"20px"}}/>
-        <div style={{width:"80px",height:"80px",borderRadius:"50%",background:"linear-gradient(135deg,#fde68a,#f97316)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px",fontWeight:"900",color:"#7c2d12",margin:"0 auto 14px",boxShadow:"0 8px 24px rgba(0,0,0,0.3)"}}>
-          {user?.name?.charAt(0).toUpperCase()||"?"}
+      {/* Profile hero */}
+      <div style={{
+        background: dark
+          ? "linear-gradient(135deg,#1A2A4A,#1877F2)"
+          : "linear-gradient(135deg,#1877F2,#0C5FD1)",
+        padding:"28px 20px 48px",
+        textAlign:"center",
+        position:"relative",
+      }}>
+        <div style={{ position:"absolute", top:"-30px", right:"-30px", width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.07)" }} />
+
+        {/* Avatar */}
+        <div style={{
+          width:76, height:76, borderRadius:"50%",
+          background:"linear-gradient(135deg,#fde68a,#f59e0b)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          margin:"0 auto 14px",
+          fontSize:"30px", fontWeight:800, color:"#7c2d12",
+          boxShadow:"0 6px 20px rgba(0,0,0,0.2)",
+          border:"3px solid rgba(255,255,255,0.6)",
+        }}>
+          {user.name.charAt(0).toUpperCase()}
         </div>
-        <div style={{color:"#fff",fontWeight:"900",fontSize:"20px"}}>{user?.name}</div>
-        <div style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",marginTop:"3px"}}>{user?.email}</div>
-        <div style={{marginTop:"8px",display:"inline-block",padding:"5px 14px",borderRadius:"20px",backgroundColor:"rgba(255,255,255,0.15)",color:"#fde68a",fontSize:"12px",fontWeight:"700"}}>
-          {user?.course} · {user?.institution}
+
+        <div style={{ color:"#fff", fontSize:"20px", fontWeight:800, letterSpacing:"-0.3px" }}>
+          {user.name}
+        </div>
+        <div style={{ color:"rgba(255,255,255,0.75)", fontSize:"13px", marginTop:"4px" }}>
+          {user.email}
+        </div>
+
+        {/* Stats row */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px", marginTop:"20px" }}>
+          {[
+            { label:"Target",   value:`${user.target} pts` },
+            { label:"Days left", value: daysLeft !== null ? `${daysLeft}d` : "—"  },
+            { label:"Subjects", value:String(user.subjects?.length || 0)           },
+          ].map((s,i)=>(
+            <div key={i} style={{ background:"rgba(255,255,255,0.12)", borderRadius:"10px", padding:"10px 8px" }}>
+              <div style={{ color:"#FFF8DB", fontWeight:800, fontSize:"16px" }}>{s.value}</div>
+              <div style={{ color:"rgba(255,255,255,0.65)", fontSize:"10px", marginTop:"2px" }}>{s.label}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div style={{padding:"16px",marginTop:"-28px",display:"flex",flexDirection:"column",gap:"14px"}}>
-        {saved&&<div style={{padding:"12px 16px",borderRadius:"14px",backgroundColor:"#f0fdf4",border:"1px solid #86efac",textAlign:"center"}}><span style={{color:"#16a34a",fontWeight:"700",fontSize:"14px"}}>✅ Profile saved!</span></div>}
+      <div style={{ padding:"0 14px", marginTop:"-16px", paddingBottom:"100px" }}>
 
-        {/* Profile card */}
-        <div style={{backgroundColor:card,borderRadius:"20px",overflow:"hidden",boxShadow:D?"0 2px 12px rgba(0,0,0,0.5)":"0 2px 16px rgba(0,0,0,0.08)",border:`1px solid ${border}`}}>
-          <div style={{padding:"16px 18px",borderBottom:`1px solid ${border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{fontWeight:"800",color:text,fontSize:"15px"}}>👤 Personal Info</div>
-              <div style={{fontSize:"11px",color:sub,marginTop:"2px"}}>Tap Edit to update your details</div>
-            </div>
-            <button onClick={()=>{setEditing(!editing);if(!editing)setEditForm(user||{});}} style={{padding:"7px 16px",borderRadius:"20px",border:`1.5px solid ${editing?"#dc2626":"#ea580c"}`,backgroundColor:editing?"#fff0f0":"#fff8f5",color:editing?"#dc2626":"#ea580c",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
-              {editing?"Cancel":"✏️ Edit"}
+        {/* Edit / Save banner */}
+        {saved && (
+          <div style={{
+            padding:"12px 16px", borderRadius:"12px", marginBottom:"12px",
+            background:"#E6F4EA", border:"1px solid #31A24C44",
+            display:"flex", alignItems:"center", gap:"8px", animation:"fadeUp 0.2s ease",
+          }}>
+            <div style={{ width:8, height:8, borderRadius:"50%", background:"#31A24C" }} />
+            <span style={{ fontSize:"13px", color:"#0D8050", fontWeight:600 }}>Profile saved successfully</span>
+          </div>
+        )}
+
+        {/* Profile info card */}
+        <div style={{ background:T.surface, borderRadius:"16px", border:`1px solid ${T.border}`, marginBottom:"14px", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+          <div style={{ padding:"16px 18px", borderBottom:`1px solid ${T.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <span style={{ fontWeight:700, color:T.text, fontSize:"14px" }}>Personal Info</span>
+            <button onClick={() => setEditing(p=>!p)} style={{
+              display:"flex", alignItems:"center", gap:"5px",
+              padding:"6px 12px", borderRadius:"8px", border:"none",
+              background: editing ? C.primaryLight : T.s2,
+              color: editing ? C.primary : T.sub,
+              fontWeight:600, fontSize:"13px", cursor:"pointer",
+            }}>
+              <Edit3 size={13} strokeWidth={2} />
+              {editing ? "Cancel" : "Edit"}
             </button>
           </div>
-          <div style={{padding:"18px",display:"flex",flexDirection:"column",gap:"14px"}}>
-            {editing?(
+
+          <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:"14px" }}>
+            {editing ? (
               <>
-                <div><label style={lbl}>Full Name</label><input style={inp} value={editForm.name||""} onChange={e=>setEditForm(p=>({...p,name:e.target.value}))} placeholder="Your full name"/></div>
-                <div><label style={lbl}>Email Address</label><input style={inp} type="email" value={editForm.email||""} onChange={e=>setEditForm(p=>({...p,email:e.target.value}))}/></div>
-                <div><label style={lbl}>Target Institution</label><select style={inp} value={editForm.institution||""} onChange={e=>setEditForm(p=>({...p,institution:e.target.value}))}><option value="">Select...</option>{INSTITUTIONS.map(i=><option key={i}>{i}</option>)}</select></div>
-                <div><label style={lbl}>Desired Course</label><select style={inp} value={editForm.course||""} onChange={e=>setEditForm(p=>({...p,course:e.target.value}))}><option value="">Select...</option>{COURSES.map(c=><option key={c}>{c}</option>)}</select></div>
                 <div>
-                  <label style={lbl}>Target Score: <span style={{color:"#ea580c",fontWeight:"800",fontSize:"16px"}}>{editForm.target}</span></label>
-                  <input type="range" min="180" max="400" step="5" value={editForm.target||"250"} onChange={e=>setEditForm(p=>({...p,target:e.target.value}))} style={{width:"100%",accentColor:"#ea580c"}}/>
+                  <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Full Name</label>
+                  <input style={inp} value={form.name||""} onChange={e=>setForm(p=>({...p,name:e.target.value}))} />
                 </div>
-                <div><label style={lbl}>JAMB Exam Date</label><input type="date" style={inp} value={editForm.deadline||""} onChange={e=>setEditForm(p=>({...p,deadline:e.target.value}))}/></div>
                 <div>
-                  <label style={{...lbl,marginBottom:"10px"}}>Preparation Level</label>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-                    {["1","2","3","4"].map(v=>(
-                      <button key={v} onClick={()=>setEditForm(p=>({...p,selfRating:v}))} style={{padding:"11px 8px",borderRadius:"12px",fontSize:"12px",cursor:"pointer",border:editForm.selfRating===v?"2px solid #ea580c":`1.5px solid ${border}`,backgroundColor:editForm.selfRating===v?"#fff8f5":card,color:editForm.selfRating===v?"#ea580c":sub,fontWeight:editForm.selfRating===v?"700":"400"}}>
-                        {RATINGS[parseInt(v)]}
-                      </button>
-                    ))}
-                  </div>
+                  <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Email</label>
+                  <input style={inp} type="email" value={form.email||""} onChange={e=>setForm(p=>({...p,email:e.target.value}))} />
                 </div>
-                <button onClick={saveProfile} style={{padding:"14px",borderRadius:"14px",border:"none",background:"linear-gradient(135deg,#c2410c,#ea580c)",color:"#fff",fontWeight:"800",fontSize:"15px",cursor:"pointer",boxShadow:"0 4px 12px rgba(234,88,12,0.3)"}}>Save Changes ✓</button>
+                <div>
+                  <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>JAMB Exam Date</label>
+                  <input style={inp} type="date" value={form.deadline||""} onChange={e=>setForm(p=>({...p,deadline:e.target.value}))} />
+                </div>
+                <div>
+                  <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Target Score: <span style={{ color:C.primary, fontWeight:800 }}>{form.target}</span></label>
+                  <input type="range" min="180" max="400" step="5" value={form.target||"260"} onChange={e=>setForm(p=>({...p,target:e.target.value}))} style={{ width:"100%", accentColor:C.primary }} />
+                </div>
+                <button onClick={saveProfile} style={{
+                  padding:"13px", borderRadius:"10px", border:"none",
+                  background:C.primary, color:"#fff", fontWeight:700,
+                  fontSize:"14px", cursor:"pointer",
+                }}>
+                  Save Changes
+                </button>
               </>
-            ):(
-              <div style={{display:"flex",flexDirection:"column",gap:"0"}}>
+            ) : (
+              <>
                 {[
-                  {label:"Name",value:user?.name,icon:"👤"},
-                  {label:"Email",value:user?.email,icon:"📧"},
-                  {label:"Institution",value:user?.institution,icon:"🏛️"},
-                  {label:"Course",value:user?.course,icon:"📖"},
-                  {label:"Target",value:`${user?.target}/400`,icon:"🎯"},
-                  {label:"Subjects",value:user?.subjects?.join(", "),icon:"📚"},
-                  {label:"Readiness",value:RATINGS[parseInt(user?.selfRating||"1")],icon:"⭐"},
-                ].map((item,i,arr)=>(
-                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"12px",padding:"12px 0",borderBottom:i<arr.length-1?`1px solid ${border}`:"none"}}>
-                    <span style={{fontSize:"16px",flexShrink:0,marginTop:"1px"}}>{item.icon}</span>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:"11px",color:sub,fontWeight:"600",marginBottom:"2px"}}>{item.label}</div>
-                      <div style={{fontSize:"13px",color:text,fontWeight:"600",lineHeight:"1.4"}}>{item.value||"—"}</div>
+                  { icon:User,      label:"Full Name",    value:user.name },
+                  { icon:Mail,      label:"Email",        value:user.email },
+                  { icon:Building2, label:"Institution",  value:user.institution },
+                  { icon:BookOpen,  label:"Course",       value:user.course },
+                  { icon:Target,    label:"Target Score", value:`${user.target}/400` },
+                  { icon:Calendar,  label:"Exam Date",    value: user.deadline ? new Date(user.deadline).toLocaleDateString("en-NG", {day:"numeric",month:"long",year:"numeric"}) : "Not set" },
+                  { icon:Star,      label:"Prep Level",   value: PREP_LABELS[parseInt(user.selfRating)||2] || "Just started" },
+                ].map((row,i)=>{
+                  const Icon = row.icon;
+                  return (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                      <div style={{ width:36, height:36, borderRadius:"10px", background:C.primaryLight, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        <Icon size={16} color={C.primary} strokeWidth={1.8} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize:"11px", color:T.sub, fontWeight:600, marginBottom:"1px" }}>{row.label}</div>
+                        <div style={{ fontSize:"14px", color:T.text, fontWeight:600 }}>{row.value}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  );
+                })}
+              </>
             )}
           </div>
         </div>
 
-        {/* Alarms */}
-        <div style={{backgroundColor:card,borderRadius:"20px",overflow:"hidden",boxShadow:D?"0 2px 12px rgba(0,0,0,0.5)":"0 2px 16px rgba(0,0,0,0.08)",border:`1px solid ${border}`}}>
-          <div style={{padding:"16px 18px",borderBottom:`1px solid ${border}`}}>
-            <div style={{fontWeight:"800",color:text,fontSize:"15px"}}>🔔 Study Reminders</div>
-            <div style={{fontSize:"11px",color:sub,marginTop:"2px"}}>Stay on track with daily notifications</div>
+        {/* Subjects card */}
+        <div style={{ background:T.surface, borderRadius:"16px", border:`1px solid ${T.border}`, marginBottom:"14px", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+          <div style={{ padding:"16px 18px", borderBottom:`1px solid ${T.border}` }}>
+            <span style={{ fontWeight:700, color:T.text, fontSize:"14px" }}>JAMB Subjects</span>
           </div>
-          <div style={{padding:"18px",display:"flex",flexDirection:"column",gap:"18px"}}>
-            {[
-              {key:"studyReminder",timeKey:"studyTime",icon:"📚",title:"Daily Study Reminder",sub:"Reminds you to study every day"},
-              {key:"morningMotivation",timeKey:"morningTime",icon:"🌅",title:"Morning Motivation",sub:"Daily JAMB tip to start your day"},
-            ].map((item,i)=>(
-              <div key={i} style={{paddingBottom:i===0?"18px":"0",borderBottom:i===0?`1px solid ${border}`:"none"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
-                  <div>
-                    <div style={{fontSize:"14px",fontWeight:"700",color:text}}>{item.icon} {item.title}</div>
-                    <div style={{fontSize:"12px",color:sub}}>{item.sub}</div>
-                  </div>
-                  <Toggle on={(alarms as any)[item.key]} onToggle={()=>saveAlarms({...alarms,[item.key]:!(alarms as any)[item.key]})}/>
-                </div>
-                {(alarms as any)[item.key]&&(
-                  <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 14px",borderRadius:"12px",backgroundColor:D?"#2c2c2e":"#f8f8f8",border:`1px solid ${border}`}}>
-                    <span style={{fontSize:"13px",color:sub,fontWeight:"600"}}>⏰ Alert at</span>
-                    <input type="time" value={(alarms as any)[item.timeKey]} onChange={e=>saveAlarms({...alarms,[item.timeKey]:e.target.value})} style={{...inp,width:"auto",padding:"8px 12px",flex:1}}/>
-                  </div>
-                )}
+          <div style={{ padding:"14px 18px", display:"flex", flexWrap:"wrap", gap:"8px" }}>
+            {(user.subjects || []).map((s,i) => (
+              <div key={i} style={{
+                padding:"7px 14px", borderRadius:"50px",
+                background:C.primaryLight, border:`1px solid ${C.primary}33`,
+                fontSize:"13px", fontWeight:600, color:C.primary,
+              }}>
+                {s}
               </div>
             ))}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div>
-                <div style={{fontSize:"14px",fontWeight:"700",color:text}}>📅 Exam Countdown Alerts</div>
-                <div style={{fontSize:"12px",color:sub}}>Alerts at 30, 14, 7 days before exam</div>
-              </div>
-              <Toggle on={alarms.examCountdown} onToggle={()=>saveAlarms({...alarms,examCountdown:!alarms.examCountdown})}/>
-            </div>
-            <div style={{padding:"10px 14px",borderRadius:"12px",backgroundColor:D?"#1a1a0a":"#fffbeb",border:"1px solid #fde68a"}}>
-              <div style={{fontSize:"12px",color:"#92400e",lineHeight:"1.5"}}>💡 Allow notifications in browser settings for reminders to work.</div>
-            </div>
           </div>
         </div>
 
-        {/* Quick links */}
-        <div style={{backgroundColor:card,borderRadius:"20px",overflow:"hidden",boxShadow:D?"0 2px 12px rgba(0,0,0,0.5)":"0 2px 16px rgba(0,0,0,0.08)",border:`1px solid ${border}`}}>
-          <div style={{padding:"14px 18px",borderBottom:`1px solid ${border}`}}><div style={{fontWeight:"800",color:text,fontSize:"15px"}}>⚡ Quick Access</div></div>
+        {/* Settings list */}
+        <div style={{ background:T.surface, borderRadius:"16px", border:`1px solid ${T.border}`, marginBottom:"14px", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
           {[
-            {icon:"📅",label:"Study Plan",href:"/studyplan"},
-            {icon:"📝",label:"Mock Exam",href:"/mock"},
-            {icon:"🧮",label:"Question Solver",href:"/solver"},
-            {icon:"🤖",label:"Ask AI Tutor",href:"/ai"},
-          ].map((item,i,arr)=>(
-            <Link key={i} href={item.href} style={{display:"flex",alignItems:"center",gap:"14px",padding:"14px 18px",textDecoration:"none",borderBottom:i<arr.length-1?`1px solid ${border}`:"none"}}>
-              <span style={{fontSize:"20px"}}>{item.icon}</span>
-              <span style={{fontSize:"14px",color:text,fontWeight:"600"}}>{item.label}</span>
-              <span style={{marginLeft:"auto",color:sub,fontSize:"16px"}}>›</span>
-            </Link>
-          ))}
+            { icon:dark?Sun:Moon, label:dark?"Light Mode":"Dark Mode",  action:toggleDark,       detail:dark?"Switch to light":"Switch to dark" },
+            { icon:Bell,           label:"Study Reminders",              action:()=>{},           detail:"Coming soon" },
+            { icon:Shield,         label:"Account Security",             action:()=>{},           detail:"Password · Privacy" },
+          ].map((item,i,arr)=>{
+            const Icon = item.icon;
+            return (
+              <button key={i} onClick={item.action} style={{
+                width:"100%", display:"flex", alignItems:"center", gap:"12px",
+                padding:"14px 18px",
+                border:"none", borderBottom: i<arr.length-1 ? `1px solid ${T.border}` : "none",
+                background:"transparent", cursor:"pointer",
+                transition:"background 0.1s",
+              }}>
+                <div style={{ width:38, height:38, borderRadius:"10px", background:T.s2, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <Icon size={17} color={T.sub} strokeWidth={1.8} />
+                </div>
+                <div style={{ flex:1, textAlign:"left" }}>
+                  <div style={{ fontSize:"14px", fontWeight:600, color:T.text }}>{item.label}</div>
+                  <div style={{ fontSize:"11px", color:T.muted, marginTop:"1px" }}>{item.detail}</div>
+                </div>
+                <ChevronRight size={16} color={T.muted} strokeWidth={2} />
+              </button>
+            );
+          })}
         </div>
 
-        <button onClick={()=>{localStorage.removeItem("companion_user");router.replace("/landing");}} style={{width:"100%",padding:"16px",borderRadius:"16px",border:"none",background:"linear-gradient(135deg,#dc2626,#ef4444)",color:"#fff",fontWeight:"700",fontSize:"15px",cursor:"pointer",boxShadow:"0 4px 12px rgba(220,38,38,0.25)"}}>
-          🚪 Log Out
+        {/* Logout */}
+        <button onClick={logout} style={{
+          width:"100%", padding:"15px", borderRadius:"14px",
+          border:`1.5px solid #FA3E3E44`,
+          background:"#FEE2E2", color:"#D0021B",
+          fontWeight:700, fontSize:"14px", cursor:"pointer",
+          display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
+        }}>
+          <LogOut size={16} strokeWidth={2} />
+          Log Out
         </button>
+
+        {user.createdAt && (
+          <p style={{ textAlign:"center", marginTop:"14px", fontSize:"11px", color:T.muted }}>
+            Member since {new Date(user.createdAt).toLocaleDateString("en-NG", { month:"long", year:"numeric" })}
+          </p>
+        )}
       </div>
+
+      <BottomNav darkMode={dark} />
+      <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
 }

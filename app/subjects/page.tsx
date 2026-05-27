@@ -1,119 +1,127 @@
-'use client';
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+"use client";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, BookOpen, PenTool } from "lucide-react";
+import Navbar from "../components/Navbar";
+import BottomNav from "../components/BottomNav";
+import { C, palette } from "../lib/design";
 
 const SUBJECTS = [
-  { id:'english', name:'English Language', emoji:'📝', color:'#3b82f6' },
-  { id:'mathematics', name:'Mathematics', emoji:'🔢', color:'#8b5cf6' },
-  { id:'physics', name:'Physics', emoji:'⚡', color:'#f59e0b' },
-  { id:'chemistry', name:'Chemistry', emoji:'🧪', color:'#10b981' },
-  { id:'biology', name:'Biology', emoji:'🧬', color:'#ec4899' },
-  { id:'government', name:'Government', emoji:'🏛️', color:'#6366f1' },
-  { id:'economics', name:'Economics', emoji:'📈', color:'#14b8a6' },
-  { id:'literature', name:'Literature', emoji:'📚', color:'#f97316' },
-  { id:'geography', name:'Geography', emoji:'🌍', color:'#84cc16' },
-  { id:'crs', name:'CRS / IRS', emoji:'✝️', color:'#a78bfa' },
+  { id:"english",     name:"English Language", icon:"📝", color:"#1877F2" },
+  { id:"mathematics", name:"Mathematics",       icon:"📐", color:"#7B3FBE" },
+  { id:"physics",     name:"Physics",           icon:"⚡", color:"#B07D00" },
+  { id:"chemistry",   name:"Chemistry",         icon:"🧪", color:"#0D8050" },
+  { id:"biology",     name:"Biology",           icon:"🧬", color:"#C75B21" },
+  { id:"government",  name:"Government",        icon:"🏛️", color:"#5B6ABF" },
+  { id:"economics",   name:"Economics",         icon:"📊", color:"#0D8080" },
+  { id:"literature",  name:"Literature",        icon:"📚", color:"#C75B21" },
+  { id:"geography",   name:"Geography",         icon:"🌍", color:"#5B7A1C" },
+  { id:"crs",         name:"CRS / IRS",         icon:"✝️", color:"#7B3FBE" },
 ];
 
 function SubjectsContent() {
   const searchParams = useSearchParams();
-  const mode = searchParams.get('mode') || 'learn';
-  const router = useRouter();
-  const [darkMode, setDarkMode] = useState(false);
+  const mode    = searchParams.get("mode") || "learn";
+  const router  = useRouter();
+  const [dark,  setDark]  = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setDarkMode(localStorage.getItem('darkMode') === 'true');
+    setDark(localStorage.getItem("darkMode") === "true");
+    setReady(true);
   }, []);
 
-  const bg = darkMode ? '#0a0a0a' : '#f5f5f7';
-  const cardBg = darkMode ? '#1c1c1e' : '#ffffff';
-  const textColor = darkMode ? '#f2f2f7' : '#1c1c1e';
-  const subText = darkMode ? '#98989d' : '#6e6e73';
-  const borderC = darkMode ? '#2c2c2e' : '#e5e5ea';
+  if (!ready) return null;
+
+  const T = palette(dark);
 
   return (
-    <div style={{ minHeight:'100vh', backgroundColor:bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+      <Navbar darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} />
 
-      {/* Header */}
-      <div style={{ background:'linear-gradient(135deg,#431407,#7c2d12,#c2410c,#ea580c)', padding:'20px 20px 28px', position:'relative', overflow:'hidden' }}>
-        <div style={{ position:'absolute', top:'-30px', right:'-30px', width:'120px', height:'120px', borderRadius:'50%', background:'rgba(255,255,255,0.06)' }} />
-        
-        <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'20px' }}>
-          <Link href="/" style={{ width:'34px', height:'34px', borderRadius:'10px', backgroundColor:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'16px', textDecoration:'none', flexShrink:0 }}>←</Link>
+      {/* Page header */}
+      <div style={{
+        background: dark
+          ? "linear-gradient(135deg,#1A2A4A,#1877F2)"
+          : "linear-gradient(135deg,#1877F2,#0C5FD1)",
+        padding: "20px 20px 32px",
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"16px" }}>
+          <Link href="/" style={{
+            width:34, height:34, borderRadius:"10px",
+            backgroundColor:"rgba(255,255,255,0.15)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            color:"#fff", textDecoration:"none", flexShrink:0,
+          }}>
+            <ArrowLeft size={16} color="#fff" strokeWidth={2} />
+          </Link>
           <div>
-            <div style={{ color:'#fff', fontWeight:'800', fontSize:'18px' }}>
-              {mode === 'learn' ? '📚 Learn' : '✏️ Practice'}
+            <div style={{ color:"#fff", fontWeight:800, fontSize:"18px" }}>
+              {mode === "learn" ? "Learn" : "Practice"}
             </div>
-            <div style={{ color:'rgba(255,255,255,0.7)', fontSize:'12px' }}>
-              {mode === 'learn' ? 'Choose a subject to study' : 'Choose a subject to practice'}
+            <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px" }}>
+              {mode === "learn" ? "Choose a subject to study" : "Choose a subject to practice"}
             </div>
           </div>
         </div>
 
-        {/* Mode toggle — two separate clean buttons */}
-        <div style={{ display:'flex', gap:'10px' }}>
-          <button
-            onClick={() => router.push('/subjects?mode=learn')}
-            style={{
-              flex:1, padding:'11px 0', borderRadius:'12px', border:'none',
-              cursor:'pointer', fontWeight:'700', fontSize:'14px',
-              backgroundColor: mode === 'learn' ? '#fff' : 'rgba(255,255,255,0.15)',
-              color: mode === 'learn' ? '#ea580c' : 'rgba(255,255,255,0.8)',
-              transition:'all 0.2s',
-              boxShadow: mode === 'learn' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-            }}
-          >
-            📚 Learn
-          </button>
-          <button
-            onClick={() => router.push('/subjects?mode=practice')}
-            style={{
-              flex:1, padding:'11px 0', borderRadius:'12px', border:'none',
-              cursor:'pointer', fontWeight:'700', fontSize:'14px',
-              backgroundColor: mode === 'practice' ? '#fff' : 'rgba(255,255,255,0.15)',
-              color: mode === 'practice' ? '#ea580c' : 'rgba(255,255,255,0.8)',
-              transition:'all 0.2s',
-              boxShadow: mode === 'practice' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-            }}
-          >
-            ✏️ Practice
-          </button>
+        {/* Toggle */}
+        <div style={{ display:"flex", gap:"8px", background:"rgba(255,255,255,0.12)", borderRadius:"12px", padding:"4px" }}>
+          {(["learn","practice"] as const).map(m => {
+            const Icon = m === "learn" ? BookOpen : PenTool;
+            return (
+              <button key={m} onClick={() => router.push(`/subjects?mode=${m}`)} style={{
+                flex:1, padding:"10px", borderRadius:"9px", border:"none", cursor:"pointer",
+                fontWeight:700, fontSize:"14px",
+                background: mode===m ? "#fff" : "transparent",
+                color: mode===m ? C.primary : "rgba(255,255,255,0.75)",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:"6px",
+                transition:"all 0.2s",
+                boxShadow: mode===m ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
+              }}>
+                <Icon size={15} strokeWidth={2} />
+                {m === "learn" ? "Learn" : "Practice"}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Subjects Grid */}
-      <div style={{ padding:'20px 16px' }}>
-        <div style={{ fontSize:'13px', color:subText, fontWeight:'600', marginBottom:'14px', textTransform:'uppercase', letterSpacing:'0.5px' }}>
+      {/* Grid */}
+      <div style={{ padding:"20px 14px 100px" }}>
+        <div style={{ fontSize:"11px", color:T.sub, fontWeight:700, marginBottom:"14px", textTransform:"uppercase", letterSpacing:"1px" }}>
           Select Subject
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
-          {SUBJECTS.map(subject => (
-            <Link key={subject.id} href={`/questions?subject=${subject.id}&mode=${mode}`} style={{ textDecoration:'none' }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
+          {SUBJECTS.map(s => (
+            <Link key={s.id} href={`/questions?subject=${s.id}&mode=${mode}`} style={{ textDecoration:"none" }}>
               <div style={{
-                backgroundColor:cardBg, borderRadius:'18px', padding:'20px 16px',
-                boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.08)',
-                border:`1px solid ${borderC}`, cursor:'pointer', transition:'transform 0.15s',
+                background:T.surface, borderRadius:"16px", padding:"18px 14px",
+                border:`1px solid ${T.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
+                cursor:"pointer", transition:"box-shadow 0.15s",
               }}>
-                <div style={{ width:'48px', height:'48px', borderRadius:'14px', backgroundColor:`${subject.color}18`, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'12px', fontSize:'24px' }}>
-                  {subject.emoji}
+                <div style={{ width:44, height:44, borderRadius:"12px", background:`${s.color}15`, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"10px", fontSize:"22px" }}>
+                  {s.icon}
                 </div>
-                <div style={{ fontWeight:'700', color:textColor, fontSize:'14px', marginBottom:'4px' }}>{subject.name}</div>
-                <div style={{ fontSize:'12px', color:subject.color, fontWeight:'600' }}>
-                  {mode === 'learn' ? 'Watch lessons →' : 'Practice now →'}
+                <div style={{ fontWeight:700, color:T.text, fontSize:"13px", marginBottom:"3px" }}>{s.name}</div>
+                <div style={{ fontSize:"11px", color:s.color, fontWeight:600 }}>
+                  {mode === "learn" ? "Watch lessons →" : "Practice now →"}
                 </div>
               </div>
             </Link>
           ))}
         </div>
       </div>
+
+      <BottomNav darkMode={dark} />
     </div>
   );
 }
 
 export default function Subjects() {
   return (
-    <Suspense fallback={<div style={{ minHeight:'100vh', backgroundColor:'#f5f5f7', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Arial', color:'#666' }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F0F2F5", display:"flex", alignItems:"center", justifyContent:"center", color:"#65676B", fontFamily:"Arial" }}>Loading…</div>}>
       <SubjectsContent />
     </Suspense>
   );

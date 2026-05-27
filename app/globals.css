@@ -2,184 +2,203 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Reset & Base ─────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+/* ── Design System ─────────────────────────────────────────────── */
+:root {
+  /* Primary — Facebook blue */
+  --primary:        #1877F2;
+  --primary-hover:  #166FE5;
+  --primary-dark:   #0C5FD1;
+  --primary-light:  #E7F0FF;
+  --primary-soft:   #F0F7FF;
 
-html { -webkit-text-size-adjust: 100%; }
+  /* Surfaces */
+  --bg:             #F0F2F5;
+  --surface:        #FFFFFF;
+  --surface-2:      #F7F8FA;
+  --surface-3:      #EBEDF0;
 
-body {
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  overscroll-behavior: none;
+  /* Borders */
+  --border:         #E4E6EB;
+  --border-light:   #F0F2F5;
+
+  /* Text */
+  --text:           #050505;
+  --text-sub:       #65676B;
+  --text-muted:     #8A8D91;
+
+  /* Semantic */
+  --success:        #31A24C;
+  --success-light:  #E6F4EA;
+  --warning:        #F7B928;
+  --warning-light:  #FEF9E7;
+  --danger:         #FA3E3E;
+  --danger-light:   #FEE9E9;
+
+  /* Brand accent (keep orange for accents only) */
+  --accent:         #EA580C;
+  --accent-light:   #FFF3EE;
+
+  /* Layout */
+  --nav-h:          56px;
+  --bottom-nav-h:   60px;
+  --radius-sm:      6px;
+  --radius-md:      8px;
+  --radius-lg:      12px;
+  --radius-xl:      16px;
+  --radius-2xl:     20px;
+  --radius-pill:    50px;
+
+  /* Shadows */
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:      0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg:      0 4px 20px rgba(0,0,0,0.1);
+  --shadow-xl:      0 8px 32px rgba(0,0,0,0.12);
+
+  /* Typography */
+  --font:           -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* ── Scrollbar ───────────────────────────────────── */
+/* Dark mode */
+[data-dark="true"] {
+  --bg:           #18191A;
+  --surface:      #242526;
+  --surface-2:    #3A3B3C;
+  --surface-3:    #4E4F50;
+  --border:       #3E4042;
+  --border-light: #3E4042;
+  --text:         #E4E6EB;
+  --text-sub:     #B0B3B8;
+  --text-muted:   #8A8D91;
+  --primary-soft: #1A2A4A;
+  --primary-light:#1C3A6E;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 ::-webkit-scrollbar { width: 0; height: 0; }
 * { scrollbar-width: none; }
 
-/* ── Smooth page transitions ─────────────────────── */
+/* ── Animations ────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0);    }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to   { opacity: 1; transform: translateY(0);     }
-}
-
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1);    }
 }
-
-@keyframes dropIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0);    }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)     scale(1);    }
 }
-
+@keyframes shimmer {
+  0%   { background-position: -400% 0; }
+  100% { background-position:  400% 0; }
+}
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.92); }
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.4; }
 }
-
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
-}
-
 @keyframes bounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30%           { transform: translateY(-6px); }
+  0%,60%,100% { transform: translateY(0); }
+  30%          { transform: translateY(-5px); }
 }
-
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+/* ── Global components ─────────────────────────────────────────── */
+.page-enter { animation: fadeUp 0.22s ease both; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
 }
 
-/* ── Page entrance animation ─────────────────────── */
-main, [data-page] {
-  animation: fadeIn 0.25s ease both;
-}
-
-/* ── Card hover effects ──────────────────────────── */
-.card-interactive {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
 }
-.card-interactive:active {
-  transform: scale(0.98);
-}
+.btn-primary:hover  { background: var(--primary-hover); box-shadow: 0 4px 14px rgba(24,119,242,0.35); }
+.btn-primary:active { transform: scale(0.97); }
 
-/* ── Button press feedback ───────────────────────── */
-button {
-  -webkit-tap-highlight-color: transparent;
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
 }
-button:active:not(:disabled) {
-  transform: scale(0.97);
-  transition: transform 0.1s ease;
-}
+.btn-secondary:hover  { background: var(--surface-3); }
+.btn-secondary:active { transform: scale(0.97); }
 
-/* ── Link press feedback ─────────────────────────── */
-a {
-  -webkit-tap-highlight-color: transparent;
-}
+button { -webkit-tap-highlight-color: transparent; }
+button:active:not(:disabled) { transition: transform 0.1s; transform: scale(0.97); }
+a { -webkit-tap-highlight-color: transparent; }
 
-/* ── Skeleton loading ────────────────────────────── */
-.skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 8px;
-}
-
-.skeleton-dark {
-  background: linear-gradient(90deg, #2c2c2e 25%, #3a3a3c 50%, #2c2c2e 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 8px;
-}
-
-/* ── Focus ring (accessibility) ──────────────────── */
-:focus-visible {
-  outline: 2px solid #ea580c;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* ── Smooth input transitions ────────────────────── */
 input, select, textarea {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: var(--font);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 input:focus, select:focus, textarea:focus {
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(24,119,242,0.12);
 }
 
-/* ── Progress bar animation ──────────────────────── */
-.progress-bar {
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: var(--radius-md);
 }
 
-/* ── Orange glow effect for CTAs ─────────────────── */
-.btn-primary {
-  transition: box-shadow 0.2s ease, transform 0.1s ease;
-}
-.btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4);
-}
-.btn-primary:active {
-  transform: scale(0.97);
-}
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
 
-/* ── Streak fire animation ───────────────────────── */
-@keyframes fireFlicker {
-  0%, 100% { transform: scale(1) rotate(-2deg); }
-  25%       { transform: scale(1.05) rotate(2deg); }
-  75%       { transform: scale(0.98) rotate(-1deg); }
-}
-.streak-fire {
-  display: inline-block;
-  animation: fireFlicker 1.8s ease-in-out infinite;
-}
-
-/* ── Toast / notification ────────────────────────── */
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(100%); }
-  to   { opacity: 1; transform: translateX(0);    }
-}
-
-/* ── Range input ─────────────────────────────────── */
 input[type="range"] {
   -webkit-appearance: none;
-  height: 6px;
+  height: 5px;
   border-radius: 3px;
-  background: #f0f0f0;
+  background: var(--surface-3);
   outline: none;
+  border: none;
+  box-shadow: none;
 }
+input[type="range"]:focus { box-shadow: none; border-color: transparent; }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 20px; height: 20px;
   border-radius: 50%;
-  background: #ea580c;
+  background: var(--primary);
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(234,88,12,0.4);
-  transition: transform 0.15s ease;
+  box-shadow: 0 1px 4px rgba(24,119,242,0.5);
+  transition: transform 0.15s;
 }
-input[type="range"]::-webkit-slider-thumb:active {
-  transform: scale(1.2);
-}
+input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }

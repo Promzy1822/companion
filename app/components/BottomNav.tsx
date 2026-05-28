@@ -7,11 +7,11 @@ import { C, palette } from "../lib/design";
 export const BOTTOM_NAV_HEIGHT = 60;
 
 const TABS = [
-  { icon: Home,          label: "Home",     href: "/"                       },
-  { icon: Bot,           label: "AI",       href: "/ai"                     },
-  { icon: PenTool,       label: "Practice", href: "/subjects?mode=practice" },
-  { icon: ClipboardList, label: "Mock",     href: "/mock"                   },
-  { icon: User,          label: "Profile",  href: "/profile"                },
+  { icon: Home,          label: "Home",     href: "/",                        basePath: "/"         },
+  { icon: Bot,           label: "AI",       href: "/ai",                      basePath: "/ai"        },
+  { icon: PenTool,       label: "Practice", href: "/subjects?mode=practice",  basePath: "/subjects"  },
+  { icon: ClipboardList, label: "Mock",     href: "/mock",                    basePath: "/mock"      },
+  { icon: User,          label: "Profile",  href: "/profile",                 basePath: "/profile"   },
 ];
 
 export default function BottomNav({ darkMode = false }: { darkMode?: boolean }) {
@@ -20,25 +20,35 @@ export default function BottomNav({ darkMode = false }: { darkMode?: boolean }) 
 
   return (
     <nav style={{
-      position:    "fixed",
-      bottom:      0,
-      left:        0,
-      right:       0,
-      /* Use safe-area-inset for devices with home indicator (iPhone X+) */
-      height:      `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
+      position:      "fixed",
+      bottom:        0,
+      left:          0,
+      right:         0,
+      height:        `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
-      background:  T.surface,
-      borderTop:   `1px solid ${T.border}`,
-      display:     "flex",
-      zIndex:      150,
-      boxShadow:   "0 -1px 0 rgba(0,0,0,0.04)",
-      /* Force its own stacking context */
-      transform:   "translateZ(0)",
-      willChange:  "auto",
+      background:    T.surface,
+      borderTop:     `1px solid ${T.border}`,
+      display:       "flex",
+      zIndex:        150,
+      boxShadow:     "0 -1px 0 rgba(0,0,0,0.04)",
+      transform:     "translateZ(0)",
     }}>
       {TABS.map(tab => {
-        const Icon   = tab.icon;
-        const active = pathname === tab.href || pathname.startsWith(tab.href + "?");
+        const Icon = tab.icon;
+        /*
+          usePathname() never includes query strings.
+          Match against basePath (the path segment only) so that
+          /subjects?mode=practice correctly activates the Practice tab
+          regardless of which query string is present.
+
+          Special case for "/" — only exact match, otherwise every
+          route would activate Home.
+        */
+        const active =
+          tab.basePath === "/"
+            ? pathname === "/"
+            : pathname === tab.basePath || pathname.startsWith(tab.basePath + "/");
+
         return (
           <Link
             key={tab.href}

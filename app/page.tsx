@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar, { NAVBAR_HEIGHT } from "./components/Navbar";
+import { useNews } from "./lib/useNews";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "./components/BottomNav";
 import QuickLinks from "./components/QuickLinks";
 import StreakCard from "./components/StreakCard";
@@ -42,9 +43,15 @@ const FALLBACK: NewsItem[] = [
 export default function Home() {
   const [darkMode,   setDarkMode]   = useState(false);
   const [user,       setUser]       = useState<User|null>(null);
-  const [news,       setNews]       = useState<NewsItem[]>([]);
-  const [newsLoad,   setNewsLoad]   = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const {
+    filtered:  news,
+    loading:   newsLoad,
+    refreshing,
+    refresh:   fetchNews,
+    setCategory: setCat,
+    lastUpdated: newsLastUpdated,
+    isStale:   newsIsStale,
+  } = useNews();
   const [cat,        setCat]        = useState("All");
   const [showCalc,   setShowCalc]   = useState(false);
   const [calcType,   setCalcType]   = useState<"jamb"|"aggregate">("aggregate");
@@ -75,17 +82,6 @@ export default function Home() {
     document.documentElement.setAttribute("data-dark", String(next));
   };
 
-  const fetchNews = useCallback(async (refresh=false) => {
-    if (refresh) setRefreshing(true); else setNewsLoad(true);
-    try {
-      const res  = await fetch("/api/news");
-      const data = await res.json();
-      const raw  = data.news?.length ? data.news : FALLBACK;
-      setNews(raw.map((n:NewsItem,i:number) => ({...n, image:IMGS[i%IMGS.length], category:catOf(n.title)})));
-    } catch {
-      setNews(FALLBACK.map((n,i)=>({...n,image:IMGS[i%IMGS.length],category:catOf(n.title)})));
-    } finally { setNewsLoad(false); setRefreshing(false); }
-  }, []);
 
   const calcAggregate = () => {
     setCalcErr(""); setResult(null);

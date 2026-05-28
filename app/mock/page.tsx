@@ -91,7 +91,7 @@ export default function MockExam() {
 
   // ── SETUP ──────────────────────────────────────────────────────
   if (phase==="setup") return (
-    <div style={{minHeight:"100vh",background:T.bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"}}>
+    <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"}}>
       <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
 
       <div style={{background:dark?"linear-gradient(135deg,#1A2A4A,#1877F2)":"linear-gradient(135deg,#1877F2,#0C5FD1)",padding:"20px 20px 32px"}}>
@@ -158,7 +158,7 @@ export default function MockExam() {
 
   // ── EXAM (no bottom nav — focus mode) ─────────────────────────
   if (phase==="exam") return (
-    <div style={{minHeight:"100vh",background:T.bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",display:"flex",flexDirection:"column"}}>
       {/* Sticky timer bar */}
       <div style={{background:dark?"linear-gradient(135deg,#111,#1A2A4A)":"linear-gradient(135deg,#1877F2,#0C5FD1)",padding:"14px 20px",position:"sticky",top:0,zIndex:50}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
@@ -227,7 +227,7 @@ export default function MockExam() {
     const gap = jambEq - parseInt(user.target||"250");
 
     return (
-      <div style={{minHeight:"100vh",background:T.bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"}}>
+      <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"}}>
         <div style={{background:dark?"linear-gradient(135deg,#1A2A4A,#1877F2)":"linear-gradient(135deg,#1877F2,#0C5FD1)",padding:"28px 20px 44px",textAlign:"center"}}>
           <div style={{width:64,height:64,borderRadius:"18px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
             <Trophy size={30} color="#FFF8DB" strokeWidth={1.8} />

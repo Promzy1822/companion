@@ -120,12 +120,12 @@ export default function Home() {
   const greeting = hour<12 ? "Good morning" : hour<17 ? "Good afternoon" : "Good evening";
 
   return (
+    <>
+    <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
     <div style={{
       minHeight:"100vh", background:T.bg,
       fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",
     }}>
-      <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
-
       {/* Hero section */}
       <div style={{
         background: darkMode
@@ -396,5 +396,6 @@ export default function Home() {
         @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
       `}</style>
     </div>
+  </>
   );
 }

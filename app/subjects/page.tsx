@@ -37,7 +37,7 @@ function SubjectsContent() {
   const T = palette(dark);
 
   return (
-    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+    <div style={{ minHeight:"100vh", paddingTop:"56px", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
       <Navbar darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} />
 
       {/* Page header */}

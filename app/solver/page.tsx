@@ -4,8 +4,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Lightbulb, Dices } from "lucide-react";
-import Navbar from "../components/Navbar";
-import BottomNav from "../components/BottomNav";
+import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
+import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 
 const SUBJECTS = ["English Language","Mathematics","Physics","Chemistry","Biology","Government","Economics","Literature in English","Geography","CRS","Commerce"];

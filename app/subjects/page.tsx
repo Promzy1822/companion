@@ -3,8 +3,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, PenTool } from "lucide-react";
-import Navbar from "../components/Navbar";
-import BottomNav from "../components/BottomNav";
+import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
+import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 
 const SUBJECTS = [

@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Target, Clock, CheckCircle, RefreshCw, BookOpen } from "lucide-react";
-import Navbar from "../components/Navbar";
-import BottomNav from "../components/BottomNav";
+import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
+import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { Progress, todayWAT } from "../lib/progress";
 import { buildScheduleTopics, JAMB_TOPICS } from "../lib/jamb-topics";
 import { C, palette } from "../lib/design";

@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, ClipboardList, Trophy, BarChart3, AlertTriangle } from "lucide-react";
-import Navbar from "../components/Navbar";
-import BottomNav from "../components/BottomNav";
+import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
+import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; }
@@ -240,7 +240,7 @@ export default function MockExam() {
           </div>
         </div>
 
-        <div style={{padding:"0 14px",marginTop:"-16px",paddingBottom:"100px"}}>
+        <div style={{padding:"0 14px",marginTop:"-16px",paddingBottom:`calc(${BOTTOM_NAV_HEIGHT}px + 16px)`}}>
           {/* Subject breakdown */}
           <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"16px"}}>

@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Navbar from "./components/Navbar";
-import BottomNav from "./components/BottomNav";
+import Navbar, { NAVBAR_HEIGHT } from "./components/Navbar";
+import BottomNav, { BOTTOM_NAV_HEIGHT } from "./components/BottomNav";
 import QuickLinks from "./components/QuickLinks";
 import StreakCard from "./components/StreakCard";
 import { C, D, palette } from "./lib/design";
@@ -145,7 +145,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div style={{ padding:"0 14px", marginTop:"-16px", paddingBottom:"80px" }}>
+      <div style={{ padding:"0 14px", marginTop:"-16px", paddingBottom:`calc(${BOTTOM_NAV_HEIGHT}px + 16px)` }}>
 
         {/* AI Chat CTA */}
         <Link href="/ai" style={{ textDecoration:"none", display:"block", marginBottom:"14px" }}>

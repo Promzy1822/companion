@@ -48,7 +48,7 @@ export default function Home() {
     loading:   newsLoad,
     refreshing,
     refresh:   fetchNews,
-    setCategory: setCat,
+    setCategory: setNewsCategory,
     lastUpdated: newsLastUpdated,
     isStale:   newsIsStale,
   } = useNews();

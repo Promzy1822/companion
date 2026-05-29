@@ -1,432 +1,483 @@
 /**
- * news-engine.ts
- * Production-grade news engine for Companion JAMB app.
+ * news-engine.ts  — v2 (stabilised)
  *
- * Architecture:
- *  - Parallel fetching across all sources simultaneously
- *  - In-memory server cache with TTL (avoids hammering RSS feeds)
- *  - Freshness scoring: age + source quality + keyword relevance
- *  - Deduplication via normalised title fingerprinting
- *  - Article age gate: max 7 days old
- *  - Stale-while-revalidate: serve cached data, refresh in background
- *  - Per-source timeouts with AbortController
- *  - Retry logic with exponential backoff
- *  - Structured logging for debugging
+ * Changes from v1:
+ *  - Image extraction from RSS enclosure / media:content / media:thumbnail / <img> in description
+ *  - Deterministic fallback image pool (education-themed Unsplash, assigned by article hash)
+ *  - isRelevantTitle() now applied to ALL sources including google_rss
+ *  - Minimum relevance threshold: articles scoring < 15 are dropped
+ *  - JAMB-specific Google News queries (no broad education queries)
+ *  - `time` field added as alias for `timeAgo` (backward-compatible with UI)
+ *  - Image URL validation (must start with http, no tracking pixels)
  */
 
 export interface NewsArticle {
-  id:        string;   // deterministic hash for dedup
+  id:        string;
   title:     string;
   url:       string;
   source:    string;
-  pubDate:   number;   // Unix ms — always a real timestamp
-  timeAgo:   string;   // human-readable, recalculated on read
+  pubDate:   number;    // Unix ms
+  timeAgo:   string;
+  time:      string;    // alias for timeAgo — used by existing UI
   category:  string;
-  relevance: number;   // 0-100 freshness+relevance score
-  image?:    string;
+  relevance: number;    // 0-100
+  image:     string;    // always populated — real or fallback
+  summary:   string;    // always populated
 }
 
-// ── In-memory server-side cache ───────────────────────────────────────────────
-// Vercel serverless functions are stateless per-instance, but within a warm
-// instance this prevents repeated RSS hammering within the TTL window.
+// ── Server-side in-memory cache ───────────────────────────────────────────────
 interface CacheEntry {
-  articles:    NewsArticle[];
-  fetchedAt:   number;   // Unix ms
-  source:      'live' | 'fallback';
+  articles:  NewsArticle[];
+  fetchedAt: number;
+  source:    string;
 }
 
 let _cache: CacheEntry | null = null;
 
-const CACHE_TTL_MS      = 15 * 60 * 1000;  // 15 min — serve cached, refresh in bg
-const STALE_TTL_MS      = 30 * 60 * 1000;  // 30 min — force refresh even if serving
-const ARTICLE_MAX_AGE   = 7 * 24 * 60 * 60 * 1000;   // 7 days
-const FETCH_TIMEOUT_MS  = 8_000;           // 8s per source
+export const CACHE_TTL_MS    = 15 * 60 * 1000;   // 15 min — serve from cache
+export const CACHE_STALE_MS  = 30 * 60 * 1000;   // 30 min — force refresh
+const ARTICLE_MAX_AGE_MS     = 7 * 24 * 3600_000; // 7 days max article age
+const FETCH_TIMEOUT_MS       = 7_000;             // 7s per source
 
-// ── Source definitions ────────────────────────────────────────────────────────
-interface NewsSource {
-  name:     string;
-  url:      string;
-  quality:  number;  // 1-5, used in relevance scoring
-  type:     'rss' | 'google_rss';
+// ── Fallback image pool ───────────────────────────────────────────────────────
+// Education-themed, stable Unsplash URLs. Assigned deterministically by article hash.
+const FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=200&q=75", // student studying
+  "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=200&q=75", // writing notes
+  "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=200&q=75", // exam hall
+  "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&q=75", // school building
+  "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=200&q=75", // library books
+  "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=200&q=75", // graduation cap
+  "https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=200&q=75", // classroom
+  "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=200&q=75", // open books
+  "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=200&q=75", // university
+  "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=200&q=75", // lecture
+];
+
+function fallbackImage(articleId: string): string {
+  // Deterministic index from the article id string
+  let n = 0;
+  for (let i = 0; i < articleId.length; i++) {
+    n = (n * 31 + articleId.charCodeAt(i)) & 0xffff;
+  }
+  return FALLBACK_IMAGES[n % FALLBACK_IMAGES.length];
 }
 
-const SOURCES: NewsSource[] = [
-  // Google News RSS — best freshness, Nigeria-filtered
-  { name:"Google News",        url:"https://news.google.com/rss/search?q=JAMB+UTME+Nigeria+2025&hl=en-NG&gl=NG&ceid=NG:en",          quality:5, type:"google_rss" },
-  { name:"Google News",        url:"https://news.google.com/rss/search?q=JAMB+admission+Nigeria+university&hl=en-NG&gl=NG&ceid=NG:en",quality:5, type:"google_rss" },
-  { name:"Google News",        url:"https://news.google.com/rss/search?q=Nigeria+education+WAEC+NECO+2025&hl=en-NG&gl=NG&ceid=NG:en", quality:4, type:"google_rss" },
+// ── Sources — JAMB-focused only ───────────────────────────────────────────────
+interface Source { name: string; url: string; quality: number; type: "rss" | "google_rss"; }
 
-  // Nigerian education news RSS
-  { name:"Vanguard Education",  url:"https://www.vanguardngr.com/category/education/feed/",            quality:4, type:"rss" },
-  { name:"Punch Education",     url:"https://punchng.com/category/education/feed/",                    quality:4, type:"rss" },
-  { name:"Guardian Nigeria",    url:"https://guardian.ng/category/features/education/feed/",            quality:4, type:"rss" },
-  { name:"Daily Post Nigeria",  url:"https://dailypost.ng/category/education/feed/",                   quality:3, type:"rss" },
-  { name:"The Cable",           url:"https://www.thecable.ng/category/lifestyle/education/feed",       quality:3, type:"rss" },
-  { name:"Channels TV",         url:"https://www.channelstv.com/category/education/feed/",             quality:3, type:"rss" },
+const SOURCES: Source[] = [
+  // Google News — JAMB-specific queries only
+  {
+    name: "Google News",
+    url:  "https://news.google.com/rss/search?q=JAMB+2025+Nigeria&hl=en-NG&gl=NG&ceid=NG:en",
+    quality: 5, type: "google_rss",
+  },
+  {
+    name: "Google News",
+    url:  "https://news.google.com/rss/search?q=JAMB+UTME+registration+result&hl=en-NG&gl=NG&ceid=NG:en",
+    quality: 5, type: "google_rss",
+  },
+  {
+    name: "Google News",
+    url:  "https://news.google.com/rss/search?q=Nigeria+university+admission+cutoff+2025&hl=en-NG&gl=NG&ceid=NG:en",
+    quality: 4, type: "google_rss",
+  },
+  {
+    name: "Google News",
+    url:  "https://news.google.com/rss/search?q=WAEC+NECO+result+Nigeria+2025&hl=en-NG&gl=NG&ceid=NG:en",
+    quality: 4, type: "google_rss",
+  },
+
+  // Nigerian education RSS feeds
+  { name: "Vanguard Education", url: "https://www.vanguardngr.com/category/education/feed/",             quality: 4, type: "rss" },
+  { name: "Punch Nigeria",      url: "https://punchng.com/category/education/feed/",                    quality: 4, type: "rss" },
+  { name: "The Guardian NG",    url: "https://guardian.ng/category/features/education/feed/",            quality: 4, type: "rss" },
+  { name: "Daily Post NG",      url: "https://dailypost.ng/category/education/feed/",                    quality: 3, type: "rss" },
+  { name: "The Cable NG",       url: "https://www.thecable.ng/category/lifestyle/education/feed",        quality: 3, type: "rss" },
 ];
 
-// Keywords that boost relevance score
-const HIGH_RELEVANCE_KEYWORDS = [
-  "jamb","utme","post-utme","post utme","admission","cut-off","cutoff",
-  "registration","result","screening","university","waec","neco","jamb 2025",
-  "scholarship","polytechnic","federal university","uniben","unilag","oau",
+// ── Keyword sets ──────────────────────────────────────────────────────────────
+
+// ANY of these must be present — articles without them are dropped
+const REQUIRED_KEYWORDS = [
+  "jamb", "utme", "post-utme", "post utme", "postutme",
+  "admission", "waec", "neco", "nabteb",
+  "university", "polytechnic", "college of education", "federal university",
+  "state university", "uniben", "unilag", "oau", "ui ibadan", "unilorin",
+  "abu zaria", "unn nsukka", "lasu", "uniport", "futo", "funaab",
+  "cut-off", "cutoff", "jamb result", "screening", "matriculation",
+  "scholarship nigeria", "bursary", "nigerian student",
+  "nuc nigeria", "education nigeria", "ministry of education nigeria",
 ];
 
-const MEDIUM_RELEVANCE_KEYWORDS = [
-  "education","student","academic","school","college","ministry","nuc",
-  "examination","certificate","degree","faculty","senate","matriculation",
+// These boost the relevance score
+const HIGH_RELEVANCE_KW = [
+  "jamb", "utme", "post-utme", "post utme", "admission 2025",
+  "jamb 2025", "utme 2025", "registration", "cut-off", "cutoff",
+  "result 2025", "screening 2025",
+];
+
+const MEDIUM_RELEVANCE_KW = [
+  "waec", "neco", "university", "polytechnic", "student", "education",
+  "scholarship", "degree", "faculty", "academic", "examination",
 ];
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
-/** Parse any date string to Unix ms. Returns 0 if unparseable. */
 function parseDate(raw: string): number {
   if (!raw) return 0;
-  try {
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? 0 : d.getTime();
-  } catch {
-    return 0;
-  }
+  try { const d = new Date(raw); return isNaN(d.getTime()) ? 0 : d.getTime(); }
+  catch { return 0; }
 }
 
-/** Convert Unix ms to human-readable age string */
 export function formatTimeAgo(ts: number): string {
   if (!ts) return "Recently";
   const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1)  return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7)  return `${days}d ago`;
-  return `${Math.floor(days / 7)}w ago`;
+  const m = Math.floor(diff / 60_000);
+  if (m < 1)   return "Just now";
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)   return `${d}d ago`;
+  return `${Math.floor(d / 7)}w ago`;
 }
 
-/** Normalise a title for dedup fingerprinting */
 function titleFingerprint(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .slice(0, 8)  // first 8 significant words
-    .join(" ");
+  return title.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim()
+    .split(" ").slice(0, 7).join(" ");
 }
 
-/** Deterministic ID from title + source */
 function articleId(title: string, source: string): string {
-  const s = title.toLowerCase().slice(0, 60) + source;
+  const s = (title + source).toLowerCase().slice(0, 80);
   let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
-  }
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
   return Math.abs(h).toString(36);
 }
 
-/** Score an article's relevance: 0-100 */
+function decodeEntities(s: string): string {
+  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'")
+    .replace(/\s+/g, " ").trim();
+}
+
+function xmlField(block: string, tag: string): string {
+  const cdata = new RegExp(`<${tag}[^>]*>\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*<\\/${tag}>`, "i");
+  const plain = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = block.match(cdata) || block.match(plain);
+  return m ? decodeEntities(m[1].trim()) : "";
+}
+
+/**
+ * Extract image URL from an RSS item block.
+ * Tries: enclosure → media:content/thumbnail → <img> in description
+ * Returns empty string if nothing found.
+ */
+function extractImage(block: string): string {
+  // 1. enclosure tag
+  const enc1 = block.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image\//i);
+  const enc2 = block.match(/<enclosure[^>]+type="image\/[^"]*"[^>]+url="([^"]+)"/i);
+  if (enc1?.[1]) return enc1[1];
+  if (enc2?.[1]) return enc2[1];
+
+  // 2. media:content with medium=image
+  const mc1 = block.match(/<media:content[^>]+url="([^"]+)"[^>]+medium="image"/i);
+  const mc2 = block.match(/<media:content[^>]+medium="image"[^>]+url="([^"]+)"/i);
+  if (mc1?.[1]) return mc1[1];
+  if (mc2?.[1]) return mc2[1];
+
+  // 3. media:thumbnail
+  const thumb = block.match(/<media:thumbnail[^>]+url="([^"]+)"/i);
+  if (thumb?.[1]) return thumb[1];
+
+  // 4. media:content (any, not just image medium)
+  const mc3 = block.match(/<media:content[^>]+url="([^"]+)"/i);
+  if (mc3?.[1] && !mc3[1].includes(".mp4") && !mc3[1].includes(".mp3")) return mc3[1];
+
+  // 5. <image> tag inside item
+  const imgTag = block.match(/<image>\s*<url>([^<]+)<\/url>/i);
+  if (imgTag?.[1]) return imgTag[1];
+
+  // 6. First <img src="..."> inside description or content:encoded
+  const descBlock = xmlField(block, "description") || xmlField(block, "content:encoded");
+  const imgSrc = descBlock.match(/<img[^>]+src="([^"]+)"/i);
+  if (imgSrc?.[1]) return imgSrc[1];
+
+  return "";
+}
+
+/** Validate an image URL — must be http/https, not a tracking pixel, reasonable extension */
+function isValidImageUrl(url: string): boolean {
+  if (!url) return false;
+  if (!url.startsWith("http")) return false;
+  // Skip tiny tracking pixels
+  if (/[?&](w|width|size)=[1-9]\b/.test(url)) {
+    const wMatch = url.match(/[?&](?:w|width)=(\d+)/);
+    if (wMatch && parseInt(wMatch[1]) < 50) return false;
+  }
+  // Skip known tracker/ad domains
+  if (/doubleclick|googlesyndication|adnxs|pixel\./.test(url)) return false;
+  return true;
+}
+
+/** Build a short summary from a title (UI uses this for the subtitle line) */
+function buildSummary(title: string, source: string): string {
+  // RSS descriptions are often HTML-heavy — just use the title as summary context
+  return `From ${source} — tap to read the full story.`;
+}
+
+/** Is this title relevant to Nigerian students? Both a filter and a minimum bar. */
+function isRelevantTitle(title: string): boolean {
+  const t = title.toLowerCase();
+  return REQUIRED_KEYWORDS.some(kw => t.includes(kw));
+}
+
+/** Score an article 0-100 (freshness + keyword weight) */
 function scoreRelevance(title: string, pubDate: number): number {
   const t = title.toLowerCase();
   let score = 0;
 
-  // Freshness (0–50 points)
-  const ageMs  = Date.now() - pubDate;
-  const ageHrs = ageMs / 3_600_000;
-  if (ageHrs < 1)   score += 50;
-  else if (ageHrs < 6)  score += 40;
-  else if (ageHrs < 24) score += 30;
-  else if (ageHrs < 48) score += 20;
-  else if (ageHrs < 72) score += 10;
-  else                   score += 2;
+  // Freshness (0–50 pts)
+  const ageH = (Date.now() - pubDate) / 3_600_000;
+  if (ageH < 1)   score += 50;
+  else if (ageH < 6)  score += 42;
+  else if (ageH < 24) score += 32;
+  else if (ageH < 48) score += 22;
+  else if (ageH < 72) score += 14;
+  else if (ageH < 120) score += 8;
+  else                 score += 2;
 
-  // Keyword relevance (0–35 points)
-  for (const kw of HIGH_RELEVANCE_KEYWORDS) {
-    if (t.includes(kw)) { score += 5; break; }
+  // High-relevance keywords (0–30 pts, up to 6 matches × 5)
+  let hi = 0;
+  for (const kw of HIGH_RELEVANCE_KW) {
+    if (t.includes(kw)) { hi += 5; if (hi >= 30) break; }
   }
-  for (const kw of HIGH_RELEVANCE_KEYWORDS) {
-    if (t.includes(kw)) score += 1; // additive per match, capped below
-  }
-  for (const kw of MEDIUM_RELEVANCE_KEYWORDS) {
-    if (t.includes(kw)) score += 2;
-  }
+  score += hi;
 
-  // Cap at 100
+  // Medium keywords (0–20 pts)
+  let med = 0;
+  for (const kw of MEDIUM_RELEVANCE_KW) {
+    if (t.includes(kw)) { med += 4; if (med >= 20) break; }
+  }
+  score += med;
+
   return Math.min(100, score);
 }
 
-/** Categorise an article by its title */
+/** Assign category */
 export function categorise(title: string): string {
   const t = title.toLowerCase();
-  if (/exam|utme|waec|neco|result|test|cbt/.test(t))            return "Exams";
-  if (/admission|cutoff|cut.off|screening|post.utme|jamb/.test(t)) return "Admissions";
-  if (/tech|ai|digital|online|portal|software|app/.test(t))     return "Tech";
-  if (/universit|polytechni|college|nuc|school|lecturer/.test(t)) return "Education";
-  if (/scholarship|bursary|award|grant/.test(t))                 return "Scholarships";
-  return "General";
+  if (/\bjamb\b|\butme\b|cbt centre/.test(t))                return "JAMB";
+  if (/exam|waec|neco|nabteb|result|test/.test(t))           return "Exams";
+  if (/admission|cutoff|cut.off|screening|post.utme/.test(t)) return "Admissions";
+  if (/scholarship|bursary|award|grant|fellowship/.test(t))  return "Scholarships";
+  if (/universit|polytechni|college|nuc|faculty/.test(t))    return "Education";
+  if (/tech|portal|digital|online|software|app/.test(t))     return "Tech";
+  return "Education"; // default to Education, not General
 }
 
-/** Decode common XML entities */
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&#8220;/g, "\u201C")
-    .replace(/&#8221;/g, "\u201D")
-    .replace(/&#8217;/g, "\u2019")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+// ── Fetch a single source ─────────────────────────────────────────────────────
 
-/** Extract a field from an XML item block */
-function xmlField(block: string, tag: string): string {
-  const cdataRe = new RegExp(`<${tag}>[\\s]*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>[\\s]*<\\/${tag}>`, "i");
-  const plainRe = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i");
-  const m = block.match(cdataRe) || block.match(plainRe);
-  return m ? decodeEntities(m[1].trim()) : "";
-}
-
-/** Is this article title JAMB-relevant enough to include? */
-function isRelevantTitle(title: string): boolean {
-  const t = title.toLowerCase();
-  // Must contain at least one relevance signal
-  return HIGH_RELEVANCE_KEYWORDS.some(kw => t.includes(kw)) ||
-         MEDIUM_RELEVANCE_KEYWORDS.some(kw => t.includes(kw));
-}
-
-// ── Fetchers ─────────────────────────────────────────────────────────────────
-
-async function fetchWithTimeout(url: string, timeout = FETCH_TIMEOUT_MS): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; CompanionBot/1.0; +https://companion-eta.vercel.app)",
-        "Accept": "application/rss+xml, application/xml, text/xml, */*",
-      },
-      // Do NOT use next.revalidate here — we manage our own cache
-      cache: "no-store",
-    });
-    return res;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function fetchSource(source: NewsSource): Promise<NewsArticle[]> {
+async function fetchSource(src: Source): Promise<NewsArticle[]> {
   const t0 = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
-    const res = await fetchWithTimeout(source.url);
+    const res = await fetch(src.url, {
+      signal: controller.signal,
+      cache:  "no-store",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; CompanionNewsBot/2.0)",
+        "Accept":     "application/rss+xml, application/xml, text/xml, */*",
+      },
+    });
+    clearTimeout(timer);
+
     if (!res.ok) {
-      console.warn(`[news-engine] ${source.name} returned ${res.status} for ${source.url}`);
+      console.warn(`[news] ${src.name} HTTP ${res.status}`);
       return [];
     }
-    const xml = await res.text();
-    const latency = Date.now() - t0;
-    console.log(`[news-engine] ${source.name} fetched in ${latency}ms`);
 
-    const items = xml.match(/<item[\s>]([\s\S]*?)<\/item>/gi) || [];
-    const articles: NewsArticle[] = [];
+    const xml = await res.text();
+    console.log(`[news] ${src.name} fetched in ${Date.now() - t0}ms`);
+
+    const items = xml.match(/<item[\s>][\s\S]*?<\/item>/gi) ?? [];
+    const out: NewsArticle[] = [];
 
     for (const item of items) {
-      // For Google RSS, title includes " - Source Name" suffix — strip it
+      // Title — for Google RSS, strip the " - Source Name" suffix
       let title = xmlField(item, "title");
-      if (source.type === "google_rss") {
-        title = title.replace(/ - [^-]+$/, "").trim();
-      }
-      if (!title || title.length < 10) continue;
+      if (src.type === "google_rss") title = title.replace(/ - [^-]{2,40}$/, "").trim();
+      if (!title || title.length < 12) continue;
 
-      // Skip irrelevant articles from general RSS feeds
-      if (source.type === "rss" && !isRelevantTitle(title)) continue;
+      // Relevance filter — applied to ALL sources (was missing for google_rss in v1)
+      if (!isRelevantTitle(title)) continue;
 
-      const link    = xmlField(item, "link") ||
-                      (item.match(/<link>(.*?)<\/link>/i)?.[1] ?? "#");
+      const link    = (item.match(/<link>(.*?)<\/link>/i)?.[1] ?? xmlField(item, "link")) || "#";
       const pubDate = parseDate(xmlField(item, "pubDate"));
+      if (!pubDate)                              continue; // no date = likely stale
+      if (Date.now() - pubDate > ARTICLE_MAX_AGE_MS) continue; // too old
 
-      // Skip articles older than max age
-      if (pubDate && Date.now() - pubDate > ARTICLE_MAX_AGE) continue;
-      // Skip articles with no parseable date (likely stale)
-      if (!pubDate) continue;
+      const sourceName = xmlField(item, "source") || src.name;
+      const id         = articleId(title, sourceName);
+      const relevance  = scoreRelevance(title, pubDate);
 
-      const sourceName = xmlField(item, "source") || source.name;
+      // Minimum relevance threshold — drop noise
+      if (relevance < 15) continue;
 
-      articles.push({
-        id:        articleId(title, sourceName),
+      // Image: try real extraction first, fall back to deterministic pool
+      const rawImage  = extractImage(item);
+      const image     = isValidImageUrl(rawImage) ? rawImage : fallbackImage(id);
+      const timeStr   = formatTimeAgo(pubDate);
+
+      out.push({
+        id,
         title,
         url:       link.startsWith("http") ? link : "#",
         source:    sourceName,
         pubDate,
-        timeAgo:   formatTimeAgo(pubDate),
+        timeAgo:   timeStr,
+        time:      timeStr,   // ← alias: UI uses item.time
         category:  categorise(title),
-        relevance: scoreRelevance(title, pubDate),
+        relevance,
+        image,
+        summary:   buildSummary(title, sourceName),
       });
     }
 
-    return articles;
+    return out;
   } catch (err: any) {
-    const msg = err?.name === "AbortError"
-      ? "timeout"
-      : String(err?.message || err).slice(0, 100);
-    console.warn(`[news-engine] ${source.name} failed: ${msg}`);
+    clearTimeout(timer);
+    console.warn(`[news] ${src.name} failed: ${err?.name === "AbortError" ? "timeout" : String(err?.message).slice(0, 80)}`);
     return [];
   }
 }
 
-// ── Deduplication ─────────────────────────────────────────────────────────────
+// ── Dedup ─────────────────────────────────────────────────────────────────────
 
-function deduplicateArticles(articles: NewsArticle[]): NewsArticle[] {
-  const seen  = new Set<string>();  // by deterministic id
-  const fps   = new Set<string>();  // by title fingerprint (catches near-dupes)
-  const result: NewsArticle[] = [];
-
-  for (const a of articles) {
-    if (seen.has(a.id)) continue;
+function deduplicate(articles: NewsArticle[]): NewsArticle[] {
+  const ids = new Set<string>();
+  const fps = new Set<string>();
+  return articles.filter(a => {
+    if (ids.has(a.id))                   return false;
     const fp = titleFingerprint(a.title);
-    if (fps.has(fp))   continue;
-    seen.add(a.id);
+    if (fps.has(fp))                     return false;
+    ids.add(a.id);
     fps.add(fp);
-    result.push(a);
-  }
-  return result;
+    return true;
+  });
 }
 
-// ── Main fetch function ───────────────────────────────────────────────────────
+// ── Fallback articles (rolling timestamps) ────────────────────────────────────
 
-async function fetchAllSources(): Promise<{ articles: NewsArticle[]; source: 'live' | 'fallback' }> {
-  console.log("[news-engine] Starting parallel fetch across all sources");
+function makeFallback(): NewsArticle[] {
+  const now = Date.now();
+  const raw = [
+    { title: "JAMB 2025 UTME Registration Portal Open — Apply Before Deadline",          t: now - 2   * 3600_000, src: "JAMB Official" },
+    { title: "JAMB Releases Updated Syllabus and Subject Combinations for UTME 2025",    t: now - 5   * 3600_000, src: "JAMB Official" },
+    { title: "JAMB 2025: How to Check Your UTME Result and Download Scorecard",          t: now - 28  * 3600_000, src: "JAMB Guide NG" },
+    { title: "Post-UTME 2025: Universities Begin Screening — Requirements Released",      t: now - 52  * 3600_000, src: "Education News" },
+    { title: "JAMB Cut-Off Marks for All Federal and State Universities 2025",            t: now - 52  * 3600_000, src: "Universities NG" },
+    { title: "WAEC and NECO Results Acceptance Policy — What JAMB Now Requires",         t: now - 76  * 3600_000, src: "JAMB Official" },
+    { title: "How to Score 300+ in JAMB UTME: Proven Study Strategies from Experts",     t: now - 76  * 3600_000, src: "Study Guide NG" },
+    { title: "JAMB CBT Centres: Full List of Approved Computer-Based Test Centres 2025", t: now - 124 * 3600_000, src: "JAMB Official" },
+  ];
+
+  return raw.map(r => {
+    const id       = articleId(r.title, r.src);
+    const timeStr  = formatTimeAgo(r.t);
+    return {
+      id,
+      title:     r.title,
+      url:       "https://www.jamb.gov.ng",
+      source:    r.src,
+      pubDate:   r.t,
+      timeAgo:   timeStr,
+      time:      timeStr,
+      category:  categorise(r.title),
+      relevance: scoreRelevance(r.title, r.t),
+      image:     fallbackImage(id),
+      summary:   buildSummary(r.title, r.src),
+    };
+  });
+}
+
+// ── Main: stale-while-revalidate ─────────────────────────────────────────────
+
+async function fetchAll(): Promise<{ articles: NewsArticle[]; source: string }> {
+  console.log("[news] Parallel fetch starting");
   const t0 = Date.now();
 
-  // Fire all source fetches in parallel
-  const results = await Promise.allSettled(SOURCES.map(fetchSource));
+  const settled = await Promise.allSettled(SOURCES.map(fetchSource));
+  let all: NewsArticle[] = [];
+  let ok = 0;
 
-  const allArticles: NewsArticle[] = [];
-  let successCount = 0;
-
-  results.forEach((r, i) => {
+  settled.forEach((r, i) => {
     if (r.status === "fulfilled" && r.value.length > 0) {
-      allArticles.push(...r.value);
-      successCount++;
+      all.push(...r.value);
+      ok++;
     } else if (r.status === "rejected") {
-      console.warn(`[news-engine] Source ${SOURCES[i].name} rejected:`, r.reason);
+      console.warn(`[news] Source ${i} rejected:`, r.reason);
     }
   });
 
-  console.log(`[news-engine] ${successCount}/${SOURCES.length} sources succeeded, ${allArticles.length} raw articles in ${Date.now()-t0}ms`);
+  console.log(`[news] ${ok}/${SOURCES.length} sources OK, ${all.length} raw articles (${Date.now()-t0}ms)`);
 
-  // Dedup
-  const unique = deduplicateArticles(allArticles);
-  console.log(`[news-engine] After dedup: ${unique.length} articles`);
-
-  // Sort by relevance score descending (freshness + keyword weight)
+  const unique = deduplicate(all);
   unique.sort((a, b) => b.relevance - a.relevance);
-
-  // Take top 20
   const top = unique.slice(0, 20);
 
   if (top.length >= 3) {
-    console.log(`[news-engine] Returning ${top.length} live articles. Top: "${top[0].title}"`);
+    console.log(`[news] ${top.length} articles ready. Top: "${top[0].title}"`);
     return { articles: top, source: "live" };
   }
 
-  // Not enough live articles — use fallback
-  console.warn("[news-engine] Insufficient live articles, using fallback");
-  return { articles: getFallbackArticles(), source: "fallback" };
+  console.warn("[news] Not enough live articles, using fallback");
+  return { articles: makeFallback(), source: "fallback" };
 }
 
-// ── Fallback articles ─────────────────────────────────────────────────────────
-
-function getFallbackArticles(): NewsArticle[] {
-  // Use rolling timestamps so they don't look permanently stale
-  const now    = Date.now();
-  const h1     = now - 2   * 3_600_000;
-  const h5     = now - 5   * 3_600_000;
-  const d1     = now - 28  * 3_600_000;
-  const d2     = now - 52  * 3_600_000;
-  const d3     = now - 76  * 3_600_000;
-  const d5     = now - 124 * 3_600_000;
-
-  const raw = [
-    { title:"JAMB 2025 UTME Registration Portal Open — Apply Before Deadline",         url:"https://www.jamb.gov.ng",      source:"JAMB Official",    pubDate:h1  },
-    { title:"JAMB Releases Updated Syllabus and Subject Combinations for 2025",         url:"https://www.jamb.gov.ng",      source:"JAMB Official",    pubDate:h5  },
-    { title:"JAMB 2025: How to Check Your UTME Result and Download Scorecard",          url:"https://www.jamb.gov.ng",      source:"JAMB Guide",       pubDate:d1  },
-    { title:"Post-UTME 2025: Universities Begin Screening — Check Requirements",        url:"https://www.jamb.gov.ng",      source:"Education News",   pubDate:d2  },
-    { title:"JAMB Cut-Off Marks for All Federal and State Universities 2025",           url:"https://www.jamb.gov.ng",      source:"Universities NG",  pubDate:d2  },
-    { title:"WAEC and NECO Results Acceptance Policy — What JAMB Now Requires",        url:"https://www.jamb.gov.ng",      source:"JAMB Official",    pubDate:d3  },
-    { title:"How to Score 300+ in JAMB UTME: Proven Study Strategies",                 url:"https://www.jamb.gov.ng",      source:"Study Guide NG",   pubDate:d3  },
-    { title:"JAMB CBT Centres: Full List of Approved Computer-Based Test Centres",     url:"https://www.jamb.gov.ng",      source:"JAMB Official",    pubDate:d5  },
-  ];
-
-  return raw.map(r => ({
-    id:        articleId(r.title, r.source),
-    title:     r.title,
-    url:       r.url,
-    source:    r.source,
-    pubDate:   r.pubDate,
-    timeAgo:   formatTimeAgo(r.pubDate),
-    category:  categorise(r.title),
-    relevance: scoreRelevance(r.title, r.pubDate),
-  }));
-}
-
-// ── Cache management ──────────────────────────────────────────────────────────
-
-function isCacheFresh(): boolean {
-  if (!_cache) return false;
-  return Date.now() - _cache.fetchedAt < CACHE_TTL_MS;
-}
-
-function isCacheStale(): boolean {
-  if (!_cache) return true;
-  return Date.now() - _cache.fetchedAt > STALE_TTL_MS;
-}
-
-/**
- * Main entry point — implements stale-while-revalidate:
- * 1. If cache is fresh (< 15min): return immediately
- * 2. If cache is stale (> 30min): wait for fresh data
- * 3. Between 15-30min: return stale cache, trigger background refresh
- */
-export async function getNews(): Promise<{ articles: NewsArticle[]; source: string; cacheAge?: number }> {
-
-  // Cache is fresh — serve immediately
-  if (isCacheFresh()) {
-    const cacheAge = Math.round((Date.now() - _cache!.fetchedAt) / 60_000);
-    console.log(`[news-engine] Serving fresh cache (${cacheAge}min old)`);
-
-    // Recalculate timeAgo on every read so it stays accurate
-    const articles = _cache!.articles.map(a => ({ ...a, timeAgo: formatTimeAgo(a.pubDate) }));
-    return { articles, source: _cache!.source + "-cache", cacheAge };
+export async function getNews(): Promise<{
+  articles:  NewsArticle[];
+  source:    string;
+  cacheAge?: number;
+}> {
+  // Fresh cache
+  if (_cache && Date.now() - _cache.fetchedAt < CACHE_TTL_MS) {
+    const cacheAge = Math.round((Date.now() - _cache.fetchedAt) / 60_000);
+    console.log(`[news] Cache hit (${cacheAge}min old)`);
+    // Recalculate timeAgo/time on every read so it stays accurate
+    const articles = _cache.articles.map(a => {
+      const t = formatTimeAgo(a.pubDate);
+      return { ...a, timeAgo: t, time: t };
+    });
+    return { articles, source: _cache.source + "-cache", cacheAge };
   }
 
-  // Cache is between 15-30min old: serve stale, refresh in background
-  if (_cache && !isCacheStale()) {
+  // Stale cache (15-30min) — serve immediately, refresh in background
+  if (_cache && Date.now() - _cache.fetchedAt < CACHE_STALE_MS) {
     const cacheAge = Math.round((Date.now() - _cache.fetchedAt) / 60_000);
-    console.log(`[news-engine] Serving stale cache (${cacheAge}min), refreshing in background`);
+    console.log(`[news] Stale cache (${cacheAge}min), background refresh`);
 
-    // Background refresh — don't await
-    fetchAllSources().then(result => {
-      _cache = { articles: result.articles, fetchedAt: Date.now(), source: result.source };
-      console.log(`[news-engine] Background refresh complete: ${result.articles.length} articles`);
-    }).catch(err => {
-      console.warn("[news-engine] Background refresh failed:", err);
+    fetchAll().then(r => {
+      _cache = { articles: r.articles, fetchedAt: Date.now(), source: r.source };
+    }).catch(e => console.warn("[news] BG refresh failed:", e));
+
+    const articles = _cache.articles.map(a => {
+      const t = formatTimeAgo(a.pubDate);
+      return { ...a, timeAgo: t, time: t };
     });
-
-    const articles = _cache.articles.map(a => ({ ...a, timeAgo: formatTimeAgo(a.pubDate) }));
     return { articles, source: _cache.source + "-stale", cacheAge };
   }
 
-  // Cache is empty or very stale: fetch synchronously
-  console.log("[news-engine] Cache empty or very stale, fetching synchronously");
-  const result = await fetchAllSources();
-  _cache = { articles: result.articles, fetchedAt: Date.now(), source: result.source };
-
-  const articles = _cache.articles.map(a => ({ ...a, timeAgo: formatTimeAgo(a.pubDate) }));
-  return { articles, source: result.source };
+  // Empty or very stale — fetch synchronously
+  console.log("[news] Cache empty/expired, fetching now");
+  const r = await fetchAll();
+  _cache  = { articles: r.articles, fetchedAt: Date.now(), source: r.source };
+  const articles = _cache.articles.map(a => {
+    const t = formatTimeAgo(a.pubDate);
+    return { ...a, timeAgo: t, time: t };
+  });
+  return { articles, source: r.source };
 }

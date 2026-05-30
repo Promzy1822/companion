@@ -66,9 +66,6 @@ export default function Auth() {
           if (legacy) { try { const u = JSON.parse(legacy); if (u.email === email) account = u; } catch {} }
         }
         if (!account) { setError("No account found. Please sign up."); return; }
-        const emailOk = u.email === form.email.toLowerCase().trim();
-        const pwOk    = u.passwordHash ? verifyPassword(form.password, u.passwordHash) : u.password === form.password;
-        if (!emailOk || !pwOk) { setError("Incorrect email or password."); return; }
         const pwOk = account.passwordHash
           ? verifyPassword(form.password, account.passwordHash)
           : account.password === form.password;

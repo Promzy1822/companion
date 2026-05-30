@@ -55,13 +55,35 @@ export default function Auth() {
     setLoading(true);
     setTimeout(() => {
       try {
-        const saved = localStorage.getItem("companion_user");
-        if (!saved) { setError("No account found. Please sign up."); return; }
-        const u = JSON.parse(saved);
+        const email = form.email.toLowerCase().trim();
+        let account = null;
+        try {
+          const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+          account = accs.find((a) => a.email === email) || null;
+        } catch {}
+        if (!account) {
+          const legacy = localStorage.getItem("companion_user");
+          if (legacy) { try { const u = JSON.parse(legacy); if (u.email === email) account = u; } catch {} }
+        }
+        if (!account) { setError("No account found. Please sign up."); return; }
         const emailOk = u.email === form.email.toLowerCase().trim();
         const pwOk    = u.passwordHash ? verifyPassword(form.password, u.passwordHash) : u.password === form.password;
         if (!emailOk || !pwOk) { setError("Incorrect email or password."); return; }
-        if (!u.passwordHash) { u.passwordHash = hashPassword(form.password); delete u.password; localStorage.setItem("companion_user", JSON.stringify(u)); }
+        const pwOk = account.passwordHash
+          ? verifyPassword(form.password, account.passwordHash)
+          : account.password === form.password;
+        if (!pwOk) { setError("Wrong password. Please try again."); return; }
+        if (!account.passwordHash) {
+          account.passwordHash = hashPassword(form.password);
+          delete account.password;
+          try {
+            const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+            const idx = accs.findIndex((a) => a.email === account.email);
+            if (idx >= 0) { accs[idx] = account; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
+          } catch {}
+        }
+        localStorage.setItem("companion_user", JSON.stringify(account));
+        router.replace("/");
         router.replace("/");
       } finally { setLoading(false); }
     }, 300);
@@ -94,6 +116,13 @@ export default function Auth() {
       recommendation: rec?.text || null,
       createdAt:    new Date().toISOString(),
     }));
+    try {
+      const _u = JSON.parse(localStorage.getItem("companion_user") || "{}");
+      const _accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+      const _idx = _accs.findIndex((a) => a.email === _u.email);
+      if (_idx >= 0) _accs[_idx] = _u; else _accs.push(_u);
+      localStorage.setItem("companion_accounts", JSON.stringify(_accs));
+    } catch {}
     router.replace("/");
   };
 

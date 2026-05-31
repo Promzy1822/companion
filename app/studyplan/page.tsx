@@ -9,11 +9,7 @@ import {
 import { Progress, todayWAT } from "../lib/progress";
 import { buildScheduleTopics, JAMB_TOPICS } from "../lib/jamb-topics";
 import { palette } from "../lib/design";
-import {
-  CalendarDays, Target, BookOpen, Clock, CheckCircle,
-  RefreshCw, MapPin, CalendarRange, LayoutGrid, ChevronRight,
-  BedDouble, Pencil, BrainCircuit,
-} from "lucide-react";
+
 
 interface User {
   name: string; target: string; institution: string;

@@ -1,136 +1,109 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { rateLimit, getClientId } from '../../lib/rateLimit';
-import { validateChatMessage, validateSystemPrompt, validateHistory } from '../../lib/validate';
+import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+const GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL_TEXT = "meta-llama/llama-4-scout-17b-16e-instruct";
+const MODEL_VIS  = "meta-llama/llama-4-scout-17b-16e-instruct"; // same model supports vision
+
+const SYSTEM_PROMPT = `You are Companion AI, an expert JAMB study assistant for Nigerian students.
+You help with:
+- Solving and explaining JAMB past questions (Mathematics, English, Physics, Chemistry, Biology, Government, Economics)
+- Breaking down difficult concepts clearly
+- Analysing images of questions or textbook pages
+- Building study plans and giving exam tips
+- Answering any question about JAMB, WAEC, NECO, or university admissions in Nigeria
+
+When solving questions:
+1. State the correct answer clearly
+2. Explain step by step in simple language
+3. Point out the key JAMB concept being tested
+4. Give a memory tip where helpful
+
+Be encouraging, concise, and focused. You are talking to a Nigerian student preparing for JAMB.`;
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limiting: 20 requests per minute per IP
-    const clientId = getClientId(req);
-    const { allowed, remaining, resetIn } = rateLimit(clientId, 20, 60000);
+    const body    = await req.json();
+    const message: string        = body.message || "";
+    const imageBase64: string    = body.imageBase64 || "";   // base64 data URL
+    const imageType: string      = body.imageType || "image/jpeg";
 
-    if (!allowed) {
-      return NextResponse.json(
-        { error: `Too many requests. Try again in ${Math.ceil(resetIn / 1000)} seconds.` },
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+    }
+
+    if (!message.trim() && !imageBase64) {
+      return NextResponse.json({ error: "Empty message" }, { status: 400 });
+    }
+
+    // Build user content — text only OR text + image
+    let userContent: any;
+
+    if (imageBase64) {
+      // Multimodal: image + optional text
+      userContent = [
         {
-          status: 429,
-          headers: {
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': String(resetIn),
-          }
-        }
+          type: "image_url",
+          image_url: {
+            url: imageBase64.startsWith("data:")
+              ? imageBase64
+              : `data:${imageType};base64,${imageBase64}`,
+          },
+        },
+      ];
+      if (message.trim()) {
+        userContent.push({ type: "text", text: message });
+      } else {
+        userContent.push({
+          type: "text",
+          text: "Please read this image carefully. If it contains a question, solve it with full explanation. If it is a textbook page or notes, summarise the key points for JAMB.",
+        });
+      }
+    } else {
+      userContent = message;
+    }
+
+    const groqBody = {
+      model:       MODEL_VIS,
+      max_tokens:  1024,
+      temperature: 0.4,
+      messages: [
+        { role: "system",    content: SYSTEM_PROMPT },
+        { role: "user",      content: userContent   },
+      ],
+    };
+
+    const res = await fetch(GROQ_URL, {
+      method:  "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify(groqBody),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("[chat] Groq error:", res.status, err.slice(0, 200));
+      return NextResponse.json(
+        { error: "AI service error. Please try again." },
+        { status: 502 }
       );
     }
 
-    // Parse body safely
-    let body: any;
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-    }
+    const data  = await res.json();
+    const reply = data.choices?.[0]?.message?.content || "No response received.";
 
-    const { message, systemPrompt, history } = body;
+    return NextResponse.json({ reply });
 
-    // Validate inputs
-    const msgValidation = validateChatMessage(message);
-    if (!msgValidation.valid) {
-      return NextResponse.json({ error: msgValidation.error }, { status: 400 });
-    }
-
-    const promptValidation = validateSystemPrompt(systemPrompt);
-    if (!promptValidation.valid) {
-      return NextResponse.json({ error: promptValidation.error }, { status: 400 });
-    }
-
-    const historyValidation = validateHistory(history);
-    if (!historyValidation.valid) {
-      return NextResponse.json({ error: historyValidation.error }, { status: 400 });
-    }
-
-    // Check API key
-    if (!process.env.GROQ_API_KEY) {
-      console.error('GROQ_API_KEY not configured');
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 503 });
-    }
-
-    // Build messages
-    const messages: { role: string; content: string }[] = [];
-
-    if (Array.isArray(history)) {
-      for (const h of history.slice(-8)) {
-        if (h?.role && h?.content) {
-          messages.push({ role: h.role, content: String(h.content).slice(0, 4000) });
-        }
-      }
-    }
-
-    messages.push({ role: 'user', content: String(message).slice(0, 4000) });
-
-    const defaultSystemPrompt = `You are Companion AI — an expert JAMB UTME and Nigerian university admissions assistant. Help Nigerian students prepare for JAMB with detailed explanations, past questions from 2000-2024, university cut-off marks, CAPS admission process, aggregate calculations, and study strategies. Always be accurate, detailed, and encouraging.`;
-
-    // Call Groq with retry logic
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-            messages: [
-              { role: 'system', content: systemPrompt || defaultSystemPrompt },
-              ...messages,
-            ],
-            max_tokens: 2048,
-            temperature: 0.7,
-          }),
-          signal: AbortSignal.timeout(30000), // 30s timeout
-        });
-
-        if (response.status === 429) {
-          // Groq rate limit — wait and retry
-          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-          continue;
-        }
-
-        if (!response.ok) {
-          const errText = await response.text();
-          console.error('Groq API error:', response.status, errText);
-          throw new Error(`Groq API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const reply = data?.choices?.[0]?.message?.content;
-
-        if (!reply) {
-          throw new Error('Empty response from AI');
-        }
-
-        return NextResponse.json(
-          { reply },
-          { headers: { 'X-RateLimit-Remaining': String(remaining) } }
-        );
-
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        if (attempt === 0) {
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-    }
-
-    console.error('All Groq attempts failed:', lastError);
+  } catch (err: any) {
+    console.error("[chat] Fatal:", String(err?.message).slice(0, 100));
     return NextResponse.json(
-      { error: 'AI service temporarily unavailable. Please try again.' },
-      { status: 503 }
+      { error: "Something went wrong. Please try again." },
+      { status: 500 }
     );
-
-  } catch (err) {
-    console.error('Chat route unexpected error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

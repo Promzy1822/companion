@@ -8,7 +8,7 @@ import {
   ChevronRight, Trash2, Trash, X, RotateCcw,
 } from "lucide-react";
 import { Progress } from "../lib/progress";
-import { palette } from "../lib/design";
+import Layout from "./components/Layout";
 
 const SUBJECTS = [
   "English Language","Mathematics","Physics","Chemistry","Biology",
@@ -87,8 +87,6 @@ function SolverContent() {
   }, []);
 
   if (!mounted) return null;
-
-  const T = palette(dark);
 
   // ── Deletion helpers ────────────────────────────────────────────────────────
 
@@ -203,74 +201,61 @@ ${q}
 
   // ── Shared styles ───────────────────────────────────────────────────────────
 
-  const inp: React.CSSProperties = {
-    width: "100%", padding: "12px 14px", borderRadius: "10px",
-    border: `1.5px solid ${T.border}`, fontSize: "14px", outline: "none",
-    background: T.s2, color: T.text, boxSizing: "border-box",
-    fontFamily: "inherit", transition: "border-color 0.15s",
-  };
-
-  // ── Render ──────────────────────────────────────────────────────────────────
+  if (!mounted) return null;
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
-
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg,#1877F2,#0C5FD1)", padding: "20px 20px 28px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/" style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
-            <ArrowLeft size={16} color="#fff" strokeWidth={2} />
-          </Link>
-          <div>
-            <div style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>Question Solver</div>
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12 }}>
-              Paste any past question — AI explains it fully
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ padding: "16px 14px", paddingBottom: 80 }}>
+    <Layout title="Question Solver" darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} showNavbar showBottomNav>
+      {/* Page content */}
+      <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
+           style={{ paddingTop: "80px", paddingBottom: "20px" }}>
 
         {/* Input card */}
-        <div style={{ background: T.surface, borderRadius: 16, padding: 18, border: `1px solid ${T.border}`, marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+        <div className="bg-surface rounded-lg border border-surface2/20 p-4 mb-4">
+          <div className="grid grid-cols-1 gap-3 mb-4">
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: T.sub, display: "block", marginBottom: 5 }}>
-                Subject <span style={{ fontWeight: 400, color: T.muted }}>(optional)</span>
+              <label className="block text-sm font-medium text-muted mb-1">
+                Subject <span className="text-xs text-muted">(optional)</span>
               </label>
-              <select style={inp} value={subject} onChange={e => setSubject(e.target.value)}>
+              <select
+                className="w-full px-3 py-2 rounded border border-border/20 bg-surface2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+              >
                 <option value="">Any</option>
                 {SUBJECTS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: T.sub, display: "block", marginBottom: 5 }}>
-                Year <span style={{ fontWeight: 400, color: T.muted }}>(optional)</span>
+              <label className="block text-sm font-medium text-muted mb-1">
+                Year <span className="text-xs text-muted">(optional)</span>
               </label>
-              <select style={inp} value={year} onChange={e => setYear(e.target.value)}>
+              <select
+                className="w-full px-3 py-2 rounded border border-border/20 bg-surface2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={year}
+                onChange={e => setYear(e.target.value)}
+              >
                 <option value="">Any</option>
                 {YEARS.map(y => <option key={y}>{y}</option>)}
               </select>
             </div>
           </div>
 
-          <label style={{ fontSize: 12, fontWeight: 600, color: T.sub, display: "block", marginBottom: 5 }}>
+          <label className="block text-sm font-medium text-muted mb-1">
             Paste your question here
           </label>
           <textarea
             value={q}
             onChange={e => setQ(e.target.value)}
-            placeholder={"Type or paste a JAMB past question.\nInclude all options A, B, C, D if multiple choice…"}
-            style={{ ...inp, minHeight: 120, resize: "vertical", lineHeight: 1.6 }}
+            placeholder="Type or paste a JAMB past question.\nInclude all options A, B, C, D if multiple choice…"
+            className="w-full px-3 py-2 rounded border border-border/20 bg-surface2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            minHeight={120}
           />
 
-          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+          <div className="flex items-center gap-3 mt-3">
             {(q || answer) && (
               <button
                 onClick={() => { setQ(""); setAnswer(""); }}
-                style={{ padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, background: "transparent", color: T.sub, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                className="px-3 py-2 rounded border border-border/20 text-muted hover:bg-surface2/50 transition-colors"
               >
                 Clear
               </button>
@@ -278,18 +263,9 @@ ${q}
             <button
               onClick={solve}
               disabled={loading || !q.trim()}
-              style={{
-                flex: 1, padding: 13, borderRadius: 10, border: "none",
-                background: loading || !q.trim() ? T.s3 : "linear-gradient(135deg,#1877F2,#0C5FD1)",
-                color: loading || !q.trim() ? T.muted : "#fff",
-                fontWeight: 700, fontSize: 14,
-                cursor: loading || !q.trim() ? "not-allowed" : "pointer",
-                boxShadow: !loading && q.trim() ? "0 4px 12px rgba(24,119,242,0.3)" : "none",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                transition: "all 0.2s",
-              }}
+              className={`w-full px-4 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors
+                ${loading || !q.trim() ? 'bg-surface2 text-muted cursor-not-allowed' : ''}`}
             >
-              <Lightbulb size={16} strokeWidth={2} />
               {loading ? "Solving…" : "Solve This Question"}
             </button>
           </div>
@@ -297,182 +273,157 @@ ${q}
 
         {/* AI Answer */}
         {(loading || answer) && (
-          <div style={{ background: T.surface, borderRadius: 16, padding: 18, border: `1px solid ${T.border}`, marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${T.border}` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#1877F2,#42A5F5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Lightbulb size={18} color="#fff" strokeWidth={1.8} />
+          <div className="bg-surface rounded-lg border border-surface2/20 p-4 mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Lightbulb size={16} color="#fff" strokeWidth={1.8} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, color: T.text, fontSize: 15 }}>AI Explanation</div>
-                {subject && <div style={{ fontSize: 11, color: T.sub }}>{subject}{year ? ` · ${year}` : ""}</div>}
+                <h3 className="font-medium">AI Explanation</h3>
+                {subject && <p className="text-sm text-muted">{subject}{year ? ` · ${year}` : ""}</p>}
               </div>
             </div>
 
             {loading ? (
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <div className="flex items-center gap-2">
                 {[0,1,2].map(i => (
-                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#1877F2", animation: "dot 1.2s infinite", animationDelay: `${i * 0.15}s` }} />
+                  <div key={i} className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                           style={{ animationDelay: `${i * 0.18}s` }}
+                  />
                 ))}
-                <span style={{ fontSize: 13, color: T.sub, marginLeft: 4 }}>Thinking…</span>
+                <span className="text-sm text-muted ml-1">Thinking…</span>
               </div>
             ) : (
-              <div style={{ fontSize: 14, color: T.text, lineHeight: 1.8 }}>
-                <ReactMarkdown>{answer}</ReactMarkdown>
-              </div>
+              <div className="prose">{answer}</div>
             )}
           </div>
         )}
 
         {/* Recent History */}
         {history.length > 0 && (
-          <div style={{ background: T.surface, borderRadius: 16, border: `1px solid ${T.border}`, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-
-            {/* History header */}
-            <div style={{ padding: "13px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
-              <Clock size={14} color={T.sub} strokeWidth={1.8} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.8px", flex: 1 }}>
-                Recent Questions
-              </span>
-
-              {/* Bulk actions */}
+          <div className="bg-surface rounded-lg border border-surface2/20 p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Clock size={16} color={dark ? '#E4E6EB' : '#050505'} strokeWidth={1.8} />
+                <span className="font-medium text-left">Recent Questions</span>
+              </div>
               {isSelecting ? (
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: T.sub }}>{selected.size} selected</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted">{selected.size} selected</span>
                   <button
                     onClick={deleteSelected}
-                    style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8, border: "none", background: "#FEE2E2", color: "#D0021B", fontWeight: 600, fontSize: 12, cursor: "pointer" }}
+                    className="px-2 py-1 rounded bg-danger/10 text-danger text-sm hover:bg-danger/20 transition-colors"
                   >
-                    <Trash2 size={12} strokeWidth={2} /> Delete
+                    Delete
                   </button>
                   <button
                     onClick={() => setSelected(new Set())}
-                    style={{ width: 26, height: 26, borderRadius: 6, border: "none", background: T.s2, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    className="w-6 h-6 rounded bg-surface2/50 flex items-center justify-center hover:bg-surface2/100 transition-colors"
                   >
-                    <X size={13} color={T.sub} strokeWidth={2} />
+                    <X size={14} color={dark ? '#E4E6EB' : '#050505'} strokeWidth={1.8} />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={clearAll}
-                  style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8, border: "none", background: T.s2, color: T.sub, fontWeight: 600, fontSize: 12, cursor: "pointer" }}
+                  className="text-sm text-muted hover:text-primary transition-colors"
                 >
-                  <Trash size={12} strokeWidth={1.8} /> Clear all
+                  Clear all
                 </button>
               )}
             </div>
 
             {/* History items */}
-            {history.map((h, i) => {
-              const isSel = selected.has(h.id);
-              return (
+            <div className="space-y-2">
+              {history.map((h, i) => (
                 <div
                   key={h.id}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "12px 16px",
-                    borderBottom: i < history.length - 1 ? `1px solid ${T.border}` : "none",
-                    background: isSel ? (dark ? "#1A2A4A" : "#EBF3FF") : "transparent",
-                    transition: "background 0.1s",
-                  }}
+                  className={`flex items-center gap-3 p-3 rounded-lg border border-surface2/20
+                    ${isSelecting && selected.has(h.id) ? 'bg-primary/10' : 'transparent'}
+                    hover:bg-surface2/50 transition-colors cursor-pointer`}
+                  onClick={() => { setQ(h.q); setAnswer(h.a); setSubject(h.subject); setYear(h.year); }}
                 >
                   {/* Select checkbox area */}
-                  <div
-                    onClick={() => toggleSelect(h.id)}
-                    style={{ width: 22, height: 22, borderRadius: 6, border: `1.5px solid ${isSel ? "#1877F2" : T.border}`, background: isSel ? "#1877F2" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
-                  >
-                    {isSel && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
-                  </div>
+                  {isSelecting && (
+                    <div className="w-4 h-4 flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(h.id)}
+                        onChange={() => toggleSelect(h.id)}
+                        className="form-checkbox h-4 w-4 text-primary"
+                      />
+                    </div>
+                  )}
 
                   {/* Icon */}
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: dark ? T.s2 : "#EBF3FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div className="w-8 h-8 flex items-center justify-center bg-surface2/50 rounded">
                     <BookOpen size={14} color="#1877F2" strokeWidth={1.8} />
                   </div>
 
-                  {/* Content — tap to load */}
-                  <div
-                    style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
-                    onClick={() => { setQ(h.q); setAnswer(h.a); setSubject(h.subject); setYear(h.year); }}
-                  >
-                    <div style={{ fontSize: 11, color: "#1877F2", fontWeight: 600, marginBottom: 2 }}>
-                      {h.subject}{h.year ? ` · ${h.year}` : ""} · {relativeTime(h.ts)}
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">{h.subject}{h.year ? ` · ${h.year}` : ""}</span>
+                      <span className="text-xs text-muted">{relativeTime(h.ts)}</span>
                     </div>
-                    <div style={{ fontSize: 13, color: T.text, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {h.q}
-                    </div>
+                    <p className="line-clamp-2 text-sm">{h.q}</p>
                   </div>
 
                   {/* Delete single */}
                   <button
                     onClick={() => deleteOne(h.id)}
-                    style={{ width: 28, height: 28, borderRadius: 7, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                    className="w-8 h-8 flex items-center justify-center text-muted hover:bg-danger/10 rounded transition-colors"
                   >
-                    <Trash2 size={14} color={T.muted} strokeWidth={1.8} />
+                    <Trash2 size={14} strokeWidth={1.8} />
                   </button>
-
-                  <div
-                    onClick={() => { setQ(h.q); setAnswer(h.a); setSubject(h.subject); setYear(h.year); }}
-                    style={{ cursor: "pointer", flexShrink: 0 }}
-                  >
-                    <ChevronRight size={14} color={T.muted} strokeWidth={2} />
-                  </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         )}
 
         {/* Empty state */}
         {history.length === 0 && !answer && !loading && (
-          <div style={{ background: T.surface, borderRadius: 16, padding: "32px 24px", textAlign: "center", border: `1px solid ${T.border}` }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: "#EBF3FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+          <div className="text-center py-8">
+            <div className="w-16 h-16 rounded-lg bg-surface2/50 flex items-center justify-center mx-auto mb-4">
               <BookOpen size={24} color="#1877F2" strokeWidth={1.8} />
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 6 }}>No questions yet</div>
-            <div style={{ fontSize: 13, color: T.sub, lineHeight: 1.5 }}>
+            <h3 className="font-semibold mb-2">No questions yet</h3>
+            <p className="text-muted">
               Paste a JAMB past question above and AI will explain the answer in full detail.
+            </p>
+          </div>
+        )}
+
+        {/* Undo toast */}
+        {undo && (
+          <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+            <div className="flex items-center gap-3 bg-surface/90 backdrop-blur-sm rounded-lg border border-surface2/20 p-4 shadow-lg">
+              <span className="flex-1 text-sm">{undo.label}</span>
+              <button
+                onClick={doUndo}
+                className="px-3 py-1 bg-primary text-white rounded text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                <RotateCcw size={14} strokeWidth={1.8} /> Undo
+              </button>
+              <button
+                onClick={() => { if (undoTimer.current) clearTimeout(undoTimer.current); setUndo(null); }}
+                className="w-8 h-8 flex items-center justify-center text-muted hover:bg-surface2/50 rounded"
+              >
+                <X size={14} strokeWidth={1.8} />
+              </button>
             </div>
           </div>
         )}
       </div>
-
-      {/* Undo toast */}
-      {undo && (
-        <div style={{
-          position: "fixed", bottom: 80, left: 16, right: 16, zIndex: 500,
-          background: dark ? "#1c1c1e" : "#050505",
-          borderRadius: 14, padding: "14px 16px",
-          display: "flex", alignItems: "center", gap: 12,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-          animation: "slideUp 0.2s ease",
-        }}>
-          <span style={{ flex: 1, fontSize: 13, color: "#fff", fontWeight: 500 }}>{undo.label}</span>
-          <button
-            onClick={doUndo}
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 9, border: "none", background: "#1877F2", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-          >
-            <RotateCcw size={13} strokeWidth={2} /> Undo
-          </button>
-          <button
-            onClick={() => { if (undoTimer.current) clearTimeout(undoTimer.current); setUndo(null); }}
-            style={{ width: 28, height: 28, borderRadius: 7, border: "none", background: "rgba(255,255,255,0.1)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            <X size={14} color="rgba(255,255,255,0.6)" strokeWidth={2} />
-          </button>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes dot     { 0%,60%,100%{opacity:.3;transform:scale(.8)} 30%{opacity:1;transform:scale(1.2)} }
-        @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-      `}</style>
-    </div>
+    </Layout>
   );
 }
 
 export default function Solver() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight:"100vh",background:"#F0F2F5",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial",color:"#65676B" }}>
+      <div className="flex min-h-[100vh] items-center justify-center bg-surface text-muted">
         Loading…
       </div>
     }>

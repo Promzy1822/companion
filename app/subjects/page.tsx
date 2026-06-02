@@ -3,9 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, PenTool } from "lucide-react";
-import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
-import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
-import { C, palette } from "../lib/design";
+import Layout from "./components/Layout";
 
 const SUBJECTS = [
   { id:"english",     name:"English Language", icon:"📝", color:"#1877F2" },
@@ -34,94 +32,71 @@ function SubjectsContent() {
 
   if (!ready) return null;
 
-  const T = palette(dark);
-
   return (
-    <div style={{ minHeight:"100vh", paddingTop:"56px", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
-      <Navbar darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} />
+    <Layout title={mode === "learn" ? "Learn" : "Practice"} darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} showNavbar showBottomNav>
+      {/* Page content */}
+      <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
+           style={{ paddingTop: "80px", paddingBottom: "20px" }}>
+        {/* Page header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/" className="w-8 h-8 rounded-full bg-surface2 flex items-center justify-center hover:bg-surface3 transition-colors">
+              <ArrowLeft size={16} color={dark ? '#E4E6EB' : '#050505'} strokeWidth={2} />
+            </Link>
+            <div>
+              <div className="font-bold text-xl">{mode === "learn" ? "Learn" : "Practice"}</div>
+              <div className="text-sm text-muted">
+                {mode === "learn" ? "Choose a subject to study" : "Choose a subject to practice"}
+              </div>
+            </div>
+          </div>
 
-      {/* Page header */}
-      <div style={{
-        background: dark
-          ? "linear-gradient(135deg,#1A2A4A,#1877F2)"
-          : "linear-gradient(135deg,#1877F2,#0C5FD1)",
-        padding: "20px 20px 32px",
-      }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"16px" }}>
-          <Link href="/" style={{
-            width:34, height:34, borderRadius:"10px",
-            backgroundColor:"rgba(255,255,255,0.15)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            color:"#fff", textDecoration:"none", flexShrink:0,
-          }}>
-            <ArrowLeft size={16} color="#fff" strokeWidth={2} />
-          </Link>
-          <div>
-            <div style={{ color:"#fff", fontWeight:800, fontSize:"18px" }}>
-              {mode === "learn" ? "Learn" : "Practice"}
-            </div>
-            <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px" }}>
-              {mode === "learn" ? "Choose a subject to study" : "Choose a subject to practice"}
-            </div>
+          {/* Toggle */}
+          <div className="inline-flex items-center gap-2 rounded-md border border-surface2/20 bg-surface2/10 px-2 py-1">
+            {(["learn","practice"] as const).map(m => {
+              const Icon = m === "learn" ? BookOpen : PenTool;
+              return (
+                <button key={m} onClick={() => router.push(`/subjects?mode=${m}`)} className={`flex-1 flex items-center justify-center gap-1 text-sm font-medium rounded px-2 py-1
+                  ${mode === m ? 'bg-primary text-white' : 'text-muted hover:bg-surface2/50'}
+                  transition-colors`}>
+                  <Icon size={14} strokeWidth={1.8} />
+                  {m === "learn" ? "Learn" : "Practice"}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Toggle */}
-        <div style={{ display:"flex", gap:"8px", background:"rgba(255,255,255,0.12)", borderRadius:"12px", padding:"4px" }}>
-          {(["learn","practice"] as const).map(m => {
-            const Icon = m === "learn" ? BookOpen : PenTool;
-            return (
-              <button key={m} onClick={() => router.push(`/subjects?mode=${m}`)} style={{
-                flex:1, padding:"10px", borderRadius:"9px", border:"none", cursor:"pointer",
-                fontWeight:700, fontSize:"14px",
-                background: mode===m ? "#fff" : "transparent",
-                color: mode===m ? C.primary : "rgba(255,255,255,0.75)",
-                display:"flex", alignItems:"center", justifyContent:"center", gap:"6px",
-                transition:"all 0.2s",
-                boxShadow: mode===m ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
-              }}>
-                <Icon size={15} strokeWidth={2} />
-                {m === "learn" ? "Learn" : "Practice"}
-              </button>
-            );
-          })}
+        {/* Grid */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-uppercase tracking-wider text-muted mb-2">
+            Select Subject
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {SUBJECTS.map(s => (
+              <Link key={s.id} href={`/questions?subject=${s.id}&mode=${mode}`} className="block no-underline">
+                <div className="flex flex-col items-center py-4 px-3 rounded-lg border border-surface2/20 bg-surface hover:bg-surface2/10 transition-colors">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-2"
+                       style={{ backgroundColor: `${s.color}15` }}>
+                    <span style={{ fontSize: "1.5rem" }}>{s.icon}</span>
+                  </div>
+                  <div className="font-semibold text-center">{s.name}</div>
+                  <div className="text-xs text-muted text-center mt-1">
+                    {mode === "learn" ? "Watch lessons →" : "Practice now →"}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* Grid */}
-      <div style={{ padding:"20px 14px 100px" }}>
-        <div style={{ fontSize:"11px", color:T.sub, fontWeight:700, marginBottom:"14px", textTransform:"uppercase", letterSpacing:"1px" }}>
-          Select Subject
-        </div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
-          {SUBJECTS.map(s => (
-            <Link key={s.id} href={`/questions?subject=${s.id}&mode=${mode}`} style={{ textDecoration:"none" }}>
-              <div style={{
-                background:T.surface, borderRadius:"16px", padding:"18px 14px",
-                border:`1px solid ${T.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
-                cursor:"pointer", transition:"box-shadow 0.15s",
-              }}>
-                <div style={{ width:44, height:44, borderRadius:"12px", background:`${s.color}15`, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"10px", fontSize:"22px" }}>
-                  {s.icon}
-                </div>
-                <div style={{ fontWeight:700, color:T.text, fontSize:"13px", marginBottom:"3px" }}>{s.name}</div>
-                <div style={{ fontSize:"11px", color:s.color, fontWeight:600 }}>
-                  {mode === "learn" ? "Watch lessons →" : "Practice now →"}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <BottomNav darkMode={dark} />
-    </div>
+    </Layout>
   );
 }
 
 export default function Subjects() {
   return (
-    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F0F2F5", display:"flex", alignItems:"center", justifyContent:"center", color:"#65676B", fontFamily:"Arial" }}>Loading…</div>}>
+    <Suspense fallback={<div className="flex min-h-[100vh] items-center justify-center bg-surface text-muted">Loading…</div>}>
       <SubjectsContent />
     </Suspense>
   );

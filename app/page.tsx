@@ -1,14 +1,11 @@
-"use client";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Navbar, { NAVBAR_HEIGHT } from "./components/Navbar";
-import { useNews } from "./lib/useNews";
-import BottomNav, { BOTTOM_NAV_HEIGHT } from "./components/BottomNav";
 import QuickLinks from "./components/QuickLinks";
 import StreakCard from "./components/StreakCard";
 import { C, D, palette } from "./lib/design";
 import { RefreshCw, Calculator, Newspaper, ChevronDown, ChevronUp } from "lucide-react";
+import Layout from "./components/Layout";
 
 interface NewsItem { title:string; url:string; source:string; time:string; image?:string; category?:string; }
 interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; }
@@ -41,6 +38,7 @@ const FALLBACK: NewsItem[] = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [darkMode,   setDarkMode]   = useState(false);
   const [user,       setUser]       = useState<User|null>(null);
   const {
@@ -61,13 +59,11 @@ export default function Home() {
   const [calcErr,    setCalcErr]    = useState("");
   const [pressed,    setPressed]    = useState<number|null>(null);
   const [ready,      setReady]      = useState(false);
-  const router = useRouter();
   const T = palette(darkMode);
 
   useEffect(() => {
     const dm = localStorage.getItem("darkMode") === "true";
     setDarkMode(dm);
-    document.documentElement.setAttribute("data-dark", String(dm));
     const u = localStorage.getItem("companion_user");
     if (!u) { router.replace("/landing"); return; }
     setUser(JSON.parse(u));
@@ -79,9 +75,7 @@ export default function Home() {
     const next = !darkMode;
     setDarkMode(next);
     localStorage.setItem("darkMode", String(next));
-    document.documentElement.setAttribute("data-dark", String(next));
   };
-
 
   const calcAggregate = () => {
     setCalcErr(""); setResult(null);
@@ -105,288 +99,315 @@ export default function Home() {
 
   const filteredNews = cat === "All" ? news : news.filter(n=>n.category===cat);
 
-  const inp: React.CSSProperties = {
-    width:"100%", padding:"12px 14px", borderRadius:"10px",
-    border:"1.5px solid "+T.border, fontSize:"14px", outline:"none",
-    background:T.s2, color:T.text, boxSizing:"border-box", fontFamily:"inherit",
-    transition:"border-color 0.15s",
-  };
-
   const hour = new Date().getHours();
   const greeting = hour<12 ? "Good morning" : hour<17 ? "Good afternoon" : "Good evening";
 
   return (
-    <>
-      <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
-      <div style={{
-        minHeight:"100vh", background:T.bg,
-        paddingTop:NAVBAR_HEIGHT+"px",
-        fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",
-      }}>
-        <div style={{
-          background: darkMode
-            ? "linear-gradient(135deg,#1A2A4A,#1877F2)"
-            : "linear-gradient(135deg,#1877F2,#0C5FD1)",
-          padding: "24px 20px 32px",
-        }}>
-          <div style={{ color:"rgba(255,255,255,0.8)", fontSize:"13px", marginBottom:"4px" }}>
-            {greeting} 👋
+    <Layout title="Home" darkMode={darkMode} onToggleDark={toggleDark}>
+      {/* Hero Section */}
+      <section className="py-12 px-4 bg-gradient-to-t from-primary to-primary/90">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold">🎓</span>
+            </div>
+            <h1 className="text-3xl font-bold text-white">Pass JAMB with<br/><span className="block">AI-Powered</span> Study Support</h1>
           </div>
-          <div style={{ color:"#fff", fontSize:"22px", fontWeight:800, letterSpacing:"-0.4px" }}>
-            {user?.name.split(" ")[0]}
+          <p className="text-white/80 max-w-2xl mx-auto">
+            Learn smarter, practice daily, and get instant answers from your AI tutor.
+            Built specifically for Nigerian students.
+          </p>
+          <Link href="/auth" className="mt-6 inline-flex items-center px-6 py-3 bg-white text-primary font-semibold rounded-full text-lg shadow-md hover:bg-primary/10 transition-colors">
+            Get Started Free <span className="ml-2">→</span>
+          </Link>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-10 px-4 bg-white/5">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { n:"1.5M+", l:"Students"  },
+            { n:"10K+",  l:"Questions" },
+            { n:"24/7",  l:"AI Help"   },
+            { n:"Free",  l:"Always"    },
+          ].map((s,i)=>(
+            <div key={i} className="bg-white rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+              <div className="text-2xl font-bold text-primary">{s.n}</div>
+              <div className="text-sm text-muted mt-1">{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">FEATURES</h2>
+            <h2 className="text-2xl font-bold text-center mb-2">Everything you need to pass</h2>
+            <p className="text-muted max-w-xl mx-auto">No more switching between apps and websites</p>
           </div>
-          <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"13px", marginTop:"4px" }}>
-            Target <span style={{ color:"#FFF8DB", fontWeight:700 }}>{user?.target} pts</span>
-            {user?.institution ? " · "+user.institution : ""}
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { icon: "📚", color: "#0D8050", bg: "#E6F4EA", title: "Smart Lessons",    desc: "Curated video lessons for all JAMB subjects, organised by topic" },
+              { icon: "🤖", color: C.primary, bg: "#E7F0FF", title: "AI Tutor 24/7",    desc: "Ask anything about JAMB — instant answers, every hour of the day" },
+              { icon: "📋", color: "#C75B21", bg: "#FFF0E6", title: "Mock Exams",        desc: "AI-generated timed exams with full subject breakdown and debrief" },
+              { icon: "📊", color: "#7B3FBE", bg: "#F3E8FF", title: "Track Progress",   desc: "Study streaks, performance analytics and personalised targets" },
+              { icon: "🧮", color: "#B07D00", bg: "#FEF9E7", title: "Score Calculator", desc: "Instant JAMB aggregate and Post-UTME score calculations" },
+              { icon: "📰", color: "#D0021B", bg: "#FEE2E2", title: "JAMB News",         desc: "Live updates on JAMB announcements, results and deadlines" },
+            ].map((f,i)=>(
+              <div key={i} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-border/20">
+                <div className="flex items-center justify-center w-12 h-12 mb-4 rounded-xl" style={{ backgroundColor: f.bg }}>
+                  <span className="text-lg">{f.icon}</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
+                <p className="text-sm text-muted">{f.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        <div style={{ padding:"0 14px", marginTop:"-16px", paddingBottom:"calc("+BOTTOM_NAV_HEIGHT+"px + 16px)" }}>
+      {/* Quick Access Section */}
+      <section className="py-12 px-4 bg-white/5">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-6">Quick Access</h2>
+          <QuickLinks darkMode={darkMode} />
+        </div>
+      </section>
 
-          <Link href="/ai" style={{ textDecoration:"none", display:"block", marginBottom:"14px" }}>
-            <div style={{
-              background:"linear-gradient(135deg,#1877F2,#166FE5)",
-              borderRadius:"16px", padding:"18px 20px",
-              display:"flex", alignItems:"center", gap:"14px",
-              boxShadow:"0 6px 20px rgba(24,119,242,0.35)",
-              position:"relative", overflow:"hidden",
-            }}>
-              <div style={{ position:"absolute", top:"-20px", right:"-20px", width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }} />
-              <div style={{ width:48, height:48, borderRadius:"14px", background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"24px", flexShrink:0 }}>
-                🤖
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ color:"#fff", fontWeight:800, fontSize:"16px", letterSpacing:"-0.2px" }}>Ask AI Anything</div>
-                <div style={{ color:"rgba(255,255,255,0.8)", fontSize:"12px", marginTop:"2px" }}>Your 24/7 JAMB tutor is ready</div>
-              </div>
-              <div style={{ width:32, height:32, borderRadius:"50%", background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", flexShrink:0 }}>
-                →
-              </div>
-            </div>
-          </Link>
+      {/* Streak Section */}
+      <section className="py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-6">Study Streak</h2>
+          <StreakCard darkMode={darkMode} />
+        </div>
+      </section>
 
-          <div style={{ marginBottom:"14px" }}>
-            <QuickLinks darkMode={darkMode} />
-          </div>
-
-          <div style={{ marginBottom:"14px" }}>
-            <StreakCard darkMode={darkMode} />
-          </div>
-
-          <div style={{
-            background:T.surface, borderRadius:"16px", marginBottom:"14px",
-            border:"1px solid "+T.border, overflow:"hidden",
-            boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
-          }}>
-            <button onClick={()=>{setShowCalc(!showCalc);setResult(null);setCalcErr("");}} style={{
-              width:"100%", padding:"16px 18px", background:"none", border:"none",
-              cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between",
-            }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
-                <div style={{ width:38, height:38, borderRadius:"10px", background:"#FEF9E7", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <Calculator size={18} color="#B07D00" strokeWidth={1.8} />
-                </div>
-                <div style={{ textAlign:"left" }}>
-                  <div style={{ fontWeight:700, color:T.text, fontSize:"14px" }}>Score Calculator</div>
-                  <div style={{ fontSize:"12px", color:T.sub }}>JAMB and Aggregate formula</div>
-                </div>
-              </div>
-              {showCalc
-                ? <ChevronUp size={18} color={T.sub} strokeWidth={2} />
-                : <ChevronDown size={18} color={T.sub} strokeWidth={2} />}
-            </button>
-
-            {showCalc && (
-              <div style={{ padding:"0 18px 18px", borderTop:"1px solid "+T.border }}>
-                <div style={{ display:"flex", gap:"6px", margin:"14px 0", background:T.s2, borderRadius:"10px", padding:"3px" }}>
-                  {(["aggregate","jamb"] as const).map(t=>(
-                    <button key={t} onClick={()=>{setCalcType(t);setResult(null);setCalcErr("");}} style={{
-                      flex:1, padding:"9px", borderRadius:"8px", border:"none", cursor:"pointer",
-                      fontWeight:700, fontSize:"13px",
-                      background: calcType===t ? C.primary : "transparent",
-                      color: calcType===t ? "#fff" : T.sub,
-                      transition:"all 0.2s",
-                    }}>
-                      {t==="aggregate" ? "Aggregate" : "JAMB Only"}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-                  <div>
-                    <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>JAMB Score (0-400)</label>
-                    <input type="number" min="0" max="400" placeholder="e.g. 285" value={jambS} onChange={e=>setJambS(e.target.value)} style={inp} />
-                  </div>
-                  {calcType==="aggregate" && (
-                    <div>
-                      <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Post-UTME Score (0-100)</label>
-                      <input type="number" min="0" max="100" placeholder="e.g. 72" value={postS} onChange={e=>setPostS(e.target.value)} style={inp} />
-                      <div style={{ fontSize:"11px", color:C.primary, marginTop:"5px", fontWeight:600 }}>
-                        Formula: (JAMB / 8) + (Post-UTME / 2)
-                      </div>
-                    </div>
-                  )}
-                  {calcErr && (
-                    <div style={{ padding:"9px 12px", background:"#FEE2E2", borderRadius:"8px", color:"#D0021B", fontSize:"13px" }}>
-                      {calcErr}
-                    </div>
-                  )}
-                  <button onClick={calcAggregate} style={{
-                    padding:"13px", borderRadius:"10px", border:"none",
-                    background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer",
-                  }}>
-                    Calculate
-                  </button>
-                  {result && (
-                    <div style={{
-                      padding:"16px", borderRadius:"12px",
-                      background: darkMode ? T.s2 : "#F0F7FF",
-                      border:"1.5px solid "+result.color+"33",
-                    }}>
-                      <div style={{ textAlign:"center", marginBottom:"12px" }}>
-                        <div style={{ fontSize:"40px", fontWeight:900, color:result.color, letterSpacing:"-1px" }}>{result.agg}</div>
-                        <div style={{ fontSize:"13px", color:result.color, fontWeight:700, marginTop:"3px" }}>{result.grade}</div>
-                      </div>
-                      {calcType==="aggregate" && (
-                        <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
-                          {[
-                            {label:"JAMB contribution",     val:jambS+" / 8 = "+result.jamb},
-                            {label:"Post-UTME contribution", val:postS+" / 2 = "+result.post},
-                            {label:"Total Aggregate",        val:result.agg+"/100"},
-                          ].map((r,i)=>(
-                            <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"7px 0", borderBottom:i<2?"1px solid "+T.border:"none" }}>
-                              <span style={{ color:T.sub }}>{r.label}</span>
-                              <span style={{ color:T.text, fontWeight:700 }}>{r.val}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div style={{
-            background:T.surface, borderRadius:"16px",
-            border:"1px solid "+T.border,
-            boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
-            overflow:"hidden",
-          }}>
-            <div style={{ padding:"16px 18px 0" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-                  <div style={{ width:36, height:36, borderRadius:"10px", background:"#FEE2E2", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    <Newspaper size={17} color="#D0021B" strokeWidth={1.8} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight:700, color:T.text, fontSize:"15px" }}>JAMB News</div>
-                    <div style={{ fontSize:"11px", color:"#31A24C", display:"flex", alignItems:"center", gap:"4px" }}>
-                      <div style={{ width:5, height:5, borderRadius:"50%", background:"#31A24C", animation:"pulse 2s infinite" }} />
-                      Live updates
-                    </div>
-                  </div>
-                </div>
-                <button onClick={()=>fetchNews(true)} style={{
-                  width:32, height:32, borderRadius:"8px", border:"none",
-                  background:T.s2, cursor:"pointer",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                }}>
-                  <RefreshCw size={15} color={T.sub} strokeWidth={2}
-                    style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none" }}
-                  />
+      {/* News Section */}
+      <section className="py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">JAMB News</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              {CATS.map(c=>(
+                <button
+                  key={c}
+                  onClick={()=>setCat(c)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium
+                           ${cat===c ? 'bg-primary text-white' : 'bg-surface2 text-muted'}
+                           hover:bg-primary/10 transition-colors`}
+                >
+                  {c}
                 </button>
-              </div>
-
-              <div style={{ display:"flex", gap:"7px", overflowX:"auto", paddingBottom:"12px", scrollbarWidth:"none" }}>
-                {CATS.map(c=>(
-                  <button key={c} onClick={()=>setCat(c)} style={{
-                    flexShrink:0, padding:"6px 14px", borderRadius:"50px", border:"none",
-                    cursor:"pointer", fontSize:"12px", fontWeight:600,
-                    background: cat===c ? C.primary : T.s2,
-                    color: cat===c ? "#fff" : T.sub,
-                    transition:"all 0.15s",
-                  }}>
-                    {c}
-                  </button>
-                ))}
-              </div>
+              ))}
+              <button
+                onClick={()=>fetchNews(true)}
+                className="ml-2 flex items-center gap-1 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
             </div>
+          </div>
 
+          <div className="space-y-4">
             {newsLoad ? (
-              <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:"14px" }}>
+              <div className="space-y-4">
                 {[0,1,2].map(i=>(
-                  <div key={i} style={{ display:"flex", gap:"12px" }}>
-                    <div style={{ flex:1 }}>
-                      <div className="skeleton" style={{ height:14, width:"90%", marginBottom:8 }} />
-                      <div className="skeleton" style={{ height:12, width:"55%" }} />
+                  <div key={i} className="flex items-start gap-4">
+                    <div className="w-1/2">
+                      <div className="h-2 w-full rounded bg-surface2"></div>
+                      <div className="h-1.5 w-1/2 rounded bg-surface2 mt-2"></div>
                     </div>
-                    <div className="skeleton" style={{ width:72, height:72, flexShrink:0, borderRadius:10 }} />
+                    <div className="flex-shrink-0 w-12 h-12 rounded bg-surface2"></div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div>
+              <>
                 {(filteredNews.length ? filteredNews : news).map((item,i)=>(
-                  <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                    style={{ textDecoration:"none", display:"block" }}
-                    onMouseDown={()=>setPressed(i)} onMouseUp={()=>setPressed(null)}
-                    onTouchStart={()=>setPressed(i)} onTouchEnd={()=>setPressed(null)}
+                  <a
+                    key={i}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block border-t border-border/20 first:border-t-0"
+                    onMouseDown={()=>setPressed(i)}
+                    onMouseUp={()=>setPressed(null)}
+                    onTouchStart={()=>setPressed(i)}
+                    onTouchEnd={()=>setPressed(null)}
                   >
-                    <div style={{
-                      padding:"14px 18px",
-                      borderTop: i===0 ? "none" : "1px solid "+T.border,
-                      display:"flex", gap:"12px", alignItems:"flex-start",
-                      background: pressed===i ? T.s2 : "transparent",
-                      transition:"background 0.1s",
-                    }}>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:"11px", color:C.primary, fontWeight:700, marginBottom:"5px", display:"flex", alignItems:"center", gap:"5px" }}>
-                          <span>{item.source}</span>
-                          <span style={{ color:T.border }}>·</span>
-                          <span style={{ color:T.sub, fontWeight:500 }}>{item.time}</span>
+                    <div className="flex items-start gap-4 py-4"
+                         className:pressed===i ? "bg-surface2" : "transparent"
+                         style={{ backgroundColor: pressed===i ? 'var(--color-surface2)' : 'transparent' }}
+                    >
+                      <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden">
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={e=>{(e.target as HTMLImageElement).style.display="none"}}
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold text-primary">{item.source}</span>
+                          <span className="text-xs text-muted">·</span>
+                          <span className="text-xs text-muted">{item.time}</span>
                         </div>
-                        <div style={{
-                          fontSize:"13px", color:T.text, fontWeight:700, lineHeight:1.4,
-                          marginBottom:"6px",
-                          display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden",
-                        }}>
-                          {item.title}
-                        </div>
-                        <span style={{ fontSize:"11px", color:T.sub, background:T.s2, padding:"3px 8px", borderRadius:"6px" }}>
+                        <h3 className="font-semibold mb-2 line-clamp-2">{item.title}</h3>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
                           {item.category}
                         </span>
                       </div>
-                      {item.image && (
-                        <div style={{ width:72, height:72, borderRadius:"10px", overflow:"hidden", flexShrink:0 }}>
-                          <img src={item.image} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}
-                            onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                        </div>
-                      )}
                     </div>
                   </a>
                 ))}
-                <div style={{ padding:"14px 18px", borderTop:"1px solid "+T.border, textAlign:"center" }}>
-                  <button onClick={()=>fetchNews(true)} style={{
-                    background:"none", border:"none", color:C.primary, fontSize:"13px", fontWeight:700, cursor:"pointer",
-                  }}>
+
+                <div className="pt-4 border-t border-border/20">
+                  <button
+                    onClick={()=>fetchNews(true)}
+                    className="w-full flex items-center justify-center text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+                  >
                     {refreshing ? "Refreshing..." : "Refresh news"}
                   </button>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
+      </section>
 
-        <BottomNav darkMode={darkMode} />
+      {/* Calculator Section */}
+      {showCalc && (
+        <section className="py-12 px-4">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Score Calculator</h2>
+              <button
+                onClick={()=>{setShowCalc(false);setResult(null);setCalcErr("");}}
+                className="text-sm font-medium text-muted hover:text-primary transition-colors"
+              >
+                Close
+              </button>
+            </div>
 
-        <style>{`
-          @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-          @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-          .skeleton { background: linear-gradient(90deg,#e0e0e0 25%,#f0f0f0 50%,#e0e0e0 75%); background-size:200% 100%; animation: shimmer 1.4s infinite; border-radius:6px; }
-          @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        `}</style>
-      </div>
-    </>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Calculator className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Score Calculator</h3>
+                  <p className="text-sm text-muted">JAMB and Aggregate formula</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  key="aggregate"
+                  onClick={()=>{setCalcType("aggregate");setResult(null);setCalcErr("");}}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold
+                           ${calcType==='aggregate' ? 'bg-primary text-white' : 'bg-surface2 text-muted'}
+                           hover:bg-primary/10 transition-colors`}
+                >
+                  Aggregate
+                </button>
+                <button
+                  key="jamb"
+                  onClick={()=>{setCalcType("jamb");setResult(null);setCalcErr("");}}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold
+                           ${calcType==='jamb' ? 'bg-primary text-white' : 'bg-surface2 text-muted'}
+                           hover:bg-primary/10 transition-colors`}
+                >
+                  JAMB Only
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1">JAMB Score (0-400)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="400"
+                    placeholder="e.g. 285"
+                    value={jambS}
+                    onChange={e=>setJambS(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-border/20 bg-surface2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                {calcType==="aggregate" && (
+                  <div>
+                    <label className="block text-sm font-medium text-muted mb-1">Post-UTME Score (0-100)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="e.g. 72"
+                      value={postS}
+                      onChange={e=>setPostS(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg border border-border/20 bg-surface2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                    <p className="text-xs mt-2 font-medium text-primary">
+                      Formula: (JAMB / 8) + (Post-UTME / 2)
+                    </p>
+                  </div>
+                )}
+
+                {calcErr && (
+                  <div className="px-4 py-2 rounded-lg bg-danger/10 text-danger">
+                    {calcErr}
+                  </div>
+                )}
+
+                <button
+                  onClick={calcAggregate}
+                  className="w-full px-4 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Calculate
+                </button>
+
+                {result && (
+                  <div className="mt-6">
+                    <div className="text-center">
+                      <div className="text-5xl font-extrabold" style={{ color: result.color }}>
+                        {result.agg}
+                      </div>
+                      <div className="text-lg font-bold mt-2" style={{ color: result.color }}>
+                        {result.grade}
+                      </div>
+                    </div>
+
+                    {calcType==="aggregate" && (
+                      <div className="mt-6 space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted">JAMB contribution</span>
+                          <span className="font-medium">{jambS} / 8 = {result.jamb}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted">Post-UTME contribution</span>
+                          <span className="font-medium">{postS} / 2 = {result.post}</span>
+                        </div>
+                        <div className="flex justify-between text-sm border-t border-border/20 pt-3">
+                          <span className="text-muted">Total Aggregate</span>
+                          <span className="font-medium text-lg">{result.agg}/100</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+    </Layout>
   );
 }

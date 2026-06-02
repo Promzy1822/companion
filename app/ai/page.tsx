@@ -121,8 +121,8 @@ export default function AIChat() {
     const history = newMsgs.slice(1, -1).map(m => ({
         role: m.role,
         content: typeof m.content === "string" ? m.content : String(m.content),
-      })).slice(-10);
-      const payload: any = { message: t, history };
+      }));
+    const payload: any = { message: t, history };
     if (attachment?.type === "image") {
       payload.imageBase64 = attachment.base64;
       payload.imageType   = attachment.file.type;

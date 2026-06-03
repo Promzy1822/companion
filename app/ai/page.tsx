@@ -259,7 +259,8 @@ export default function AIChat() {
                   </button>
                 ))}
               </div>
-            )
+          </div>
+          </div>
           )}
 
           <div ref={messagesEndRef} />

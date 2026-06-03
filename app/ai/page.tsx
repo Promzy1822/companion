@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
-import Layout from "../components/Layout";
 import {
   ArrowLeft, Send, Paperclip, Sun, Moon,
   Sparkles, X, RotateCcw, Image, FileText,

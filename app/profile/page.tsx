@@ -8,7 +8,7 @@ import {
   Shield, Bell, Check, X,
 } from "lucide-react";
 import { C, palette } from "../lib/design";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 /* ─── Types ──────────────────────────────────────────────────── */
 interface UserData {
@@ -171,7 +171,27 @@ export default function Profile() {
 
   /* ── Render ───────────────────────────────────────────────── */
   return (
-    <Layout title="Profile" darkMode={dark} onToggleDark={toggleDark}>
+    <Layout title="Profile" darkMode={dark} onToggleDark={toggleDark} contentWidth="standard" showSidebar={true} sidebarContent={
+      <div className="space-y-4">
+        <div className="p-4 bg-surface2/50 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+              <User size={16} color={C.primary} />
+            </div>
+            <div>
+              <div className="font-medium">{user.name}</div>
+              <div className="text-sm text-muted">{user.email}</div>
+            </div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div>Target Score: {user.target}/400</div>
+            <div>Institution: {user.institution}</div>
+            <div>Course: {user.course}</div>
+            <div>Subjects: {user.subjects.join(', ')}</div>
+          </div>
+        </div>
+      </div>
+    }>
       {/* Save banner */}
       {saved && (
         <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-success/10 text-success">

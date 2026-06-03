@@ -8,6 +8,9 @@ interface LayoutProps {
   showBottomNav?: boolean;
   darkMode?: boolean;
   onToggleDark?: () => void;
+  contentWidth?: 'standard' | 'wide' | 'full';
+  showSidebar?: boolean;
+  sidebarContent?: React.ReactNode;
 }
 
 export default function Layout({
@@ -17,8 +20,13 @@ export default function Layout({
   showBottomNav = true,
   darkMode = false,
   onToggleDark,
+  contentWidth = 'standard',
+  showSidebar = false,
+  sidebarContent,
 }: LayoutProps) {
   const [mounted, setMounted] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -26,6 +34,11 @@ export default function Layout({
     const storedDark = localStorage.getItem("darkMode") === "true";
     if (typeof window !== "undefined") {
       document.documentElement.setAttribute("data-dark", String(storedDark));
+      // Check for desktop size on mount and resize
+      const checkDesktop = () => setIsDesktop(window.innerWidth >= 1280);
+      checkDesktop();
+      window.addEventListener('resize', checkDesktop);
+      return () => window.removeEventListener('resize', checkDesktop);
     }
   }, []);
 
@@ -38,15 +51,55 @@ export default function Layout({
     }
   };
 
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
   if (!mounted) return null;
 
   const navbarHeight = showNavbar ? 56 : 0;
-  const bottomNavHeight = showBottomNav ? 60 : 0;
+  const bottomNavHeight = (showBottomNav && !isDesktop) ? 60 : 0; // Hide bottom nav on desktop
 
   return (
-    <div className="page-layout" style={{ minHeight: "100vh" }}>
-      {showNavbar && (
-        <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-surface"
+    <div className="page-layout" style={{ minHeight: "100vh", position: "relative" }}>
+      {/* Desktop Sidebar */}
+      {isDesktop && showSidebar && (
+        <aside className={`fixed top-0 left-0 h-full w-64 border-r border-border/20 bg-surface z-50 transform ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300`}>
+          <div className="flex h-full flex-col">
+            {/* Desktop navbar */}
+            <nav className={`flex-shrink-0 h-${navbarHeight} border-b border-border/20 flex items-center justify-between px-4`}>
+              <Link href="/" className="flex items-center gap-2 text-decoration-none">
+                <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">C</span>
+                </div>
+                <span className="font-bold text-lg text-tracking-tight">Companion</span>
+              </Link>
+              {onToggleDark && (
+                <button
+                  onClick={toggleDark}
+                  className="w-9 h-9 bg-surface2 rounded-full flex items-center justify-center hover:bg-surface3 transition-colors"
+                  aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {darkMode ? "☀️" : "🌙"}
+                </button>
+              )}
+            </nav>
+
+            {/* Sidebar content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {sidebarContent}
+            </div>
+
+            {/* Mobile sidebar overlay */}
+            {!isDesktop && (
+              <div className="fixed inset-0 bg-black/50 z-40 opacity-0 pointer-events-none transition-opacity duration-300"
+                   className:sidebarOpen ? "opacity-100 pointer-events-auto" : "" />
+            )}
+          </div>
+        </aside>
+      )}
+
+      {/* Main Navbar (mobile/tablet or desktop without sidebar) */}
+      {!isDesktop || !showSidebar && (
+        <nav className={`fixed top-0 left-0 right-0 z-50 border-b bg-surface ${isDesktop && !showSidebar ? 'left-64' : 'left-0'}`
              style={{ height: `${navbarHeight}px`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
           <Link href="/" className="flex items-center gap-2 text-decoration-none">
             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
@@ -56,30 +109,58 @@ export default function Layout({
           </Link>
 
           <div className="flex items-center gap-2">
-            {onToggleDark && (
+            {/* Hamburger menu for mobile/tablet */}
+            {!isDesktop && (
               <button
-                onClick={toggleDark}
-                className={`w-9 h-9 bg-surface2 rounded-full flex items-center justify-center hover:bg-surface3 transition-colors ${darkMode ? 'dark-mode-toggle' : ''}`}
-                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                onClick={toggleSidebar}
+                className="w-9 h-9 bg-surface2 rounded-full flex items-center justify-center hover:bg-surface3 transition-colors"
+                aria-label="Open menu"
               >
-                {darkMode ? "☀️" : "🌙"}
+                {'☰'}
               </button>
             )}
 
-            {/* User menu would go here when authenticated */}
+            {showNavbar && (
+              <>
+                {onToggleDark && (
+                  <button
+                    onClick={toggleDark}
+                    className={`w-9 h-9 bg-surface2 rounded-full flex items-center justify-center hover:bg-surface3 transition-colors ${darkMode ? 'dark-mode-toggle' : ''}`}
+                    aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                  >
+                    {darkMode ? "☀️" : "🌙"}
+                  </button>
+                )}
+
+                {/* User menu would go here when authenticated */}
+              </>
+            )}
           </div>
         </nav>
       )}
 
-      <main className="page-content flex-1 w-full overflow-x-hidden"
+      <main className={`flex-1 w-full min-h-[calc(100vh-${navbarHeight}px-${bottomNavHeight}px)]
+                        ${isDesktop && showSidebar ? 'ml-64' : ''}
+                        overflow-x-hidden`}
             style={{
               paddingTop: `calc(${navbarHeight}px + env(safe-area-inset-top, 0px))`,
               paddingBottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom, 0px))`
             }}>
-        {children}
+        {/* Container based on contentWidth prop */}
+        <div className={`min-h-full flex flex-col ${contentWidth === 'standard' ? 'container' : contentWidth === 'wide' ? 'max-w-xl' : ''} mx-auto ${contentWidth === 'full' ? '' : 'px-4'}`}>
+          {sidebarContent && !isDesktop && showSidebar && (
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Space for sidebar when open on mobile */}
+            </div>
+          )}
+          <div className="flex-1">
+            {children}
+          </div>
+        </div>
       </main>
 
-      {showBottomNav && (
+      {/* Bottom Navigation (mobile only) */}
+      {showBottomNav && !isDesktop && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-surface"
              style={{ height: `${bottomNavHeight}px`, display: "flex" }}>
           <Link href="/"

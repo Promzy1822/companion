@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 function QuestionsContent() {
   const router = useRouter();
@@ -19,7 +19,7 @@ function QuestionsContent() {
   const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
 
   return (
-    <Layout title={`${subjectName} — ${mode === 'learn' ? 'Lessons' : 'Practice'}`} darkMode={dark} onToggleDark={setDark} showNavbar showBottomNav>
+    <Layout title={`${subjectName} — ${mode === 'learn' ? 'Lessons' : 'Practice'}`} darkMode={dark} onToggleDark={setDark} showNavbar showBottomNav contentWidth="standard">
       <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
            style={{ paddingTop: "80px", paddingBottom: "20px" }}>
         <div className="flex items-center gap-3 mb-6">

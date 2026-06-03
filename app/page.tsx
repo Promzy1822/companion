@@ -103,7 +103,7 @@ export default function Home() {
   const greeting = hour<12 ? "Good morning" : hour<17 ? "Good afternoon" : "Good evening";
 
   return (
-    <Layout title="Home" darkMode={darkMode} onToggleDark={toggleDark}>
+    <Layout title="Home" darkMode={darkMode} onToggleDark={toggleDark} contentWidth="wide" showSidebar={false}>
       {/* Hero Section */}
       <section className="py-12 px-4 bg-gradient-to-t from-primary to-primary/90">
         <div className="max-w-4xl mx-auto text-center">

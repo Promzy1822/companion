@@ -8,7 +8,7 @@ import {
   ChevronRight, Trash2, Trash, X, RotateCcw,
 } from "lucide-react";
 import { Progress } from "../lib/progress";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 const SUBJECTS = [
   "English Language","Mathematics","Physics","Chemistry","Biology",
@@ -204,7 +204,7 @@ ${q}
   if (!mounted) return null;
 
   return (
-    <Layout title="Question Solver" darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} showNavbar showBottomNav>
+    <Layout title="Question Solver" darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} showNavbar showBottomNav contentWidth="standard">
       {/* Page content */}
       <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
            style={{ paddingTop: "80px", paddingBottom: "20px" }}>

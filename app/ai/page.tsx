@@ -5,7 +5,7 @@ import {
   ArrowLeft, Send, Paperclip, Sun, Moon,
   Sparkles, X, RotateCcw, Image, FileText,
 } from "lucide-react";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 interface Message {
   role:    "user" | "assistant";
@@ -171,7 +171,7 @@ export default function AIChat() {
   };
 
   return (
-    <Layout title="AI Chat" darkMode={dark} onToggleDark={toggleDark}>
+    <Layout title="AI Chat" darkMode={dark} onToggleDark={toggleDark} contentWidth="standard">
       {/* Messages */}
       <div className="flex-1 w-full overflow-y-auto p-4 pt-10 pb-6"
            style={{ paddingTop: "80px", paddingBottom: "20px" }}>

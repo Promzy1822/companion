@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 import { C } from "../lib/design";
 import { BookOpen, Bot, BarChart3, Newspaper, Calculator, ClipboardList, CheckCircle, ArrowRight, Star } from "lucide-react";
 
@@ -41,7 +41,7 @@ export default function Landing() {
   ];
 
   return (
-    <Layout title="Companion — AI-Powered JAMB Study Support" darkMode={false} onToggleDark={() => {}} showNavbar={false} showBottomNav={false}>
+    <Layout title="Companion — AI-Powered JAMB Study Support" darkMode={false} onToggleDark={() => {}} showNavbar={false} showBottomNav={false} contentWidth="standard">
       {/* Page content */}
       <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
            style={{ paddingTop: "80px", paddingBottom: "20px" }}>

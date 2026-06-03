@@ -4,7 +4,7 @@ import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../lib/cutoffs";
 import { hashPassword, verifyPassword, validateEmail, validatePassword } from "../lib/auth";
 import { C, palette } from "../lib/design";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
@@ -127,7 +127,7 @@ export default function Auth() {
   const lbl: React.CSSProperties = { fontSize:"13px", fontWeight:600, color:"#65676B", display:"block", marginBottom:"6px" };
 
   return (
-    <Layout title="Auth" showNavbar={false} showBottomNav={false}>
+    <Layout title="Auth" showNavbar={false} showBottomNav={false} contentWidth="standard">
       {/* Header */}
       <header className="mb-8">
         <div className="flex justify-between">

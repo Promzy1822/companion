@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, PenTool } from "lucide-react";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 const SUBJECTS = [
   { id:"english",     name:"English Language", icon:"📝", color:"#1877F2" },
@@ -33,7 +33,7 @@ function SubjectsContent() {
   if (!ready) return null;
 
   return (
-    <Layout title={mode === "learn" ? "Learn" : "Practice"} darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} showNavbar showBottomNav>
+    <Layout title={mode === "learn" ? "Learn" : "Practice"} darkMode={dark} onToggleDark={() => { const n=!dark; setDark(n); localStorage.setItem("darkMode",String(n)); }} showNavbar showBottomNav contentWidth="standard">
       {/* Page content */}
       <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
            style={{ paddingTop: "80px", paddingBottom: "20px" }}>

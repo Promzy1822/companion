@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Home, Bot, PenTool, ClipboardList, User } from "lucide-react";
 import { C, palette } from "../lib/design";
 
@@ -16,7 +17,21 @@ const TABS = [
 
 export default function BottomNav({ darkMode = false }: { darkMode?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const T        = palette(darkMode);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const checkDesktop = () => setIsDesktop(window.innerWidth >= 1280);
+      checkDesktop();
+      window.addEventListener('resize', checkDesktop);
+      return () => window.removeEventListener('resize', checkDesktop);
+    }
+  }, []);
+
+  // Don't render on desktop screens
+  if (isDesktop) return null;
 
   return (
     <nav style={{

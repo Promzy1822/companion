@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, ClipboardList, Trophy, BarChart3, AlertTriangle
 } from "lucide-react";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; }
 interface Result   { score:number; total:number; bySubject:Record<string,{correct:number;total:number}>; timeTaken:number; }
@@ -89,7 +89,7 @@ export default function MockExam() {
   if (!mounted) return null;
 
   return (
-    <Layout title="Mock Exam" darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} showNavbar={phase !== "exam"} showBottomNav={phase !== "exam"}>
+    <Layout title="Mock Exam" darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} showNavbar={phase !== "exam"} showBottomNav={phase !== "exam"} contentWidth="standard">
       {/* Page content */}
       <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
            style={{ paddingTop: "80px", paddingBottom: "20px" }}>

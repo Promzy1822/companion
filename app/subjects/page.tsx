@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, PenTool } from "lucide-react";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 const SUBJECTS = [
   { id:"english",     name:"English Language", icon:"📝", color:"#1877F2" },

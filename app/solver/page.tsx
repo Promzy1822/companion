@@ -8,7 +8,7 @@ import {
   ChevronRight, Trash2, Trash, X, RotateCcw,
 } from "lucide-react";
 import { Progress } from "../lib/progress";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 const SUBJECTS = [
   "English Language","Mathematics","Physics","Chemistry","Biology",

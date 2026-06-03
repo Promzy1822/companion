@@ -5,7 +5,7 @@ import {
   ArrowLeft, Send, Paperclip, Sun, Moon,
   Sparkles, X, RotateCcw, Image, FileText,
 } from "lucide-react";
-import Layout from "./components/Layout";
+import Layout from "../components/Layout";
 
 interface Message {
   role:    "user" | "assistant";

@@ -1,11 +1,10 @@
-"use client";
-import Layout from "../components/Layout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../lib/cutoffs";
 import { hashPassword, verifyPassword, validateEmail, validatePassword } from "../lib/auth";
 import { C, palette } from "../lib/design";
+import Layout from "./components/Layout";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];

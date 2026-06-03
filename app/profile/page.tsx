@@ -8,7 +8,7 @@ import {
   Shield, Bell, Check, X,
 } from "lucide-react";
 import { C, palette } from "../lib/design";
-import Layout from "../components/Layout";
+import Layout from "./components/Layout";
 
 /* ─── Types ──────────────────────────────────────────────────── */
 interface UserData {

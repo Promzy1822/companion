@@ -1,8 +1,7 @@
-"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Layout from "../components/Layout";
+import Layout from "./components/Layout";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Layout from "../components/Layout";
+import Layout from "./components/Layout";
 
 function QuestionsContent() {
   const router = useRouter();

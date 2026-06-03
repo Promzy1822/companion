@@ -1,6 +1,5 @@
 "use client";
 import Layout from "../components/Layout";
-"use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";

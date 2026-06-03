@@ -6,7 +6,6 @@ import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, ClipboardList, Trophy, BarChart3, AlertTriangle
 } from "lucide-react";
-import Layout from "../components/Layout";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; }
 interface Result   { score:number; total:number; bySubject:Record<string,{correct:number;total:number}>; timeTaken:number; }

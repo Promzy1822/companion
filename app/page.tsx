@@ -7,7 +7,6 @@ import QuickLinks from "./components/QuickLinks";
 import StreakCard from "./components/StreakCard";
 import { C, D, palette } from "./lib/design";
 import { RefreshCw, Calculator, Newspaper, ChevronDown, ChevronUp } from "lucide-react";
-import Layout from "../components/Layout";
 
 interface NewsItem { title:string; url:string; source:string; time:string; image?:string; category?:string; }
 interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; }

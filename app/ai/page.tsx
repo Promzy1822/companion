@@ -1,3 +1,4 @@
+import Layout from "../components/Layout";
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";

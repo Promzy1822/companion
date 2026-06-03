@@ -1,5 +1,4 @@
 "use client";
-"use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Layout from "../components/Layout";
@@ -91,11 +90,10 @@ export default function MockExam() {
 
   return (
     <Layout title="Mock Exam" darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} showNavbar={phase !== "exam"} showBottomNav={phase !== "exam"} contentWidth="standard">
-      {/* Page content */}
       <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
            style={{ paddingTop: "80px", paddingBottom: "20px" }}>
 
-        // ── SETUP ──────────────────────────────────────────────────────
+        {/* SETUP */}
         {phase === "setup" && (
           <>
             <div className="mb-6">
@@ -151,7 +149,7 @@ export default function MockExam() {
                     </div>
                     <div className="space-y-2">
                       {history.slice(0,3).map((h,i)=>(
-                        <div key={i} className={`border-t border-surface2/20 py-3 first:border-t-0 flex justify-between items-center`}>
+                        <div key={i} className="border-t border-surface2/20 py-3 first:border-t-0 flex justify-between items-center">
                           <div>
                             <div className="font-medium">{h.score}/{h.total} correct</div>
                             <div className="text-xs text-muted">{h.date}</div>
@@ -167,13 +165,13 @@ export default function MockExam() {
                   </div>
                 </div>
               )}
-            </>
-          )}
+            </div>
+          </>
+        )}
 
-        // ── EXAM (no bottom nav — focus mode) ─────────────────────────
+        {/* EXAM */}
         {phase === "exam" && (
           <>
-            {/* Sticky timer bar */}
             <div className="sticky top-0 z-20">
               <div className="bg-gradient-to-b from-primary/10 to-transparent px-4 py-2">
                 <div className="flex justify-between items-center mb-1">
@@ -184,8 +182,8 @@ export default function MockExam() {
                     Submit
                   </button>
                 </div>
-                <div className="h-0.5 bg-gradient-to-r from-transparent via-{timerCol} to-transparent" />
-                <div className="flex gap-1 mt-1 overflow-x-auto pb-1 scrollbar-hidden">
+                <div className="h-0.5 bg-surface2" />
+                <div className="flex gap-1 mt-1 overflow-x-auto pb-1">
                   {questions.map((_,i)=>(
                     <div key={i} onClick={()=>setCurrent(i)} className={`w-6 h-6 rounded
                       ${i===current ? 'bg-white' : answers[i]!==undefined ? 'bg-primary/20' : 'bg-primary/5'}
@@ -203,7 +201,7 @@ export default function MockExam() {
               {questions[current] && (
                 <>
                   <div className="bg-surface rounded-lg border border-surface2/20 p-4 mb-4">
-                    <div className="text-xs font-medium text-primary mb-1 text-uppercase tracking-wider">
+                    <div className="text-xs font-medium text-primary mb-1">
                       {questions[current].subject}
                     </div>
                     <p className="text-lg font-medium">{questions[current].question}</p>
@@ -211,15 +209,10 @@ export default function MockExam() {
                   <div className="space-y-2">
                     {questions[current].options.map((opt,i)=>(
                       <button key={i} onClick={()=>setAnswers(p=>({...p,[current]:i}))} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border
-                        ${answers[current]===i ? 'border-primary' : 'border-surface2/20'}
-                        bg-${answers[current]===i ? 'primary' : 'surface'}
-                        text-${answers[current]===i ? 'white' : 'text'}
-                        font-medium
-                        ${answers[current]===i ? 'font-semibold' : 'font-normal'}
+                        ${answers[current]===i ? 'border-primary bg-primary text-white font-semibold' : 'border-surface2/20 bg-surface text-text font-normal'}
                         hover:bg-surface2/50 transition-colors`}>
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center
-                           bg-${answers[current]===i ? 'primary' : 'surface2'}
-                           text-${answers[current]===i ? 'white' : 'muted'}">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center
+                          ${answers[current]===i ? 'bg-white/20 text-white' : 'bg-surface2 text-muted'}`}>
                           {["A","B","C","D"][i]}
                         </div>
                         {opt}
@@ -227,8 +220,7 @@ export default function MockExam() {
                     ))}
                   </div>
                   <div className="flex justify-between mt-4">
-                    <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} className={`px-4 py-2 rounded-lg border border-surface2/20 bg-transparent text-muted hover:bg-surface2/10 transition-colors
-                      ${current===0 ? 'cursor-not-allowed opacity-50' : ''}`}>
+                    <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} className={`px-4 py-2 rounded-lg border border-surface2/20 bg-transparent text-muted hover:bg-surface2/10 transition-colors ${current===0 ? 'cursor-not-allowed opacity-50' : ''}`}>
                       ← Prev
                     </button>
                     {current<questions.length-1?(
@@ -247,22 +239,19 @@ export default function MockExam() {
           </>
         )}
 
-        // ── RESULT ─────────────────────────────────────────────────────
+        {/* RESULT */}
         {phase === "result" && result && (
           <>
-            {/* Result header */}
             <div className="text-center mb-6">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
                 <Trophy size={30} color="#FFF8DB" strokeWidth={1.8} />
               </div>
               <p className="text-xs text-muted mb-1">Your Score</p>
-              <p className="text-3xl font-bold text-primary tracking-tighter"
-                 style={{ letterSpacing: "-2px" }}>{result.score}/{result.total}</p>
+              <p className="text-3xl font-bold text-primary tracking-tighter">{result.score}/{result.total}</p>
               <p className="text-sm font-medium text-primary/80 mt-1">
                 {Math.round((result.score/result.total)*100)}% · JAMB equivalent: {Math.round((result.score/result.total)*400)}
               </p>
               <p className="text-sm mt-2">
-                {/* Target comparison logic */}
                 {(() => {
                   const user = (()=>{ try{return JSON.parse(localStorage.getItem("companion_user")||"{}");} catch{return {};} })();
                   const jambEq = Math.round((result.score/result.total)*400);
@@ -273,7 +262,6 @@ export default function MockExam() {
             </div>
 
             <div className="space-y-4">
-              {/* Subject breakdown */}
               <div className="bg-surface rounded-lg border border-surface2/20 p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <BarChart3 size={17} color="#1877F2" strokeWidth={1.8} />
@@ -289,7 +277,7 @@ export default function MockExam() {
                       </span>
                     </div>
                     <div className="w-full h-1.5 bg-surface2/50 rounded overflow-hidden">
-                      <div className="h-full bg-"
+                      <div className="h-full rounded"
                          style={{ width: `${Math.round((d.correct/d.total)*100)}%`,
                                 backgroundColor: Math.round((d.correct/d.total)*100)>=70 ? "#31A24C" : Math.round((d.correct/d.total)*100)>=50 ? "#F7B928" : "#FA3E3E" }}></div>
                     </div>
@@ -302,7 +290,6 @@ export default function MockExam() {
                 )}
               </div>
 
-              {/* Missed questions */}
               <div className="bg-surface rounded-lg border border-surface2/20 p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <AlertTriangle size={17} color="#F7B928" strokeWidth={1.8} />
@@ -310,15 +297,15 @@ export default function MockExam() {
                 </div>
                 {questions.map((q,i)=>answers[i]!==q.correct&&(
                   <div key={i} className="mb-3 p-3 rounded-lg bg-danger/10 border border-danger/20">
-                    <div className="text-xs font-medium text-danger mb-1 text-uppercase tracking-wider">
+                    <div className="text-xs font-medium text-danger mb-1">
                       {q.subject}
                     </div>
                     <p className="text-base font-medium mb-1">{q.question}</p>
                     <div className="flex items-center gap-2 text-sm">
                       <div className="w-6 h-6 rounded-lg bg-success flex items-center justify-center text-xs font-medium text-white">
-                        ✅ {q.options[q.correct]}
+                        ✓
                       </div>
-                      <div className="flex-1">{q.explanation}</div>
+                      <div className="flex-1">{q.options[q.correct]} — {q.explanation}</div>
                     </div>
                   </div>
                 ))}
@@ -337,9 +324,10 @@ export default function MockExam() {
                   Study Plan →
                 </Link>
               </div>
-            </>
-          )}
+            </div>
+          </>
         )}
+
       </div>
     </Layout>
   );

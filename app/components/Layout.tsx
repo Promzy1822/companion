@@ -30,11 +30,9 @@ export default function Layout({
 
   useEffect(() => {
     setMounted(true);
-    // Initialize dark mode from localStorage
     const storedDark = localStorage.getItem("darkMode") === "true";
     if (typeof window !== "undefined") {
       document.documentElement.setAttribute("data-dark", String(storedDark));
-      // Check for desktop size on mount and resize
       const checkDesktop = () => setIsDesktop(window.innerWidth >= 1280);
       checkDesktop();
       window.addEventListener('resize', checkDesktop);
@@ -56,7 +54,7 @@ export default function Layout({
   if (!mounted) return null;
 
   const navbarHeight = showNavbar ? 56 : 0;
-  const bottomNavHeight = (showBottomNav && !isDesktop) ? 60 : 0; // Hide bottom nav on desktop
+  const bottomNavHeight = (showBottomNav && !isDesktop) ? 60 : 0;
 
   return (
     <div className="page-layout" style={{ minHeight: "100vh", position: "relative" }}>
@@ -64,7 +62,6 @@ export default function Layout({
       {isDesktop && showSidebar && (
         <aside className={`fixed top-0 left-0 h-full w-64 border-r border-border/20 bg-surface z-50 transform ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300`}>
           <div className="flex h-full flex-col">
-            {/* Desktop navbar */}
             <nav className={`flex-shrink-0 h-${navbarHeight} border-b border-border/20 flex items-center justify-between px-4`}>
               <Link href="/" className="flex items-center gap-2 text-decoration-none">
                 <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
@@ -83,24 +80,24 @@ export default function Layout({
               )}
             </nav>
 
-            {/* Sidebar content */}
             <div className="flex-1 overflow-y-auto p-6">
               {sidebarContent}
             </div>
 
-            {/* Mobile sidebar overlay */}
+            {/* FIX 1: merged classNames into one */}
             {!isDesktop && (
-              <div className="fixed inset-0 bg-black/50 z-40 opacity-0 pointer-events-none transition-opacity duration-300"
-                   className:sidebarOpen ? "opacity-100 pointer-events-auto" : "" />
+              <div className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} />
             )}
           </div>
         </aside>
       )}
 
-      {/* Main Navbar (mobile/tablet or desktop without sidebar) */}
-      {!isDesktop || !showSidebar && (
-        <nav className={`fixed top-0 left-0 right-0 z-50 border-b bg-surface ${isDesktop && !showSidebar ? 'left-64' : 'left-0'}`
-             style={{ height: `${navbarHeight}px`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+      {/* FIX 2 & 3: fixed parentheses and closing backtick+brace */}
+      {(!isDesktop || !showSidebar) && (
+        <nav
+          className={`fixed top-0 left-0 right-0 z-50 border-b bg-surface ${isDesktop && !showSidebar ? 'left-64' : 'left-0'}`}
+          style={{ height: `${navbarHeight}px`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}
+        >
           <Link href="/" className="flex items-center gap-2 text-decoration-none">
             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
               <span className="text-white font-bold text-xs">C</span>
@@ -109,7 +106,6 @@ export default function Layout({
           </Link>
 
           <div className="flex items-center gap-2">
-            {/* Hamburger menu for mobile/tablet */}
             {!isDesktop && (
               <button
                 onClick={toggleSidebar}
@@ -131,28 +127,20 @@ export default function Layout({
                     {darkMode ? "☀️" : "🌙"}
                   </button>
                 )}
-
-                {/* User menu would go here when authenticated */}
               </>
             )}
           </div>
         </nav>
       )}
 
-      <main className={`flex-1 w-full min-h-[calc(100vh-${navbarHeight}px-${bottomNavHeight}px)]
-                        ${isDesktop && showSidebar ? 'ml-64' : ''}
-                        overflow-x-hidden`}
-            style={{
-              paddingTop: `calc(${navbarHeight}px + env(safe-area-inset-top, 0px))`,
-              paddingBottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom, 0px))`
-            }}>
-        {/* Container based on contentWidth prop */}
+      <main
+        className={`flex-1 w-full min-h-[calc(100vh-${navbarHeight}px-${bottomNavHeight}px)] ${isDesktop && showSidebar ? 'ml-64' : ''} overflow-x-hidden`}
+        style={{
+          paddingTop: `calc(${navbarHeight}px + env(safe-area-inset-top, 0px))`,
+          paddingBottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom, 0px))`
+        }}
+      >
         <div className={`min-h-full flex flex-col ${contentWidth === 'standard' ? 'container' : contentWidth === 'wide' ? 'max-w-xl' : ''} mx-auto ${contentWidth === 'full' ? '' : 'px-4'}`}>
-          {sidebarContent && !isDesktop && showSidebar && (
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Space for sidebar when open on mobile */}
-            </div>
-          )}
           <div className="flex-1">
             {children}
           </div>
@@ -163,37 +151,23 @@ export default function Layout({
       {showBottomNav && !isDesktop && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-surface"
              style={{ height: `${bottomNavHeight}px`, display: "flex" }}>
-          <Link href="/"
-                className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none
-                           hover:bg-primary/10 active:bg-primary/20">
+          <Link href="/" className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none hover:bg-primary/10 active:bg-primary/20">
             <span className="text-xs font-medium">🏠</span>
             <span className="text-xs font-medium">Home</span>
           </Link>
-
-          <Link href="/ai"
-                className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none
-                           hover:bg-primary/10 active:bg-primary/20">
+          <Link href="/ai" className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none hover:bg-primary/10 active:bg-primary/20">
             <span className="text-xs font-medium">🤖</span>
             <span className="text-xs font-medium">AI</span>
           </Link>
-
-          <Link href="/subjects?mode=practice"
-                className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none
-                           hover:bg-primary/10 active:bg-primary/20">
+          <Link href="/subjects?mode=practice" className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none hover:bg-primary/10 active:bg-primary/20">
             <span className="text-xs font-medium">✏️</span>
             <span className="text-xs font-medium">Practice</span>
           </Link>
-
-          <Link href="/mock"
-                className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none
-                           hover:bg-primary/10 active:bg-primary/20">
+          <Link href="/mock" className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none hover:bg-primary/10 active:bg-primary/20">
             <span className="text-xs font-medium">📋</span>
             <span className="text-xs font-medium">Mock</span>
           </Link>
-
-          <Link href="/profile"
-                className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none
-                           hover:bg-primary/10 active:bg-primary/20">
+          <Link href="/profile" className="flex-1 flex flex-col items-center justify-center gap-1 text-decoration-none hover:bg-primary/10 active:bg-primary/20">
             <span className="text-xs font-medium">👤</span>
             <span className="text-xs font-medium">Profile</span>
           </Link>

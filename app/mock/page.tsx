@@ -1,6 +1,8 @@
 "use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Layout from "../components/Layout";
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, ClipboardList, Trophy, BarChart3, AlertTriangle

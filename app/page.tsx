@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import Layout from "../components/Layout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import QuickLinks from "./components/QuickLinks";

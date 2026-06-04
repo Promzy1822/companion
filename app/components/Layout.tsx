@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -84,7 +85,7 @@ export default function Layout({
               {sidebarContent}
             </div>
 
-            {/* FIX 1: merged classNames into one */}
+            {/* Mobile overlay */}
             {!isDesktop && (
               <div className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} />
             )}
@@ -92,7 +93,7 @@ export default function Layout({
         </aside>
       )}
 
-      {/* FIX 2 & 3: fixed parentheses and closing backtick+brace */}
+      {/* Main navbar */}
       {(!isDesktop || !showSidebar) && (
         <nav
           className={`fixed top-0 left-0 right-0 z-50 border-b bg-surface ${isDesktop && !showSidebar ? 'left-64' : 'left-0'}`}

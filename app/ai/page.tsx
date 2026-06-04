@@ -24,7 +24,7 @@ const QUICK_ACTIONS = [
 
 const WELCOME: Message = {
   role: "assistant", id: 0,
-  content: "Hello! I'm **Companion AI** 🎓\n\nI can help you:\n- Solve past questions with step-by-step explanations\n- Explain difficult JAMB topics clearly\n- Analyse photos of questions or textbook pages\n- Build study plans and give exam tips\n\nYou can type a question or attach a photo of a question. What would you like to work on?",
+  content: "Hello! I'm **Companion AI** 🎓\n\nI can help you:\n- Solve past questions with step-by-step explanations\n- Explain difficult JAMB topics clearly\n- Analyse photos of questions or texts\n- Generate practice questions from topics\n\nJust upload an image or type your question below!",
 };
 
 export default function AIChat() {
@@ -98,7 +98,7 @@ export default function AIChat() {
     }
   };
 
-  // ── Send ──────────────────────────────────────────────────────────────
+  // ── Send ───────────────────────────────────────────────────────────
 
   const sendMessage = async (text: string) => {
     const t         = text.trim();
@@ -128,7 +128,7 @@ export default function AIChat() {
       payload.imageType   = attachment.file.type;
     } else if (attachment?.type === "text") {
       // Prepend file content to message
-      payload.message = `The user has shared a text file named "${attachment.file.name}".\n\nFile contents:\n${attachment.base64}\n\n${t ? `User's question: ${t}` : "Please summarise the key points relevant to JAMB."}`;
+      payload.message = `The user has shared a text file named "${attachment.file.name}".\n\nFile contents:\n${attachment.base64}\n\n${t ? `User's question: ${t}` : "Please summarise the key points."}`;
     }
     setAttachment(null);
     setLoading(true);
@@ -206,12 +206,8 @@ export default function AIChat() {
                       style={{ backgroundColor: isUser ? T.surface : '#f0f0f0' }}
                     />
                   )}
-                  <div className={`px-4 py-2 rounded-lg
-                           ${isUser
-                             ? (m.image ? 'bg-primary text-white rounded-tr-xl rounded-bl-lg rounded-br-lg'
-                                : 'bg-primary text-white rounded-tr-xl rounded-bl-lg rounded-br-lg')
-                             : `bg-${isUser ? 'surface' : 'primary'}/10 text-${isUser ? 'white' : 'text'} border border-${isUser ? 'surface' : 'primary'}/20`}
-                           `}>
+                  <div className={isUser ? 'px-4 py-2 rounded-lg bg-primary text-white rounded-tr-xl rounded-bl-lg rounded-br-lg' : 'px-4 py-2 rounded-lg border'}
+                       style={!isUser ? { backgroundColor: dark ? '#2A2A35' : '#f5f5f5', color: T.text, borderColor: dark ? '#3A3A45' : '#e0e0e0' } : {}}>
                     {isUser ? (
                       <span>{m.content}</span>
                     ) : (
@@ -232,7 +228,7 @@ export default function AIChat() {
               <div className="flex space-x-2">
                 {[0,1,2].map(i => (
                   <div key={i} className="w-2 h-2 rounded-full bg-primary animate-bounce"
-                           style={{ animationDelay: `${i * 0.18}s` }}
+                       style={{ animationDelay: `${i * 0.18}s` }}
                   />
                 ))}
               </div>
@@ -291,7 +287,7 @@ export default function AIChat() {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-{dark ? 'white' : 'text'}">{attachment.file.name}</div>
+              <div className="font-medium" style={{ color: dark ? '#fff' : T.text }}>{attachment.file.name}</div>
               <div className="text-xs text-muted mt-1">
                 {attachment.type === "image"
                   ? "Image — AI will read and solve"
@@ -314,7 +310,7 @@ export default function AIChat() {
              backgroundColor: dark ? "rgba(13,13,15,0.95)" : "rgba(255,255,255,0.95)",
              backdropFilter: "blur(16px)",
              WebkitBackdropFilter: "blur(16px)",
-             borderTop: `1px solid ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)}"`
+             borderTop: `1px solid ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`
            }}>
         <div className="flex items-center gap-2"
              style={{
@@ -343,7 +339,8 @@ export default function AIChat() {
           {/* Text input */}
           <input
             ref={inputRef}
-            className="flex-1 bg-transparent border-none outline-none text-sm text-{dark ? 'white' : 'text'} p-0"
+            className="flex-1 bg-transparent border-none outline-none text-sm p-0"
+            style={{ color: dark ? '#fff' : T.text }}
             placeholder={attachment ? "Add a message (optional)…" : "Ask anything about JAMB…"}
             value={input}
             onChange={e => setInput(e.target.value)}

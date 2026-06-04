@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import Layout from "../components/Layout";
 import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../lib/cutoffs";
@@ -51,7 +52,7 @@ export default function Auth() {
         let account = null;
         try {
           const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-          account = accs.find((a) => a.email === email) || null;
+          account = accs.find((a: any) => a.email === email) || null;
         } catch {}
         if (!account) {
           const legacy = localStorage.getItem("companion_user");
@@ -67,7 +68,7 @@ export default function Auth() {
           delete account.password;
           try {
             const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-            const idx = accs.findIndex((a) => a.email === account.email);
+            const idx = accs.findIndex((a: any) => a.email === account.email);
             if (idx >= 0) { accs[idx] = account; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
           } catch {}
         }
@@ -107,7 +108,7 @@ export default function Auth() {
     try {
       const _u = JSON.parse(localStorage.getItem("companion_user") || "{}");
       const _accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-      const _idx = _accs.findIndex((a) => a.email === _u.email);
+      const _idx = _accs.findIndex((a: any) => a.email === _u.email);
       if (_idx >= 0) _accs[_idx] = _u; else _accs.push(_u);
       localStorage.setItem("companion_accounts", JSON.stringify(_accs));
     } catch {}
@@ -116,16 +117,6 @@ export default function Auth() {
 
   const prob = rec && form.institution !== "Other" && form.course !== "Other"
     ? getAdmissionProbability(parseInt(form.target), getCutoff(form.institution, form.course)) : null;
-
-  const T = palette(false); // Auth page always uses light mode for consistency
-
-  const inp: React.CSSProperties = {
-    width:"100%", padding:"12px 14px", borderRadius:"8px",
-    border:"1.5px solid #E4E6EB", fontSize:"14px", outline:"none",
-    background:"#F7F8FA", color:"#050505", boxSizing:"border-box",
-    fontFamily:"inherit",
-  };
-  const lbl: React.CSSProperties = { fontSize:"13px", fontWeight:600, color:"#65676B", display:"block", marginBottom:"6px" };
 
   return (
     <Layout title="Auth" showNavbar={false} showBottomNav={false} contentWidth="standard">
@@ -137,8 +128,7 @@ export default function Auth() {
             Back
           </Link>
           <div className="flex items-center gap-4">
-            <img src="/icon-192.png" alt="Companion" width={48} height={48}
-              className="rounded-xl shadow-lg" />
+            <img src="/icon-192.png" alt="Companion" width={48} height={48} className="rounded-xl shadow-lg" />
             <div className="text-center">
               <h1 className="text-2xl font-bold">companion</h1>
               <p className="text-sm text-primary/60">AI JAMB Study Assistant</p>
@@ -148,25 +138,19 @@ export default function Auth() {
       </header>
 
       {/* Card */}
-      <main className="max-w-md w-full">
+      <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Tabs */}
-          <div className="border-b border-border/20">
+          <div className="flex border-b border-border/20">
             <button
-              key="login"
               onClick={()=>{setMode("login");setStep(1);setError("");}}
-              className={`flex-1 px-4 py-3 font-medium text-center
-                       ${mode==='login' ? 'border-b-2 border-primary bg-primary/5 text-primary' : 'text-muted hover:bg-surface2'}
-                       transition-colors`}
+              className={`flex-1 px-4 py-3 font-medium text-center ${mode==='login' ? 'border-b-2 border-primary bg-primary/5 text-primary' : 'text-muted hover:bg-surface2'} transition-colors`}
             >
               Log In
             </button>
             <button
-              key="signup"
               onClick={()=>{setMode("signup");setStep(1);setError("");}}
-              className={`flex-1 px-4 py-3 font-medium text-center
-                       ${mode==='signup' ? 'border-b-2 border-primary bg-primary/5 text-primary' : 'text-muted hover:bg-surface2'}
-                       transition-colors`}
+              className={`flex-1 px-4 py-3 font-medium text-center ${mode==='signup' ? 'border-b-2 border-primary bg-primary/5 text-primary' : 'text-muted hover:bg-surface2'} transition-colors`}
             >
               Create Account
             </button>
@@ -208,9 +192,7 @@ export default function Auth() {
                   </button>
                 </div>
                 {error && (
-                  <div className="mt-2 px-3 py-2 rounded bg-danger/10 text-danger text-sm">
-                    ⚠️ {error}
-                  </div>
+                  <div className="mt-2 px-3 py-2 rounded bg-danger/10 text-danger text-sm">⚠️ {error}</div>
                 )}
                 <button
                   onClick={handleLogin}
@@ -221,10 +203,7 @@ export default function Auth() {
                 </button>
                 <p className="mt-4 text-center text-sm text-muted">
                   No account?{" "}
-                  <button
-                    onClick={()=>setMode("signup")}
-                    className="text-primary font-medium hover:text-primary/90 transition-colors"
-                  >
+                  <button onClick={()=>setMode("signup")} className="text-primary font-medium hover:text-primary/90 transition-colors">
                     Create one free
                   </button>
                 </p>
@@ -237,9 +216,7 @@ export default function Auth() {
                 {/* Progress */}
                 <div className="flex items-center space-x-3">
                   {[1,2,3].map(s=>(
-                    <div key={s} className={`w-3 h-0.5 bg-${s<step?'primary':s===step?'primary':'border-border/20'}
-                             rounded transition-colors ${s<step?'opacity-40':''}`}
-                    />
+                    <div key={s} className={`flex-1 h-0.5 rounded transition-colors ${s<=step ? 'bg-primary' : 'bg-border/20'}`} />
                   ))}
                 </div>
 
@@ -308,7 +285,6 @@ export default function Auth() {
                       </select>
                     </div>
 
-                    {/* AI Insight card */}
                     {rec && (
                       <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
                         <div className="flex items-center justify-between mb-3">
@@ -316,9 +292,8 @@ export default function Auth() {
                             <span className="text-xl">🤖</span>
                             <h3 className="font-medium text-primary">AI Admission Insight</h3>
                           </div>
-                          <span className={`px-2 py-1 rounded text-xs font-medium
-                                   bg-${COMP_COLOR[rec.competition]}/20
-                                   text-${COMP_COLOR[rec.competition]}`}>
+                          <span style={{ backgroundColor: COMP_COLOR[rec.competition] + '33', color: COMP_COLOR[rec.competition] }}
+                                className="px-2 py-1 rounded text-xs font-medium">
                             {rec.competition}
                           </span>
                         </div>
@@ -340,7 +315,8 @@ export default function Auth() {
                               <span className="font-medium">{prob.label}</span>
                             </div>
                             <div className="w-full h-2 bg-border/20 rounded overflow-hidden">
-                              <div className={`h-full w-${prob.percent}% bg-${prob.color} transition-width duration-300`} />
+                              <div className="h-full rounded transition-all duration-300"
+                                   style={{ width: `${prob.percent}%`, backgroundColor: prob.color }} />
                             </div>
                           </div>
                         )}
@@ -357,7 +333,7 @@ export default function Auth() {
                       <p className="text-muted">English is compulsory. Select 3 more.</p>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-success/5 rounded-lg border border-success/20">
-                      <CheckCircle size={16} />
+                      <CheckCircle size={16} className="text-success" />
                       <span className="font-medium text-success">English Language (auto-included)</span>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-4">
@@ -368,22 +344,17 @@ export default function Auth() {
                           <button
                             key={s}
                             onClick={()=>toggleSubject(s)}
-                            className={`px-3 py-2 rounded-md font-medium
-                                     ${sel ? 'bg-primary text-white' :
-                                       max ? 'border-border/20 text-muted opacity-50 cursor-not-allowed' :
-                                       'border-border/20 hover:bg-surface2 text-gray-800'}
-                                     transition-colors`}
+                            disabled={max}
+                            className={`px-3 py-2 rounded-md font-medium transition-colors
+                              ${sel ? 'bg-primary text-white' : max ? 'border border-border/20 text-muted opacity-50 cursor-not-allowed' : 'border border-border/20 hover:bg-surface2 text-gray-800'}`}
                           >
                             {s}
                           </button>
                         );
                       })}
                     </div>
-                    <div className="mt-3 p-3 rounded
-                             ${form.subjects.length===3 ? 'bg-success/5 border border-success/20' : 'bg-primary/5 border border-primary/20'}
-                             text-center">
-                      <span className="font-medium
-                              ${form.subjects.length===3 ? 'text-success' : 'text-primary'}">
+                    <div className={`mt-3 p-3 rounded text-center ${form.subjects.length===3 ? 'bg-success/5 border border-success/20' : 'bg-primary/5 border border-primary/20'}`}>
+                      <span className={`font-medium ${form.subjects.length===3 ? 'text-success' : 'text-primary'}`}>
                         {form.subjects.length}/3 {form.subjects.length===3 ? "✓ Complete!" : `— need ${3-form.subjects.length} more`}
                       </span>
                     </div>
@@ -397,10 +368,10 @@ export default function Auth() {
                       <h2 className="text-xl font-bold">Set Your Goal</h2>
                       <p className="text-muted">AI has pre-set your target based on your institution</p>
                     </div>
-                    <div className="flex items-center">
-                      <label className="flex items-center gap-2 text-sm font-medium text-muted">
+                    <div>
+                      <label className="flex items-center justify-between text-sm font-medium text-muted mb-2">
                         <span>Target Score</span>
-                        <span className="font-semibold">{form.target}</span>
+                        <span className="font-semibold text-primary">{form.target}</span>
                       </label>
                       <input
                         type="range" min="180" max="400" step="5"
@@ -431,9 +402,8 @@ export default function Auth() {
                           <button
                             key={v}
                             onClick={()=>update("selfRating",v)}
-                            className={`px-3 py-2 rounded-md font-medium
-                                     ${form.selfRating===v ? 'bg-primary text-white' : 'border-border/20 hover:bg-surface2 text-gray-800'}
-                                     transition-colors`}
+                            className={`px-3 py-2 rounded-md font-medium transition-colors
+                              ${form.selfRating===v ? 'bg-primary text-white' : 'border border-border/20 hover:bg-surface2 text-gray-800'}`}
                           >
                             {l}
                           </button>
@@ -444,23 +414,21 @@ export default function Auth() {
                 )}
 
                 {error && (
-                  <div className="mt-4 px-3 py-2 rounded bg-danger/10 text-danger text-sm">
-                    ⚠️ {error}
-                  </div>
+                  <div className="mt-4 px-3 py-2 rounded bg-danger/10 text-danger text-sm">⚠️ {error}</div>
                 )}
 
                 <div className="mt-6 flex justify-between">
                   {step > 1 && (
                     <button
                       onClick={()=>{setStep(s=>s-1);setError("");}}
-                      className="px-4 py-3 border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+                      className="px-4 py-3 border border-primary/20 text-primary rounded-lg hover:bg-primary/10 transition-colors"
                     >
                       ← Back
                     </button>
                   )}
                   <button
                     onClick={step < 3 ? nextStep : signup}
-                    className="px-4 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                    className="px-4 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors ml-auto"
                   >
                     {step < 3 ? "Continue →" : "🚀 Start Studying!"}
                   </button>
@@ -468,17 +436,15 @@ export default function Auth() {
 
                 <p className="mt-6 text-center text-sm text-muted">
                   Already have an account?{" "}
-                  <button
-                    onClick={()=>{setMode("login");setStep(1);}}
-                    className="text-primary font-medium hover:text-primary/90 transition-colors"
-                  >
+                  <button onClick={()=>{setMode("login");setStep(1);}} className="text-primary font-medium hover:text-primary/90 transition-colors">
                     Log in
                   </button>
                 </p>
               </div>
             )}
           </div>
-        </main>
-      </Layout>
+        </div>
+      </div>
+    </Layout>
   );
 }

@@ -63,7 +63,7 @@ export default function Layout({
       {isDesktop && showSidebar && (
         <aside className={`fixed top-0 left-0 h-full w-64 border-r border-border/20 bg-surface z-50 transform ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300`}>
           <div className="flex h-full flex-col">
-            <nav className={`flex-shrink-0 h-${navbarHeight} border-b border-border/20 flex items-center justify-between px-4`}>
+            <nav className="flex-shrink-0 border-b border-border/20 flex items-center justify-between px-4" style={{ height: `${navbarHeight}px` }}>
               <Link href="/" className="flex items-center gap-2 text-decoration-none">
                 <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
                   <span className="text-white font-bold text-xs">C</span>
@@ -96,7 +96,7 @@ export default function Layout({
       {/* Main navbar */}
       {(!isDesktop || !showSidebar) && (
         <nav
-          className={`fixed top-0 left-0 right-0 z-50 border-b bg-surface ${isDesktop && !showSidebar ? 'left-64' : 'left-0'}`}
+          className={`fixed top-0 left-0 right-0 z-50 border-b bg-surface`}
           style={{ height: `${navbarHeight}px`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}
         >
           <Link href="/" className="flex items-center gap-2 text-decoration-none">
@@ -135,13 +135,14 @@ export default function Layout({
       )}
 
       <main
-        className={`flex-1 w-full min-h-[calc(100vh-${navbarHeight}px-${bottomNavHeight}px)] ${isDesktop && showSidebar ? 'ml-64' : ''} overflow-x-hidden`}
+        className={`flex-1 w-full overflow-x-hidden ${isDesktop && showSidebar ? 'ml-64' : ''}`}
         style={{
+          minHeight: `calc(100vh - ${navbarHeight}px - ${bottomNavHeight}px)`,
           paddingTop: `calc(${navbarHeight}px + env(safe-area-inset-top, 0px))`,
           paddingBottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom, 0px))`
         }}
       >
-        <div className={`min-h-full flex flex-col ${contentWidth === 'standard' ? 'container' : contentWidth === 'wide' ? 'max-w-xl' : ''} mx-auto ${contentWidth === 'full' ? '' : 'px-4'}`}>
+        <div className={`min-h-full flex flex-col ${contentWidth === 'standard' ? 'container' : contentWidth === 'wide' ? 'max-w-6xl' : ''} mx-auto ${contentWidth === 'full' ? '' : 'px-4'}`}>
           <div className="flex-1">
             {children}
           </div>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Layout from "../components/Layout";
 
 function QuestionsContent() {
   const router = useRouter();
@@ -12,52 +11,59 @@ function QuestionsContent() {
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('darkMode') === 'true';
-    setDark(saved);
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') setDark(true);
   }, []);
 
   const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
 
   return (
-    <Layout title={`${subjectName} — ${mode === 'learn' ? 'Lessons' : 'Practice'}`} darkMode={dark} onToggleDark={setDark} showNavbar showBottomNav contentWidth="standard">
-      <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
-           style={{ paddingTop: "80px", paddingBottom: "20px" }}>
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => router.back()}
-            className="w-8 h-8 rounded-full bg-surface2 flex items-center justify-center hover:bg-surface3 transition-colors"
-          >
-            <ArrowLeft size={20} color={dark ? '#E4E6EB' : '#050505'} strokeWidth={1.8} />
-          </button>
-          <div className="font-bold text-2xl text-tracking-tight">
-            Com<span className="text-primary">panion</span>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <h1 className="text-3xl font-bold text-center mb-2">
-            {subjectName} — <span className="text-primary">{mode === 'learn' ? 'Lessons' : 'Practice'}</span>
-          </h1>
-          <p className="text-center text-muted">
-            {mode === 'learn' ? 'Watch video lessons for this subject' : 'Answer past JAMB questions'}
-          </p>
-        </div>
-
-        <div className="text-center">
-          <div className="w-24 h-24 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-            {mode === 'learn' ? '🎬' : '✏️'}
-          </div>
-          <h2 className="text-xl font-semibold mb-2">
-            {mode === 'learn' ? 'Lessons coming soon' : 'Questions coming soon'}
-          </h2>
-          <p className="text-muted">
-            {mode === 'learn'
-              ? 'We are curating the best YouTube lessons for ' + subjectName
-              : 'We are loading past JAMB questions for ' + subjectName}
-          </p>
+    <div style={{
+      minHeight: '100vh',
+      background: dark ? '#0f0f0f' : '#faf7f2',
+      color: dark ? '#f0f0f0' : '#1a1208',
+      padding: '24px 20px',
+      fontFamily: 'sans-serif',
+      transition: 'all 0.3s ease'
+    }}>
+      <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'28px'}}>
+        <button onClick={() => router.back()} style={{
+          background:'none', border:'none',
+          fontSize:'20px', cursor:'pointer',
+          color: dark ? '#f0f0f0' : '#1a1208'
+        }}>←</button>
+        <div style={{fontSize:'20px', fontWeight:800}}>
+          Com<span style={{color:'#e07000'}}>panion</span>
         </div>
       </div>
-    </Layout>
+
+      <div style={{fontSize:'22px', fontWeight:800, marginBottom:'6px'}}>
+        {subjectName} — <span style={{color:'#e07000'}}>{mode === 'learn' ? 'Lessons' : 'Practice'}</span>
+      </div>
+      <div style={{fontSize:'13px', color: dark ? '#888' : '#b09060', marginBottom:'32px'}}>
+        {mode === 'learn' ? 'Watch video lessons for this subject' : 'Answer past JAMB questions'}
+      </div>
+
+      <div style={{
+        background: dark ? '#1a1a1a' : '#ffffff',
+        border: `1px solid ${dark ? '#2a2a2a' : '#ede8df'}`,
+        borderRadius:'16px',
+        padding:'32px 20px',
+        textAlign:'center'
+      }}>
+        <div style={{fontSize:'48px', marginBottom:'16px'}}>
+          {mode === 'learn' ? '🎬' : '✏️'}
+        </div>
+        <div style={{fontSize:'16px', fontWeight:700, marginBottom:'8px'}}>
+          {mode === 'learn' ? 'Lessons coming soon' : 'Questions coming soon'}
+        </div>
+        <div style={{fontSize:'13px', color: dark ? '#888' : '#b09060'}}>
+          {mode === 'learn'
+            ? 'We are curating the best YouTube lessons for ' + subjectName
+            : 'We are loading past JAMB questions for ' + subjectName}
+        </div>
+      </div>
+    </div>
   );
 }
 

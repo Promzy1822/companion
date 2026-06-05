@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Layout from "../components/Layout";
 import { C } from "../lib/design";
 import { BookOpen, Bot, BarChart3, Newspaper, Calculator, ClipboardList, CheckCircle, ArrowRight, Star } from "lucide-react";
 
@@ -41,168 +40,234 @@ export default function Landing() {
   ];
 
   return (
-    <Layout title="Companion — AI-Powered JAMB Study Support" darkMode={false} onToggleDark={() => {}} showNavbar={false} showBottomNav={false} contentWidth="standard">
-      {/* Page content */}
-      <div className="flex-1 w-full overflow-y-auto p-6 pt-10 pb-6"
-           style={{ paddingTop: "80px", paddingBottom: "20px" }}>
+    <div style={{
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      background: "#fff", overflowX: "hidden",
+    }}>
 
-        {/* ── NAV ────────────────────────────────────────────────── */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/icon-192.png" alt="Companion" width={28} height={28}
-                className="rounded" />
-              <span className="font-bold text-xl text-tracking-tight">
-                Companion
-              </span>
-            </div>
-            <Link href="/auth" className="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
-              Log In
-            </Link>
-          </div>
+      {/* ── NAV ────────────────────────────────────────────────── */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+        borderBottom: "1px solid #E4E6EB",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 20px", height: "56px",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+          <img src="/icon-192.png" alt="Companion" width={28} height={28}
+            style={{ borderRadius: "8px", display: "block" }} />
+          <span style={{ fontWeight: 800, fontSize: "17px", color: "#050505", letterSpacing: "-0.3px" }}>
+            companion
+          </span>
         </div>
+        <Link href="/auth" style={{
+          background: C.primary, color: "#fff",
+          borderRadius: "50px", padding: "8px 18px",
+          fontSize: "13px", fontWeight: 700, textDecoration: "none",
+        }}>
+          Log In
+        </Link>
+      </nav>
 
-        {/* ── HERO ────────────────────────────────────────────────── */}
-        <div className="mb-8">
-          <div className="relative">
-            {/* Floating orbs */}
-            <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-primary/5" />
-            <div className="absolute bottom-0 -left-16 w-48 h-48 rounded-full bg-primary/3" />
+      {/* ── HERO ────────────────────────────────────────────────── */}
+      <div style={{
+        background: "linear-gradient(160deg, #F0F7FF 0%, #E8F1FF 60%, #EFF2FF 100%)",
+        padding: "56px 24px 64px",
+        textAlign: "center",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        {/* Floating orbs */}
+        <div style={{ position:"absolute", top:"-40px", right:"-40px", width:220, height:220, borderRadius:"50%", background:"rgba(24,119,242,0.08)" }} />
+        <div style={{ position:"absolute", bottom:"0", left:"-60px", width:180, height:180, borderRadius:"50%", background:"rgba(24,119,242,0.06)" }} />
 
-            <div className="relative z-10 text-center">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-white border border-surface2/20 rounded-full px-4 py-1 mb-6">
-                <div className="w-2.5 h-2.5 bg-success rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-muted">Nigeria's #1 JAMB Study App</span>
-              </div>
-
-              {/* Logo */}
-              <div className="mb-4">
-                <img src="/icon-192.png" alt="Companion" width={80} height={80}
-                  className="rounded-lg shadow-lg" />
-              </div>
-
-              <h1 className="text-4xl font-bold text-center mb-4 text-tracking-tight">
-                Pass JAMB with<br />
-                <span className="text-primary">AI-Powered</span> Study Support
-              </h1>
-              <p className="text-lg text-center text-muted max-w-2xl mx-auto">
-                Learn smarter, practice daily, and get instant answers from your AI tutor.
-                Built specifically for Nigerian students.
-              </p>
-
-              <Link href="/auth" className="mt-6 inline-flex items-center gap-3 bg-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors shadow-lg">
-                Get Started Free <ArrowRight size={18} strokeWidth={2.2} />
-              </Link>
-              <p className="mt-3 text-xs text-muted">
-                No credit card &nbsp;·&nbsp; Takes 2 minutes
-              </p>
-            </div>
+        <div style={{ position: "relative" }}>
+          {/* Badge */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            background: "#fff", border: "1px solid #E4E6EB",
+            borderRadius: "50px", padding: "5px 14px",
+            marginBottom: "24px",
+            boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
+          }}>
+            <div style={{ width:6, height:6, borderRadius:"50%", background:"#31A24C", animation:"pulse 2s infinite" }} />
+            <span style={{ fontSize:"12px", fontWeight:600, color:"#65676B" }}>Nigeria's #1 JAMB Study App</span>
           </div>
 
-          {/* Stats */}
-          <div className="mt-8 grid grid-cols-1 gap-4 text-center bg-surface rounded-lg border border-surface2/20 md:grid-cols-4">
-            {[
-              { n:"1.5M+", l:"Students"  },
-              { n:"10K+",  l:"Questions" },
-              { n:"24/7",  l:"AI Help"   },
-              { n:"Free",  l:"Always"    },
-            ].map((s,i)=>(
-              <div key={i}>
-                <div className="text-2xl font-bold text-primary">{s.n}</div>
-                <div className="text-sm text-muted">{s.l}</div>
-              </div>
-            ))}
+          {/* Logo */}
+          <div style={{ margin: "0 auto 20px", display: "inline-block" }}>
+            <img src="/icon-192.png" alt="Companion" width={80} height={80}
+              style={{ borderRadius: "22px", boxShadow: "0 8px 28px rgba(24,119,242,0.25)", display: "block" }} />
           </div>
-        </div>
 
-        {/* ── FEATURES ────────────────────────────────────────────── */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <div className="text-xs font-medium text-primary tracking-wider mb-1">FEATURES</div>
-            <h2 className="text-2xl font-bold text-center mb-2">Everything you need to pass</h2>
-            <p className="text-center text-muted max-w-3xl mx-auto">
-              No more switching between apps and websites
-            </p>
-          </div>
-          <div className="grid gap-4">
-            {FEATURES.map((f,i)=>(
-              <div key={i} className="bg-surface rounded-xl border border-surface2/20 p-6 hover:bg-surface2/50 transition-colors">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-3"
-                       style={{ backgroundColor: f.bg }}>
-                    <f.icon size={20} strokeWidth={1.8} color={f.color} />
-                  </div>
-                </div>
-                <h3 className="font-semibold text-center">{f.title}</h3>
-                <p className="text-center text-muted">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+          <h1 style={{
+            fontSize: "36px", fontWeight: 900, lineHeight: 1.15,
+            color: "#050505", margin: "0 0 16px",
+            letterSpacing: "-1px",
+          }}>
+            Pass JAMB with<br />
+            <span style={{ color: C.primary }}>AI-Powered</span> Study Support
+          </h1>
+          <p style={{
+            fontSize: "16px", color: "#65676B",
+            lineHeight: 1.6, margin: "0 0 32px",
+          }}>
+            Learn smarter, practice daily, and get instant answers from your AI tutor.
+            Built specifically for Nigerian students.
+          </p>
 
-        {/* ── HOW IT WORKS ────────────────────────────────────────── */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <div className="text-xs font-medium text-primary tracking-wider mb-1">HOW IT WORKS</div>
-            <h2 className="text-2xl font-bold text-center mb-2">Simple. Effective. Fast.</h2>
-          </div>
-          <div className="grid gap-6">
-            {STEPS.map((s,i)=>(
-              <div key={i} className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-lg">
-                  {s.n}
-                </div>
-                <div>
-                  <h3 className="font-medium">{s.title}</h3>
-                  <p className="text-muted">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── TESTIMONIALS ────────────────────────────────────────── */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <div className="text-xs font-medium text-primary tracking-wider mb-1">STUDENT STORIES</div>
-          </div>
-          <div className="space-y-4">
-            {TESTIMONIALS.map((t,i)=>(
-              <div key={i} className="bg-surface rounded-xl border border-surface2/20 p-6">
-                <div className="flex items-center mb-3">
-                  {[...Array(5)].map((_,j)=><Star key={j} size={14} color="#F7B928" fill="#F7B928" strokeWidth={0} />)}
-                </div>
-                <p className="italic text-muted">{t.text}"</p>
-                <div className="mt-3 flex justify-between items-center text-sm">
-                  <span className="font-medium">{t.name}</span>
-                  <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded">
-                    {t.score} · {t.school}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── CTA ─────────────────────────────────────────────────── */}
-        <div className="text-center">
-          <div className="mb-6">
-            <img src="/icon-192.png" alt="Companion" width={60} height={60}
-              className="rounded-lg shadow-lg mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Ready to ace JAMB?</h2>
-            <p className="text-white/80 max-w-2xl mx-auto">
-              Join thousands of students already using Companion
-            </p>
-          </div>
-          <Link href="/auth" className="inline-flex items-center gap-3 bg-white text-primary font-bold py-3 px-6 rounded-lg hover:bg-white/90 transition-colors shadow-lg">
-            Create Free Account <ArrowRight size={18} strokeWidth={2.2} />
+          <Link href="/auth" style={{
+            display: "inline-flex", alignItems: "center", gap: "8px",
+            background: C.primary, color: "#fff",
+            borderRadius: "50px", padding: "16px 32px",
+            fontWeight: 800, fontSize: "16px", textDecoration: "none",
+            boxShadow: "0 6px 24px rgba(24,119,242,0.35)",
+          }}>
+            Get Started Free <ArrowRight size={18} strokeWidth={2.2} />
           </Link>
-          <p className="mt-4 text-xs text-white/60">
-            No credit card required
+          <p style={{ marginTop: "12px", fontSize: "12px", color: "#8A8D91" }}>
+            No credit card &nbsp;·&nbsp; Takes 2 minutes
           </p>
         </div>
+
+        {/* Stats */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
+          gap: "1px",
+          margin: "40px 0 0",
+          background: "#E4E6EB", borderRadius: "14px", overflow: "hidden",
+        }}>
+          {[
+            { n:"1.5M+", l:"Students"  },
+            { n:"10K+",  l:"Questions" },
+            { n:"24/7",  l:"AI Help"   },
+            { n:"Free",  l:"Always"    },
+          ].map((s,i)=>(
+            <div key={i} style={{ padding:"16px 8px", textAlign:"center", background:"#fff" }}>
+              <div style={{ fontSize:"18px", fontWeight:900, color:C.primary }}>{s.n}</div>
+              <div style={{ fontSize:"11px", color:"#65676B", marginTop:"2px" }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
       </div>
-    </Layout>
+
+      {/* ── FEATURES ────────────────────────────────────────────── */}
+      <div style={{ padding: "56px 20px", background: "#F0F2F5" }}>
+        <div style={{ textAlign:"center", marginBottom:"32px" }}>
+          <div style={{ fontSize:"12px", fontWeight:700, color:C.primary, letterSpacing:"2px", marginBottom:"8px" }}>FEATURES</div>
+          <h2 style={{ fontSize:"26px", fontWeight:800, color:"#050505", margin:"0 0 8px", letterSpacing:"-0.5px" }}>
+            Everything you need to pass
+          </h2>
+          <p style={{ fontSize:"14px", color:"#65676B", margin:0 }}>No more switching between apps and websites</p>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
+          {FEATURES.map((f,i)=>{
+            const Icon = f.icon;
+            return (
+              <div key={i} style={{
+                background:"#fff", borderRadius:"16px", padding:"20px 16px",
+                border:"1px solid #E4E6EB", boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
+              }}>
+                <div style={{
+                  width:44, height:44, borderRadius:"12px",
+                  background:f.bg,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  marginBottom:"12px",
+                }}>
+                  <Icon size={20} strokeWidth={1.8} color={f.color} />
+                </div>
+                <div style={{ fontWeight:700, fontSize:"14px", color:"#050505", marginBottom:"5px" }}>{f.title}</div>
+                <div style={{ fontSize:"12px", color:"#65676B", lineHeight:1.5 }}>{f.desc}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── HOW IT WORKS ────────────────────────────────────────── */}
+      <div style={{ padding:"56px 20px", background:"#fff" }}>
+        <div style={{ textAlign:"center", marginBottom:"32px" }}>
+          <div style={{ fontSize:"12px", fontWeight:700, color:C.primary, letterSpacing:"2px", marginBottom:"8px" }}>HOW IT WORKS</div>
+          <h2 style={{ fontSize:"26px", fontWeight:800, color:"#050505", margin:0, letterSpacing:"-0.5px" }}>
+            Simple. Effective. Fast.
+          </h2>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:"20px" }}>
+          {STEPS.map((s,i)=>(
+            <div key={i} style={{ display:"flex", gap:"16px", alignItems:"flex-start" }}>
+              <div style={{
+                width:40, height:40, borderRadius:"50%", flexShrink:0,
+                background: C.primary,
+                display:"flex", alignItems:"center", justifyContent:"center",
+                color:"#fff", fontWeight:900, fontSize:"16px",
+                boxShadow:"0 4px 14px rgba(24,119,242,0.3)",
+              }}>{s.n}</div>
+              <div style={{ paddingTop:"4px" }}>
+                <div style={{ fontWeight:700, fontSize:"15px", color:"#050505", marginBottom:"4px" }}>{s.title}</div>
+                <div style={{ fontSize:"13px", color:"#65676B", lineHeight:1.5 }}>{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── TESTIMONIALS ────────────────────────────────────────── */}
+      <div style={{ padding:"40px 20px", background:"#F0F2F5" }}>
+        <div style={{ textAlign:"center", marginBottom:"24px" }}>
+          <div style={{ fontSize:"12px", fontWeight:700, color:C.primary, letterSpacing:"2px" }}>STUDENT STORIES</div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+          {TESTIMONIALS.map((t,i)=>(
+            <div key={i} style={{
+              background:"#fff", borderRadius:"16px", padding:"16px",
+              border:"1px solid #E4E6EB", boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
+            }}>
+              <div style={{ display:"flex", gap:"2px", marginBottom:"8px" }}>
+                {[...Array(5)].map((_,j)=><Star key={j} size={14} color="#F7B928" fill="#F7B928" strokeWidth={0} />)}
+              </div>
+              <p style={{ fontSize:"13px", color:"#3C4043", margin:"0 0 12px", lineHeight:1.55, fontStyle:"italic" }}>"{t.text}"</p>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <span style={{ fontWeight:700, fontSize:"13px", color:"#050505" }}>{t.name}</span>
+                <span style={{
+                  fontSize:"12px", fontWeight:600, color:C.primary,
+                  background:"#E7F0FF", padding:"4px 10px", borderRadius:"20px",
+                }}>{t.score} · {t.school}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── CTA ─────────────────────────────────────────────────── */}
+      <div style={{
+        padding:"56px 24px",
+        background: "linear-gradient(135deg, #1877F2, #0C5FD1)",
+        textAlign:"center",
+      }}>
+        <img src="/icon-192.png" alt="Companion" width={60} height={60}
+          style={{ borderRadius:"18px", margin:"0 auto 20px", display:"block", boxShadow:"0 8px 24px rgba(0,0,0,0.25)" }} />
+        <h2 style={{ color:"#fff", fontSize:"26px", fontWeight:800, margin:"0 0 10px", letterSpacing:"-0.5px" }}>
+          Ready to ace JAMB?
+        </h2>
+        <p style={{ color:"rgba(255,255,255,0.8)", fontSize:"14px", margin:"0 0 28px" }}>
+          Join thousands of students already using Companion
+        </p>
+        <Link href="/auth" style={{
+          display:"inline-flex", alignItems:"center", gap:"8px",
+          background:"#fff", color:C.primary,
+          borderRadius:"50px", padding:"16px 32px",
+          fontWeight:800, fontSize:"16px", textDecoration:"none",
+          boxShadow:"0 6px 24px rgba(0,0,0,0.2)",
+          marginBottom:"14px",
+        }}>
+          Create Free Account <ArrowRight size={18} strokeWidth={2.2} />
+        </Link>
+        <p style={{ color:"rgba(255,255,255,0.55)", fontSize:"12px", margin:0 }}>No credit card required</p>
+      </div>
+
+      <style>{`
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+      `}</style>
+    </div>
   );
 }

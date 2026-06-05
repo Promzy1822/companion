@@ -60,41 +60,35 @@ export default function Navbar({
             aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
             className="w-9 h-9 bg-surface2 rounded-full flex items-center justify-center hover:bg-surface3 transition-colors"
           >
-            {darkMode ? <Sun  {...ic} color={T.sub} /> : <Moon {...ic} color={T.sub} />}
+            {darkMode ? <Sun {...ic} color={T.sub} /> : <Moon {...ic} color={T.sub} />}
           </button>
         )}
 
         {user ? (
           <div className="relative">
             <button
-              onClick={() => {
-                // Dropdown would be handled by parent layout or a separate dropdown component
-                // For now, we'll just navigate to profile on click
-              }}
+              onClick={() => router.push("/profile")}
               className="flex items-center gap-3"
             >
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-white font-bold text-xs">{user.name.charAt(0).toUpperCase()}</span>
               </div>
               <div className="flex-1">
-                <div className="font-medium text">{user.name.split(" ")[0]}</div>
+                <div className="font-medium">{user.name.split(" ")[0]}</div>
                 <div className="text-xs text-muted">{user.email}</div>
               </div>
-              <ChevronDown
-                size={13} strokeWidth={2.5} color={T.sub}
-                className="transition-transform duration-200"
-                // Would add rotation logic here if we had dropdown state
-              />
-            </div>
-          ) : (
-            <Link
-              href="/auth"
-              className="px-3 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              Sign Up
-            </Link>
-          )}
-        </div>
+              <ChevronDown size={13} strokeWidth={2.5} color={T.sub} className="transition-transform duration-200" />
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/auth"
+            className="px-3 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Sign Up
+          </Link>
+        )}
       </div>
-    );
+    </div>
+  );
 }

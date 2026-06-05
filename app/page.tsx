@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import Layout from "../components/Layout";
+import Layout from "./components/Layout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import QuickLinks from "./components/QuickLinks";
@@ -30,27 +30,21 @@ const catOf = (t:string) => {
 };
 
 const FALLBACK: NewsItem[] = [
-  {title:"JAMB 2025 UTME Registration Portal Now Open",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"2h ago"},
-  {title:"JAMB Releases Updated Syllabus for 2025 UTME",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"5h ago"},
-  {title:"UNILAG Post-UTME Screening 2025: Dates Released",url:"#",source:"UNILAG Info",time:"1d ago"},
-  {title:"How to Score 300+ in JAMB: Expert Study Tips",url:"#",source:"Education Guide",time:"1d ago"},
-  {title:"CBT Centres: Approved JAMB Centres 2025",url:"#",source:"JAMB Guide",time:"2d ago"},
-  {title:"OAU Cut-Off Marks for All Courses 2025",url:"#",source:"University News",time:"3d ago"},
+  {title:"JAMB 2025 UTME Registration Portal Now Open",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"2h ago",category:"Exams"},
+  {title:"JAMB Releases Updated Syllabus for 2025 UTME",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"5h ago",category:"Exams"},
+  {title:"UNILAG Post-UTME Screening 2025: Dates Released",url:"#",source:"UNILAG Info",time:"1d ago",category:"Admissions"},
+  {title:"How to Score 300+ in JAMB: Expert Study Tips",url:"#",source:"Education Guide",time:"1d ago",category:"Education"},
+  {title:"CBT Centres: Approved JAMB Centres 2025",url:"#",source:"JAMB Guide",time:"2d ago",category:"Exams"},
+  {title:"OAU Cut-Off Marks for All Courses 2025",url:"#",source:"University News",time:"3d ago",category:"Admissions"},
 ];
 
 export default function Home() {
   const router = useRouter();
   const [darkMode,   setDarkMode]   = useState(false);
   const [user,       setUser]       = useState<User|null>(null);
-  const {
-    filtered:  news,
-    loading:   newsLoad,
-    refreshing,
-    refresh:   fetchNews,
-    setCategory: setNewsCategory,
-    lastUpdated: newsLastUpdated,
-    isStale:   newsIsStale,
-  } = useNews();
+  const [news,       setNews]       = useState<NewsItem[]>(FALLBACK);
+  const [newsLoad,   setNewsLoad]   = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [cat,        setCat]        = useState("All");
   const [showCalc,   setShowCalc]   = useState(false);
   const [calcType,   setCalcType]   = useState<"jamb"|"aggregate">("aggregate");
@@ -61,6 +55,25 @@ export default function Home() {
   const [pressed,    setPressed]    = useState<number|null>(null);
   const [ready,      setReady]      = useState(false);
   const T = palette(darkMode);
+
+  const fetchNews = async (force = false) => {
+    if (refreshing && !force) return;
+    setRefreshing(true);
+    try {
+      const res = await fetch("/api/news");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length) {
+          setNews(data.map((n: NewsItem) => ({ ...n, category: n.category || catOf(n.title) })));
+        }
+      }
+    } catch {
+      setNews(FALLBACK);
+    } finally {
+      setRefreshing(false);
+      setNewsLoad(false);
+    }
+  };
 
   useEffect(() => {
     const dm = localStorage.getItem("darkMode") === "true";
@@ -99,7 +112,6 @@ export default function Home() {
   if (!ready) return null;
 
   const filteredNews = cat === "All" ? news : news.filter(n=>n.category===cat);
-
   const hour = new Date().getHours();
   const greeting = hour<12 ? "Good morning" : hour<17 ? "Good afternoon" : "Good evening";
 
@@ -149,15 +161,14 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-center mb-2">Everything you need to pass</h2>
             <p className="text-muted max-w-xl mx-auto">No more switching between apps and websites</p>
           </div>
-
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: "📚", color: "#0D8050", bg: "#E6F4EA", title: "Smart Lessons",    desc: "Curated video lessons for all JAMB subjects, organised by topic" },
-              { icon: "🤖", color: C.primary, bg: "#E7F0FF", title: "AI Tutor 24/7",    desc: "Ask anything about JAMB — instant answers, every hour of the day" },
-              { icon: "📋", color: "#C75B21", bg: "#FFF0E6", title: "Mock Exams",        desc: "AI-generated timed exams with full subject breakdown and debrief" },
-              { icon: "📊", color: "#7B3FBE", bg: "#F3E8FF", title: "Track Progress",   desc: "Study streaks, performance analytics and personalised targets" },
-              { icon: "🧮", color: "#B07D00", bg: "#FEF9E7", title: "Score Calculator", desc: "Instant JAMB aggregate and Post-UTME score calculations" },
-              { icon: "📰", color: "#D0021B", bg: "#FEE2E2", title: "JAMB News",         desc: "Live updates on JAMB announcements, results and deadlines" },
+              { icon:"📚", color:"#0D8050", bg:"#E6F4EA", title:"Smart Lessons",    desc:"Curated video lessons for all JAMB subjects, organised by topic" },
+              { icon:"🤖", color:C.primary, bg:"#E7F0FF", title:"AI Tutor 24/7",    desc:"Ask anything about JAMB — instant answers, every hour of the day" },
+              { icon:"📋", color:"#C75B21", bg:"#FFF0E6", title:"Mock Exams",        desc:"AI-generated timed exams with full subject breakdown and debrief" },
+              { icon:"📊", color:"#7B3FBE", bg:"#F3E8FF", title:"Track Progress",   desc:"Study streaks, performance analytics and personalised targets" },
+              { icon:"🧮", color:"#B07D00", bg:"#FEF9E7", title:"Score Calculator", desc:"Instant JAMB aggregate and Post-UTME score calculations" },
+              { icon:"📰", color:"#D0021B", bg:"#FEE2E2", title:"JAMB News",         desc:"Live updates on JAMB announcements, results and deadlines" },
             ].map((f,i)=>(
               <div key={i} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-border/20">
                 <div className="flex items-center justify-center w-12 h-12 mb-4 rounded-xl" style={{ backgroundColor: f.bg }}>
@@ -197,9 +208,7 @@ export default function Home() {
                 <button
                   key={c}
                   onClick={()=>setCat(c)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium
-                           ${cat===c ? 'bg-primary text-white' : 'bg-surface2 text-muted'}
-                           hover:bg-primary/10 transition-colors`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${cat===c ? 'bg-primary text-white' : 'bg-surface2 text-muted'} hover:bg-primary/10 transition-colors`}
                 >
                   {c}
                 </button>
@@ -241,9 +250,9 @@ export default function Home() {
                     onTouchStart={()=>setPressed(i)}
                     onTouchEnd={()=>setPressed(null)}
                   >
-                    <div className="flex items-start gap-4 py-4"
-                         className:pressed===i ? "bg-surface2" : "transparent"
-                         style={{ backgroundColor: pressed===i ? 'var(--color-surface2)' : 'transparent' }}
+                    <div
+                      className="flex items-start gap-4 py-4"
+                      style={{ backgroundColor: pressed===i ? 'var(--color-surface2)' : 'transparent' }}
                     >
                       <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden">
                         {item.image && (
@@ -256,7 +265,7 @@ export default function Home() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-semibold text-primary">{item.source}</span>
                           <span className="text-xs text-muted">·</span>
                           <span className="text-xs text-muted">{item.time}</span>
@@ -269,7 +278,6 @@ export default function Home() {
                     </div>
                   </a>
                 ))}
-
                 <div className="pt-4 border-t border-border/20">
                   <button
                     onClick={()=>fetchNews(true)}
@@ -297,7 +305,6 @@ export default function Home() {
                 Close
               </button>
             </div>
-
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -308,84 +315,52 @@ export default function Home() {
                   <p className="text-sm text-muted">JAMB and Aggregate formula</p>
                 </div>
               </div>
-
               <div className="flex gap-3">
-                <button
-                  key="aggregate"
-                  onClick={()=>{setCalcType("aggregate");setResult(null);setCalcErr("");}}
-                  className={`flex-1 px-4 py-2 rounded-lg font-semibold
-                           ${calcType==='aggregate' ? 'bg-primary text-white' : 'bg-surface2 text-muted'}
-                           hover:bg-primary/10 transition-colors`}
-                >
-                  Aggregate
-                </button>
-                <button
-                  key="jamb"
-                  onClick={()=>{setCalcType("jamb");setResult(null);setCalcErr("");}}
-                  className={`flex-1 px-4 py-2 rounded-lg font-semibold
-                           ${calcType==='jamb' ? 'bg-primary text-white' : 'bg-surface2 text-muted'}
-                           hover:bg-primary/10 transition-colors`}
-                >
-                  JAMB Only
-                </button>
+                {(["aggregate","jamb"] as const).map(t=>(
+                  <button
+                    key={t}
+                    onClick={()=>{setCalcType(t);setResult(null);setCalcErr("");}}
+                    className={`flex-1 px-4 py-2 rounded-lg font-semibold ${calcType===t ? 'bg-primary text-white' : 'bg-surface2 text-muted'} hover:bg-primary/10 transition-colors`}
+                  >
+                    {t==="aggregate" ? "Aggregate" : "JAMB Only"}
+                  </button>
+                ))}
               </div>
-
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-muted mb-1">JAMB Score (0-400)</label>
                   <input
-                    type="number"
-                    min="0"
-                    max="400"
-                    placeholder="e.g. 285"
-                    value={jambS}
-                    onChange={e=>setJambS(e.target.value)}
+                    type="number" min="0" max="400" placeholder="e.g. 285"
+                    value={jambS} onChange={e=>setJambS(e.target.value)}
                     className="w-full px-4 py-2 rounded-lg border border-border/20 bg-surface2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 {calcType==="aggregate" && (
                   <div>
                     <label className="block text-sm font-medium text-muted mb-1">Post-UTME Score (0-100)</label>
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      placeholder="e.g. 72"
-                      value={postS}
-                      onChange={e=>setPostS(e.target.value)}
+                      type="number" min="0" max="100" placeholder="e.g. 72"
+                      value={postS} onChange={e=>setPostS(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border border-border/20 bg-surface2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
-                    <p className="text-xs mt-2 font-medium text-primary">
-                      Formula: (JAMB / 8) + (Post-UTME / 2)
-                    </p>
+                    <p className="text-xs mt-2 font-medium text-primary">Formula: (JAMB / 8) + (Post-UTME / 2)</p>
                   </div>
                 )}
-
                 {calcErr && (
-                  <div className="px-4 py-2 rounded-lg bg-danger/10 text-danger">
-                    {calcErr}
-                  </div>
+                  <div className="px-4 py-2 rounded-lg bg-danger/10 text-danger">{calcErr}</div>
                 )}
-
                 <button
                   onClick={calcAggregate}
                   className="w-full px-4 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   Calculate
                 </button>
-
                 {result && (
                   <div className="mt-6">
                     <div className="text-center">
-                      <div className="text-5xl font-extrabold" style={{ color: result.color }}>
-                        {result.agg}
-                      </div>
-                      <div className="text-lg font-bold mt-2" style={{ color: result.color }}>
-                        {result.grade}
-                      </div>
+                      <div className="text-5xl font-extrabold" style={{ color: result.color }}>{result.agg}</div>
+                      <div className="text-lg font-bold mt-2" style={{ color: result.color }}>{result.grade}</div>
                     </div>
-
                     {calcType==="aggregate" && (
                       <div className="mt-6 space-y-3">
                         <div className="flex justify-between text-sm">

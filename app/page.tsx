@@ -7,6 +7,7 @@ import { useNews } from "./lib/useNews";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "./components/BottomNav";
 import QuickLinks from "./components/QuickLinks";
 import StreakCard from "./components/StreakCard";
+import CountdownBanner from "./components/CountdownBanner";
 import { C, D, palette } from "./lib/design";
 import { RefreshCw, Calculator, Newspaper, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -52,15 +53,15 @@ export default function Home() {
     lastUpdated: newsLastUpdated,
     isStale:   newsIsStale,
   } = useNews();
-  const [cat,        setCat]        = useState("All");
-  const [showCalc,   setShowCalc]   = useState(false);
-  const [calcType,   setCalcType]   = useState<"jamb"|"aggregate">("aggregate");
-  const [jambS,      setJambS]      = useState("");
-  const [postS,      setPostS]      = useState("");
-  const [result,     setResult]     = useState<{agg:number;jamb:number;post:number;grade:string;color:string}|null>(null);
-  const [calcErr,    setCalcErr]    = useState("");
-  const [pressed,    setPressed]    = useState<number|null>(null);
-  const [ready,      setReady]      = useState(false);
+  const [cat,      setCat]      = useState("All");
+  const [showCalc, setShowCalc] = useState(false);
+  const [calcType, setCalcType] = useState<"jamb"|"aggregate">("aggregate");
+  const [jambS,    setJambS]    = useState("");
+  const [postS,    setPostS]    = useState("");
+  const [result,   setResult]   = useState<{agg:number;jamb:number;post:number;grade:string;color:string}|null>(null);
+  const [calcErr,  setCalcErr]  = useState("");
+  const [pressed,  setPressed]  = useState<number|null>(null);
+  const [ready,    setReady]    = useState(false);
   const router = useRouter();
   const T = palette(darkMode);
 
@@ -81,7 +82,6 @@ export default function Home() {
     localStorage.setItem("darkMode", String(next));
     document.documentElement.setAttribute("data-dark", String(next));
   };
-
 
   const calcAggregate = () => {
     setCalcErr(""); setResult(null);
@@ -123,6 +123,7 @@ export default function Home() {
         paddingTop:NAVBAR_HEIGHT+"px",
         fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",
       }}>
+        {/* Hero header */}
         <div style={{
           background: darkMode
             ? "linear-gradient(135deg,#1A2A4A,#1877F2)"
@@ -143,6 +144,10 @@ export default function Home() {
 
         <div style={{ padding:"0 14px", marginTop:"-16px", paddingBottom:"calc("+BOTTOM_NAV_HEIGHT+"px + 16px)" }}>
 
+          {/* Countdown banner — shows only if user set an exam date */}
+          <CountdownBanner darkMode={darkMode} />
+
+          {/* AI CTA */}
           <Link href="/ai" style={{ textDecoration:"none", display:"block", marginBottom:"14px" }}>
             <div style={{
               background:"linear-gradient(135deg,#1877F2,#166FE5)",
@@ -159,53 +164,50 @@ export default function Home() {
                 <div style={{ color:"#fff", fontWeight:800, fontSize:"16px", letterSpacing:"-0.2px" }}>Ask AI Anything</div>
                 <div style={{ color:"rgba(255,255,255,0.8)", fontSize:"12px", marginTop:"2px" }}>Your 24/7 JAMB tutor is ready</div>
               </div>
-              <div style={{ width:32, height:32, borderRadius:"50%", background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", flexShrink:0 }}>
-                →
-              </div>
+              <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"20px" }}>→</div>
             </div>
           </Link>
 
-          <div style={{ marginBottom:"14px" }}>
-            <QuickLinks darkMode={darkMode} />
-          </div>
-
+          {/* Streak */}
           <div style={{ marginBottom:"14px" }}>
             <StreakCard darkMode={darkMode} />
           </div>
 
+          {/* Quick links */}
+          <div style={{ marginBottom:"14px" }}>
+            <QuickLinks darkMode={darkMode} />
+          </div>
+
+          {/* Calculator */}
           <div style={{
-            background:T.surface, borderRadius:"16px", marginBottom:"14px",
-            border:"1px solid "+T.border, overflow:"hidden",
+            background:T.surface, borderRadius:"16px",
+            border:"1px solid "+T.border,
             boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
+            marginBottom:"14px", overflow:"hidden",
           }}>
-            <button onClick={()=>{setShowCalc(!showCalc);setResult(null);setCalcErr("");}} style={{
-              width:"100%", padding:"16px 18px", background:"none", border:"none",
-              cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between",
+            <button onClick={()=>setShowCalc(v=>!v)} style={{
+              width:"100%", padding:"16px 18px", border:"none", background:"transparent",
+              display:"flex", alignItems:"center", gap:"12px", cursor:"pointer",
             }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
-                <div style={{ width:38, height:38, borderRadius:"10px", background:"#FEF9E7", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <Calculator size={18} color="#B07D00" strokeWidth={1.8} />
-                </div>
-                <div style={{ textAlign:"left" }}>
-                  <div style={{ fontWeight:700, color:T.text, fontSize:"14px" }}>Score Calculator</div>
-                  <div style={{ fontSize:"12px", color:T.sub }}>JAMB and Aggregate formula</div>
-                </div>
+              <div style={{ width:36, height:36, borderRadius:"10px", background:"#FEF9E7", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Calculator size={17} color="#B07D00" strokeWidth={1.8} />
               </div>
-              {showCalc
-                ? <ChevronUp size={18} color={T.sub} strokeWidth={2} />
-                : <ChevronDown size={18} color={T.sub} strokeWidth={2} />}
+              <div style={{ flex:1, textAlign:"left" }}>
+                <div style={{ fontWeight:700, color:T.text, fontSize:"15px" }}>Score Calculator</div>
+                <div style={{ fontSize:"12px", color:T.sub }}>JAMB and Aggregate formula</div>
+              </div>
+              {showCalc ? <ChevronUp size={18} color={T.sub} /> : <ChevronDown size={18} color={T.sub} />}
             </button>
 
             {showCalc && (
-              <div style={{ padding:"0 18px 18px", borderTop:"1px solid "+T.border }}>
-                <div style={{ display:"flex", gap:"6px", margin:"14px 0", background:T.s2, borderRadius:"10px", padding:"3px" }}>
+              <div style={{ padding:"0 18px 20px", borderTop:"1px solid "+T.border }}>
+                <div style={{ display:"flex", gap:"8px", margin:"16px 0 14px" }}>
                   {(["aggregate","jamb"] as const).map(t=>(
-                    <button key={t} onClick={()=>{setCalcType(t);setResult(null);setCalcErr("");}} style={{
-                      flex:1, padding:"9px", borderRadius:"8px", border:"none", cursor:"pointer",
-                      fontWeight:700, fontSize:"13px",
-                      background: calcType===t ? C.primary : "transparent",
+                    <button key={t} onClick={()=>{setCalcType(t);setResult(null);}} style={{
+                      flex:1, padding:"9px", borderRadius:"10px", border:"none",
+                      background: calcType===t ? C.primary : T.s2,
                       color: calcType===t ? "#fff" : T.sub,
-                      transition:"all 0.2s",
+                      fontWeight:700, fontSize:"13px", cursor:"pointer",
                     }}>
                       {t==="aggregate" ? "Aggregate" : "JAMB Only"}
                     </button>
@@ -214,59 +216,54 @@ export default function Home() {
                 <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                   <div>
                     <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>JAMB Score (0-400)</label>
-                    <input type="number" min="0" max="400" placeholder="e.g. 285" value={jambS} onChange={e=>setJambS(e.target.value)} style={inp} />
+                    <input style={inp} type="number" placeholder="e.g. 280" value={jambS} onChange={e=>setJambS(e.target.value)} />
                   </div>
                   {calcType==="aggregate" && (
                     <div>
                       <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Post-UTME Score (0-100)</label>
-                      <input type="number" min="0" max="100" placeholder="e.g. 72" value={postS} onChange={e=>setPostS(e.target.value)} style={inp} />
-                      <div style={{ fontSize:"11px", color:C.primary, marginTop:"5px", fontWeight:600 }}>
-                        Formula: (JAMB / 8) + (Post-UTME / 2)
-                      </div>
-                    </div>
-                  )}
-                  {calcErr && (
-                    <div style={{ padding:"9px 12px", background:"#FEE2E2", borderRadius:"8px", color:"#D0021B", fontSize:"13px" }}>
-                      {calcErr}
-                    </div>
-                  )}
-                  <button onClick={calcAggregate} style={{
-                    padding:"13px", borderRadius:"10px", border:"none",
-                    background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer",
-                  }}>
-                    Calculate
-                  </button>
-                  {result && (
-                    <div style={{
-                      padding:"16px", borderRadius:"12px",
-                      background: darkMode ? T.s2 : "#F0F7FF",
-                      border:"1.5px solid "+result.color+"33",
-                    }}>
-                      <div style={{ textAlign:"center", marginBottom:"12px" }}>
-                        <div style={{ fontSize:"40px", fontWeight:900, color:result.color, letterSpacing:"-1px" }}>{result.agg}</div>
-                        <div style={{ fontSize:"13px", color:result.color, fontWeight:700, marginTop:"3px" }}>{result.grade}</div>
-                      </div>
-                      {calcType==="aggregate" && (
-                        <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
-                          {[
-                            {label:"JAMB contribution",     val:jambS+" / 8 = "+result.jamb},
-                            {label:"Post-UTME contribution", val:postS+" / 2 = "+result.post},
-                            {label:"Total Aggregate",        val:result.agg+"/100"},
-                          ].map((r,i)=>(
-                            <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"7px 0", borderBottom:i<2?"1px solid "+T.border:"none" }}>
-                              <span style={{ color:T.sub }}>{r.label}</span>
-                              <span style={{ color:T.text, fontWeight:700 }}>{r.val}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <input style={inp} type="number" placeholder="e.g. 65" value={postS} onChange={e=>setPostS(e.target.value)} />
+                      <div style={{ fontSize:"11px", color:T.muted, marginTop:"5px" }}>Formula: (JAMB / 8) + (Post-UTME / 2)</div>
                     </div>
                   )}
                 </div>
+                {calcErr && <div style={{ color:"#FA3E3E", fontSize:"13px", marginTop:"10px" }}>{calcErr}</div>}
+                <button onClick={calcAggregate} style={{
+                  width:"100%", marginTop:"14px", padding:"13px", borderRadius:"10px", border:"none",
+                  background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer",
+                }}>
+                  Calculate
+                </button>
+                {result && (
+                  <div style={{
+                    padding:"16px", borderRadius:"12px", marginTop:"12px",
+                    background: darkMode ? T.s2 : "#F0F7FF",
+                    border:"1.5px solid "+result.color+"33",
+                  }}>
+                    <div style={{ textAlign:"center", marginBottom:"12px" }}>
+                      <div style={{ fontSize:"40px", fontWeight:900, color:result.color, letterSpacing:"-1px" }}>{result.agg}</div>
+                      <div style={{ fontSize:"13px", color:result.color, fontWeight:700, marginTop:"3px" }}>{result.grade}</div>
+                    </div>
+                    {calcType==="aggregate" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+                        {[
+                          {label:"JAMB contribution",      val:jambS+" / 8 = "+result.jamb},
+                          {label:"Post-UTME contribution",  val:postS+" / 2 = "+result.post},
+                          {label:"Total Aggregate",         val:result.agg+"/100"},
+                        ].map((r,i)=>(
+                          <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"7px 0", borderBottom:i<2?"1px solid "+T.border:"none" }}>
+                            <span style={{ color:T.sub }}>{r.label}</span>
+                            <span style={{ color:T.text, fontWeight:700 }}>{r.val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
+          {/* News */}
           <div style={{
             background:T.surface, borderRadius:"16px",
             border:"1px solid "+T.border,
@@ -297,7 +294,6 @@ export default function Home() {
                   />
                 </button>
               </div>
-
               <div style={{ display:"flex", gap:"7px", overflowX:"auto", paddingBottom:"12px", scrollbarWidth:"none" }}>
                 {CATS.map(c=>(
                   <button key={c} onClick={()=>setCat(c)} style={{
@@ -347,8 +343,7 @@ export default function Home() {
                           <span style={{ color:T.sub, fontWeight:500 }}>{item.time}</span>
                         </div>
                         <div style={{
-                          fontSize:"13px", color:T.text, fontWeight:700, lineHeight:1.4,
-                          marginBottom:"6px",
+                          fontSize:"13px", color:T.text, fontWeight:700, lineHeight:1.4, marginBottom:"6px",
                           display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden",
                         }}>
                           {item.title}
@@ -381,8 +376,8 @@ export default function Home() {
         <BottomNav darkMode={darkMode} />
 
         <style>{`
-          @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-          @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+          @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.4} }
+          @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
           .skeleton { background: linear-gradient(90deg,#e0e0e0 25%,#f0f0f0 50%,#e0e0e0 75%); background-size:200% 100%; animation: shimmer 1.4s infinite; border-radius:6px; }
           @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         `}</style>

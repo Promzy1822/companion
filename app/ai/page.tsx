@@ -12,14 +12,14 @@ interface Message {
   role:    "user" | "assistant";
   content: string;
   id:      number;
-  image?:  string; // base64 for display only
+  image?:  string;
 }
 
 const QUICK_ACTIONS = [
-  { label: "Solve a question",    prompt: "Help me solve this JAMB question: "  },
-  { label: "Explain a topic",     prompt: "Explain this JAMB topic clearly: "   },
-  { label: "Generate questions",  prompt: "Give me 5 JAMB past questions on: "  },
-  { label: "Study tips",          prompt: "Give me study tips for JAMB "        },
+  { label: "Solve a question",   prompt: "Help me solve this JAMB question: "  },
+  { label: "Explain a topic",    prompt: "Explain this JAMB topic clearly: "   },
+  { label: "Generate questions", prompt: "Give me 5 JAMB past questions on: "  },
+  { label: "Study tips",         prompt: "Give me study tips for JAMB "        },
 ];
 
 const WELCOME: Message = {
@@ -28,14 +28,14 @@ const WELCOME: Message = {
 };
 
 export default function AIChat() {
-  const [input,       setInput]       = useState("");
-  const [dark,        setDark]        = useState(false);
-  const [messages,    setMessages]    = useState<Message[]>([WELCOME]);
-  const [loading,     setLoading]     = useState(false);
-  const [attachment,  setAttachment]  = useState<{ file: File; preview: string; base64: string; type: "image" | "text" } | null>(null);
-  const [focused,     setFocused]     = useState(false);
-  const [mounted,     setMounted]     = useState(false);
-  const [fileError,   setFileError]   = useState("");
+  const [input,      setInput]      = useState("");
+  const [dark,       setDark]       = useState(false);
+  const [messages,   setMessages]   = useState<Message[]>([WELCOME]);
+  const [loading,    setLoading]    = useState(false);
+  const [attachment, setAttachment] = useState<{ file: File; preview: string; base64: string; type: "image" | "text" } | null>(null);
+  const [focused,    setFocused]    = useState(false);
+  const [mounted,    setMounted]    = useState(false);
+  const [fileError,  setFileError]  = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
@@ -57,32 +57,24 @@ export default function AIChat() {
     localStorage.setItem("darkMode", String(n));
   };
 
-  // ── File handling ─────────────────────────────────────────────────────────
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!fileInputRef.current) fileInputRef.current = e.target;
-    e.target.value = ""; // reset so same file can be reselected
+    e.target.value = "";
     if (!file) return;
-
     setFileError("");
-
     const MAX_MB = 10;
     if (file.size > MAX_MB * 1024 * 1024) {
       setFileError(`File too large. Maximum is ${MAX_MB}MB.`);
       return;
     }
-
     const isImage = file.type.startsWith("image/");
     const isText  = file.type === "text/plain" || file.name.endsWith(".txt");
-
     if (!isImage && !isText) {
       setFileError("Only images (JPG, PNG, WEBP) and text files (.txt) are supported.");
       return;
     }
-
     const reader = new FileReader();
-
     if (isImage) {
       reader.onload = (ev) => {
         const base64 = ev.target?.result as string;
@@ -98,15 +90,12 @@ export default function AIChat() {
     }
   };
 
-  // ── Send ──────────────────────────────────────────────────────────────────
-
   const sendMessage = async (text: string) => {
     const t         = text.trim();
     const hasAttach = !!attachment;
     if (!t && !hasAttach) return;
     if (loading) return;
 
-    // Build user message for display
     const userMsg: Message = {
       role:    "user",
       id:      msgId.current++,
@@ -117,17 +106,15 @@ export default function AIChat() {
     setMessages(newMsgs);
     setInput("");
 
-    // Build API payload
     const history = newMsgs.slice(1, -1).map(m => ({
-        role: m.role,
-        content: typeof m.content === "string" ? m.content : String(m.content),
-      }));
+      role:    m.role,
+      content: typeof m.content === "string" ? m.content : String(m.content),
+    }));
     const payload: any = { message: t, history };
     if (attachment?.type === "image") {
       payload.imageBase64 = attachment.base64;
       payload.imageType   = attachment.file.type;
     } else if (attachment?.type === "text") {
-      // Prepend file content to message
       payload.message = `The user has shared a text file named "${attachment.file.name}".\n\nFile contents:\n${attachment.base64}\n\n${t ? `User's question: ${t}` : "Please summarise the key points relevant to JAMB."}`;
     }
     setAttachment(null);
@@ -151,8 +138,7 @@ export default function AIChat() {
 
   if (!mounted) return null;
 
-  const T = palette(dark);
-
+  const T          = palette(dark);
   const bg         = dark ? "#0D0D0F" : "#F8F9FB";
   const headerBg   = dark ? "rgba(18,18,22,0.92)" : "rgba(255,255,255,0.92)";
   const aiBubBg    = dark ? "#1E1E24" : "#FFFFFF";
@@ -164,38 +150,28 @@ export default function AIChat() {
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif", overflow: "hidden" }}>
 
       {/* Header */}
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: headerBg, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href="/" style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${dark ? "#2A2A35" : "#E8EAED"}`, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: dark ? "#1E1E24" : "#fff", flexShrink: 0 }}>
-          <ArrowLeft size={16} color={T.sub} strokeWidth={2} />
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: headerBg, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+        <Link href="/" style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F0F2F5", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <ArrowLeft size={17} color={T.text} strokeWidth={2} />
         </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 12, background: "linear-gradient(135deg,#1877F2,#42A5F5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Sparkles size={17} color="#fff" strokeWidth={1.8} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: T.text, letterSpacing: "-0.2px" }}>Companion AI</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#31A24C" }} />
-              <span style={{ fontSize: 11, color: T.sub }}>JAMB expert · always available</span>
-            </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: T.text, letterSpacing: "-0.2px" }}>Companion AI</div>
+          <div style={{ fontSize: 11, color: "#31A24C", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#31A24C" }} />
+            Online · JAMB expert
           </div>
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {messages.length > 1 && (
-            <button onClick={() => setMessages([WELCOME])} style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: dark ? "#1E1E24" : "#F1F3F5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <RotateCcw size={14} color={T.sub} strokeWidth={2} />
-            </button>
-          )}
-          <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: dark ? "#1E1E24" : "#F1F3F5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            {dark ? <Sun size={14} color={T.sub} strokeWidth={2} /> : <Moon size={14} color={T.sub} strokeWidth={2} />}
-          </button>
-        </div>
+        <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F0F2F5", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {dark ? <Sun size={16} color={T.text} /> : <Moon size={16} color={T.text} />}
+        </button>
+        <button onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F0F2F5", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <RotateCcw size={15} color={T.sub} strokeWidth={2} />
+        </button>
       </div>
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: "auto", padding: "80px 16px 20px", display: "flex", flexDirection: "column", gap: 6 }}>
-
-        {messages.map((m, i) => {
+        {messages.map((m) => {
           const isUser = m.role === "user";
           return (
             <div key={m.id} style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 8, marginBottom: 2, animation: "fadeUp 0.2s ease both" }}>
@@ -205,13 +181,8 @@ export default function AIChat() {
                 </div>
               )}
               <div style={{ maxWidth: "80%" }}>
-                {/* Image preview inside message */}
                 {m.image && (
-                  <img
-                    src={m.image}
-                    alt="Attached"
-                    style={{ maxWidth: "100%", maxHeight: 200, borderRadius: "12px 12px 0 0", display: "block", objectFit: "contain", background: dark ? "#2A2A35" : "#f0f0f0" }}
-                  />
+                  <img src={m.image} alt="Attached" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: "12px 12px 0 0", display: "block", objectFit: "contain", background: dark ? "#2A2A35" : "#f0f0f0" }} />
                 )}
                 <div style={{
                   padding: isUser ? "11px 15px" : "13px 16px",
@@ -247,29 +218,27 @@ export default function AIChat() {
           </div>
         )}
 
-        {/* Quick action chips */}
-        {messages.length === 1 && !loading && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 11, color: T.muted, textAlign: "center", marginBottom: 12, fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase" }}>
-              Try asking
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {QUICK_ACTIONS.map((a, i) => (
-                <button key={i} onClick={() => { setInput(a.prompt); inputRef.current?.focus(); }} style={{ padding: "12px 14px", borderRadius: 12, border: `1px solid ${dark ? "#2A2A35" : "#E8EAED"}`, background: dark ? "#1E1E24" : "#fff", cursor: "pointer", textAlign: "left", boxShadow: dark ? "none" : "0 1px 4px rgba(0,0,0,0.05)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text, lineHeight: 1.4 }}>{a.label}</div>
-                  <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>Tap to start</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Persistent quick-action chips — always visible above input */}
+      <div style={{ padding: "8px 16px 0", display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", flexShrink: 0 }}>
+        {QUICK_ACTIONS.map((a, i) => (
+          <button key={i} onClick={() => { setInput(a.prompt); inputRef.current?.focus(); }} style={{
+            flexShrink: 0, padding: "7px 13px", borderRadius: 20,
+            border: `1px solid ${dark ? "#2A2A35" : "#E8EAED"}`,
+            background: dark ? "#1E1E24" : "#fff",
+            color: dark ? "#B0B3B8" : "#65676B",
+            fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+          }}>
+            {a.label}
+          </button>
+        ))}
       </div>
 
       {/* File error */}
       {fileError && (
-        <div style={{ margin: "0 16px 8px", padding: "10px 14px", background: "#FEE2E2", border: "1px solid #FECACA", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ margin: "8px 16px 0", padding: "10px 14px", background: "#FEE2E2", border: "1px solid #FECACA", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <span style={{ fontSize: 13, color: "#D0021B", fontWeight: 500 }}>{fileError}</span>
           <button onClick={() => setFileError("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
             <X size={14} color="#D0021B" strokeWidth={2} />
@@ -279,7 +248,7 @@ export default function AIChat() {
 
       {/* Attachment preview */}
       {attachment && (
-        <div style={{ margin: "0 16px 8px", padding: "10px 14px", background: dark ? "#1E2A4A" : "#EBF3FF", border: "1px solid #1877F244", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ margin: "8px 16px 0", padding: "10px 14px", background: dark ? "#1E2A4A" : "#EBF3FF", border: "1px solid #1877F244", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
           {attachment.type === "image" ? (
             <img src={attachment.preview} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
           ) : (
@@ -302,10 +271,8 @@ export default function AIChat() {
       )}
 
       {/* Input area */}
-      <div style={{ padding: "12px 16px 20px", background: dark ? "rgba(13,13,15,0.95)" : "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderTop: `1px solid ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
+      <div style={{ padding: "10px 16px 28px", background: dark ? "rgba(13,13,15,0.95)" : "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderTop: `1px solid ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, marginTop: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: inputBg, borderRadius: 24, padding: "8px 8px 8px 14px", border: `1.5px solid ${inputBord}`, transition: "border-color 0.2s, box-shadow 0.2s", boxShadow: focused ? "0 0 0 3px rgba(24,119,242,0.12)" : "none" }}>
-
-          {/* File attach */}
           <label style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "2px" }}>
             {attachment?.type === "image"
               ? <Image size={18} color="#1877F2" strokeWidth={1.8} />
@@ -318,8 +285,6 @@ export default function AIChat() {
               onChange={handleFileChange}
             />
           </label>
-
-          {/* Text input */}
           <input
             ref={inputRef}
             style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: 15, color: T.text, padding: "4px 0", fontFamily: "inherit" }}
@@ -330,21 +295,16 @@ export default function AIChat() {
             onBlur={() => setFocused(false)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
           />
-
-          {/* Send */}
           <button
             onClick={() => sendMessage(input)}
             disabled={loading || (!input.trim() && !attachment)}
-            style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: loading || (!input.trim() && !attachment) ? (dark ? "#2A2A35" : "#E8EAED") : "#1877F2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: loading || (!input.trim() && !attachment) ? "not-allowed" : "pointer", transition: "background 0.2s, box-shadow 0.2s", boxShadow: !loading && (input.trim() || attachment) ? "0 2px 10px rgba(24,119,242,0.4)" : "none" }}
+            style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: loading || (!input.trim() && !attachment) ? (dark ? "#2A2A35" : "#E8EAED") : "#1877F2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: loading || (!input.trim() && !attachment) ? "not-allowed" : "pointer", transition: "background 0.2s", boxShadow: !loading && (input.trim() || attachment) ? "0 2px 10px rgba(24,119,242,0.4)" : "none" }}
           >
             <Send size={16} color="#fff" strokeWidth={2} style={{ transform: "translateX(1px)" }} />
           </button>
         </div>
-
         <div style={{ textAlign: "center", marginTop: 8 }}>
-          <span style={{ fontSize: 10, color: T.muted }}>
-            Supports images (JPG, PNG) and text files · AI can make mistakes
-          </span>
+          <span style={{ fontSize: 10, color: T.muted }}>Supports images (JPG, PNG) and text files · AI can make mistakes</span>
         </div>
       </div>
 

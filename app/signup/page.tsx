@@ -2,17 +2,32 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","UNILAG","FUNAAB","Other"];
 const COURSES = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
 const SUBJECTS = ["English Language","Mathematics","Physics","Chemistry","Biology","Government","Economics","Literature in English","Geography","CRS","IRS","Commerce","Agricultural Science","Further Mathematics"];
 
+function hashPassword(pw: string): string {
+  const salted = "companion_salt_2025_" + pw;
+  let hash = 0;
+  for (let i = 0; i < salted.length; i++) {
+    const char = salted.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16) +
+    Math.abs(hash * 2654435761).toString(16) +
+    Math.abs(hash ^ 0xdeadbeef).toString(16);
+}
+
 export default function Signup() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [form, setForm] = useState({
-    name: "", email: "", institution: "", course: "",
+    name: "", email: "", password: "", institution: "", course: "",
     subjects: [] as string[], target: "250", deadline: "", selfRating: "2"
   });
 
@@ -20,16 +35,9 @@ export default function Signup() {
 
   const toggleSubject = (s: string) => {
     const cur = form.subjects;
-    if (cur.includes(s)) {
-      update("subjects", cur.filter(x => x !== s));
-    } else {
-      if (cur.length >= 4) {
-        setError("You can only select 4 subjects");
-        setTimeout(() => setError(""), 2000);
-        return;
-      }
-      update("subjects", [...cur, s]);
-    }
+    if (cur.includes(s)) { update("subjects", cur.filter(x => x !== s)); return; }
+    if (cur.length >= 4) { setError("You can only select 4 subjects"); setTimeout(() => setError(""), 2000); return; }
+    update("subjects", [...cur, s]);
   };
 
   const nextStep = () => {
@@ -37,6 +45,7 @@ export default function Signup() {
     if (step === 1) {
       if (!form.name.trim()) { setError("Enter your name"); return; }
       if (!form.email.trim() || !form.email.includes("@")) { setError("Enter a valid email"); return; }
+      if (!form.password || form.password.length < 6) { setError("Password must be at least 6 characters"); return; }
       if (!form.institution) { setError("Select your institution"); return; }
       if (!form.course) { setError("Select your course"); return; }
     }
@@ -48,16 +57,32 @@ export default function Signup() {
 
   const handleSubmit = () => {
     if (!form.deadline) { setError("Select your exam date"); return; }
-    localStorage.setItem("companion_user", JSON.stringify(form));
+    const user = {
+      ...form,
+      passwordHash: hashPassword(form.password),
+      password: undefined,
+      createdAt: new Date().toISOString(),
+    };
+    delete (user as any).password;
+    // Save to both keys so auth login works
+    localStorage.setItem("companion_user", JSON.stringify(user));
+    try {
+      const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+      const existing = accs.findIndex((a: any) => a.email === user.email);
+      if (existing >= 0) accs[existing] = user; else accs.push(user);
+      localStorage.setItem("companion_accounts", JSON.stringify(accs));
+    } catch {}
     router.push("/");
   };
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "13px 16px", borderRadius: "12px",
     border: "1.5px solid #e8e8e8", fontSize: "14px", outline: "none",
-    backgroundColor: "#fafafa", boxSizing: "border-box", color: "#1a1a1a"
+    backgroundColor: "#fafafa", boxSizing: "border-box", color: "#1a1a1a",
   };
-  const labelStyle: React.CSSProperties = { fontSize: "13px", fontWeight: "600", color: "#555", marginBottom: "6px", display: "block" };
+  const labelStyle: React.CSSProperties = {
+    fontSize: "13px", fontWeight: "600", color: "#555", marginBottom: "6px", display: "block",
+  };
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#fff", minHeight: "100vh" }}>
@@ -85,6 +110,25 @@ export default function Signup() {
             </div>
             <div><label style={labelStyle}>Full Name</label><input style={inputStyle} placeholder="e.g. Kelechi Promise" value={form.name} onChange={e => update("name", e.target.value)} /></div>
             <div><label style={labelStyle}>Email Address</label><input style={inputStyle} type="email" placeholder="e.g. promise@gmail.com" value={form.email} onChange={e => update("email", e.target.value)} /></div>
+            <div>
+              <label style={labelStyle}>Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  style={{ ...inputStyle, paddingRight: "44px" }}
+                  type={showPw ? "text" : "password"}
+                  placeholder="Min. 6 characters"
+                  value={form.password}
+                  onChange={e => update("password", e.target.value)}
+                />
+                <button onClick={() => setShowPw(p => !p)} style={{
+                  position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer", color: "#999",
+                  display: "flex", alignItems: "center",
+                }}>
+                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
             <div>
               <label style={labelStyle}>Target Institution</label>
               <select style={inputStyle} value={form.institution} onChange={e => update("institution", e.target.value)}>
@@ -120,7 +164,7 @@ export default function Signup() {
                     backgroundColor: (selected || isEnglish) ? "#fff8f5" : "#fff",
                     color: (selected || isEnglish) ? "#ea580c" : "#555",
                     fontWeight: (selected || isEnglish) ? "700" : "400",
-                    opacity: isEnglish ? 0.7 : 1
+                    opacity: isEnglish ? 0.7 : 1,
                   }}>
                     {s}{isEnglish ? " ✓" : ""}
                   </button>
@@ -150,13 +194,13 @@ export default function Signup() {
             <div>
               <label style={labelStyle}>How prepared are you right now?</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                {[["1","😰 Not ready at all"],["2","😐 Just started"],["3","😊 Making progress"],["4","🔥 Almost ready"]].map(([v, label]) => (
+                {[["1","😰 Not ready"],["2","😐 Just started"],["3","😊 Making progress"],["4","🔥 Almost ready"]].map(([v, label]) => (
                   <button key={v} onClick={() => update("selfRating", v)} style={{
                     padding: "12px 8px", borderRadius: "12px", fontSize: "12px", cursor: "pointer",
                     border: form.selfRating === v ? "2px solid #ea580c" : "1.5px solid #e0e0e0",
                     backgroundColor: form.selfRating === v ? "#fff8f5" : "#fff",
                     color: form.selfRating === v ? "#ea580c" : "#555",
-                    fontWeight: form.selfRating === v ? "700" : "400", textAlign: "center"
+                    fontWeight: form.selfRating === v ? "700" : "400", textAlign: "center",
                   }}>{label}</button>
                 ))}
               </div>
@@ -172,17 +216,17 @@ export default function Signup() {
 
         <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
           {step > 1 && (
-            <button onClick={() => setStep(s => s-1)} style={{ flex: 1, padding: "14px", borderRadius: "30px", border: "1.5px solid #ea580c", backgroundColor: "#fff", color: "#ea580c", fontWeight: "700", fontSize: "15px", cursor: "pointer" }}>← Back</button>
+            <button onClick={() => setStep(s => s - 1)} style={{ flex: 1, padding: "14px", borderRadius: "30px", border: "1.5px solid #ea580c", backgroundColor: "#fff", color: "#ea580c", fontWeight: "700", fontSize: "15px", cursor: "pointer" }}>← Back</button>
           )}
           <button onClick={step < 3 ? nextStep : handleSubmit} style={{
             flex: 2, padding: "14px", borderRadius: "30px", border: "none",
             background: "linear-gradient(135deg, #c2410c, #ea580c)",
             color: "#fff", fontWeight: "700", fontSize: "15px", cursor: "pointer",
-            boxShadow: "0 4px 16px rgba(234,88,12,0.35)"
+            boxShadow: "0 4px 16px rgba(234,88,12,0.35)",
           }}>{step < 3 ? "Continue →" : "🚀 Start Studying!"}</button>
         </div>
         <p style={{ textAlign: "center", marginTop: "16px", fontSize: "13px", color: "#999" }}>
-          Already have an account? <Link href="/" style={{ color: "#ea580c", textDecoration: "none", fontWeight: "600" }}>Go to app</Link>
+          Already have an account? <Link href="/auth" style={{ color: "#ea580c", textDecoration: "none", fontWeight: "600" }}>Log in</Link>
         </p>
       </div>
     </div>

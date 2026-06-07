@@ -54,6 +54,7 @@ export default function StudyPlan() {
   const [activeW,   setActiveW]   = useState(0);
   const [view,      setView]      = useState<"today" | "week" | "overview">("today");
   const [mounted,   setMounted]   = useState(false);
+  const [confirmRegen, setConfirmRegen] = useState(false);
 
   useEffect(() => {
     setMounted(true);

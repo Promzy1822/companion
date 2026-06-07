@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../lib/cutoffs";
 import { hashPassword, verifyPassword, validateEmail, validatePassword } from "../lib/auth";
 import { C, palette } from "../lib/design";
+import { Session } from "../lib/session";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
@@ -80,7 +81,7 @@ export default function Auth() {
           } catch {}
         }
         localStorage.setItem("companion_user", JSON.stringify(account));
-        router.replace("/");
+        Session.set();
         router.replace("/");
       } finally { setLoading(false); }
     }, 300);
@@ -103,6 +104,7 @@ export default function Auth() {
   const signup = () => {
     if (!form.deadline) { setError("Please select your exam date"); return; }
     const cutoff = form.institution !== "Other" && form.course !== "Other" ? getCutoff(form.institution, form.course) : null;
+    Session.set();
     localStorage.setItem("companion_user", JSON.stringify({
       ...form,
       email:        form.email.toLowerCase().trim(),

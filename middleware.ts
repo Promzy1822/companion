@@ -1,17 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ['/landing', '/auth', '/api', '/_next'];
+// Routes that do NOT require authentication
+const PUBLIC_PATHS = [
+  "/landing",
+  "/auth",
+  "/api",
+  "/_next",
+  "/favicon",
+  "/icon",
+  "/manifest",
+  "/sw.js",
+];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  // Allow all public paths and static files
+
+  // Always allow static files and public routes
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) return NextResponse.next();
-  if (pathname.includes('.')) return NextResponse.next();
-  // For all other routes, just pass through
-  // Auth is handled client-side in each page's useEffect
+  if (pathname.includes(".")) return NextResponse.next(); // static assets
+
+  // Check for session cookie
+  const hasSession = req.cookies.has("companion_session");
+
+  if (!hasSession) {
+    // Redirect to landing page if no session cookie
+    const landingUrl = new URL("/landing", req.url);
+    return NextResponse.redirect(landingUrl);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon|manifest).*)'],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|manifest|sw).*)"],
 };

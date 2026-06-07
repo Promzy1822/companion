@@ -10,6 +10,7 @@ import {
 import Navbar,    { NAVBAR_HEIGHT }     from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
+import { Session } from "../lib/session";
 
 interface UserData {
   name: string; email: string; institution: string; course: string;
@@ -107,7 +108,7 @@ export default function Profile() {
     setPwSuccess(true); setTimeout(() => { setPwSuccess(false); setShowPwForm(false); }, 2000);
   };
 
-  const logout = () => { localStorage.removeItem("companion_user"); router.replace("/landing"); };
+  const logout = () => { Session.logout(); router.replace("/landing"); };
 
   if (!ready || !user) return null;
 

@@ -1,8 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Simple admin key check — set ADMIN_KEY in your Vercel env vars
+  const adminKey = process.env.ADMIN_KEY;
+  if (adminKey) {
+    const provided = req.headers.get("x-admin-key");
+    if (!provided || provided !== adminKey) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   try {
     const kvUrl = process.env.KV_REST_API_URL;
     if (!kvUrl) {
@@ -26,16 +35,17 @@ export async function GET() {
       available: true,
       total: total ?? 0,
       bySubject: {
-        Mathematics:       mathCount,
-        "English Language":engCount,
-        Physics:           physCount,
-        Chemistry:         chemCount,
-        Biology:           bioCount,
-        Government:        govCount,
-        Economics:         ecoCount,
+        Mathematics:        mathCount,
+        "English Language": engCount,
+        Physics:            physCount,
+        Chemistry:          chemCount,
+        Biology:            bioCount,
+        Government:         govCount,
+        Economics:          ecoCount,
       },
     });
-  } catch (err: any) {
-    return NextResponse.json({ available: false, error: String(err?.message) });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ available: false, error: msg });
   }
 }

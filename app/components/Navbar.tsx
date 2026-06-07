@@ -8,6 +8,7 @@ import {
   Sun, Moon, Sparkles,
 } from "lucide-react";
 import AppLogo from "./AppLogo";
+import { Session } from "../lib/session";
 import { C, D, palette } from "../lib/design";
 
 interface UserData { name: string; email: string; target: string; institution?: string; }
@@ -58,7 +59,7 @@ export default function Navbar({
   }, [open]);
 
   const logout = () => {
-    try { localStorage.removeItem("companion_user"); } catch {}
+    Session.logout();
     setUser(null);
     setOpen(false);
     router.push("/landing");

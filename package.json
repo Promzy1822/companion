@@ -11,8 +11,6 @@
   "dependencies": {
     "@next/swc-linux-x64-gnu": "13.4.19",
     "@vercel/kv": "^3.0.0",
-    "audit": "^0.0.6",
-    "fund": "^1.0.0",
     "lucide-react": "^1.16.0",
     "next": "14.2.29",
     "react": "^18",

@@ -283,7 +283,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <button onClick={()=>fetchNews(true)} style={{
+                <button onClick={()=>fetchNews()} style={{
                   width:32, height:32, borderRadius:"8px", border:"none",
                   background:T.s2, cursor:"pointer",
                   display:"flex", alignItems:"center", justifyContent:"center",
@@ -361,7 +361,7 @@ export default function Home() {
                   </a>
                 ))}
                 <div style={{ padding:"14px 18px", borderTop:"1px solid "+T.border, textAlign:"center" }}>
-                  <button onClick={()=>fetchNews(true)} style={{
+                  <button onClick={()=>fetchNews()} style={{
                     background:"none", border:"none", color:C.primary, fontSize:"13px", fontWeight:700, cursor:"pointer",
                   }}>
                     {refreshing ? "Refreshing..." : "Refresh news"}

@@ -102,7 +102,6 @@ function QuestionsContent() {
               cursor: 'pointer', fontWeight: 700, fontSize: 13,
               background: mode === m ? C.primary : T.surface,
               color: mode === m ? '#fff' : T.sub,
-              border: mode === m ? 'none' : `1px solid ${T.border}`,
             }}>
               {m === 'learn' ? '🎬 Lessons' : '✏️ Practice'}
             </button>

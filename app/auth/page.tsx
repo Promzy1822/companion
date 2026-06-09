@@ -29,7 +29,7 @@ export default function Auth() {
 
   useEffect(() => {
     const u = localStorage.getItem("companion_user");
-    if (u) router.replace("/");
+    if (u) Session.set(); router.replace("/");
   }, [router]);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function Auth() {
         }
         localStorage.setItem("companion_user", JSON.stringify(account));
         Session.set();
-        router.replace("/");
+        Session.set(); router.replace("/");
       } finally { setLoading(false); }
     }, 300);
   };
@@ -122,7 +122,7 @@ export default function Auth() {
       if (_idx >= 0) _accs[_idx] = _u; else _accs.push(_u);
       localStorage.setItem("companion_accounts", JSON.stringify(_accs));
     } catch {}
-    router.replace("/");
+    Session.set(); router.replace("/");
   };
 
   const prob = rec && form.institution !== "Other" && form.course !== "Other"

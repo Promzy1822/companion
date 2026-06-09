@@ -8,6 +8,7 @@ import BottomNav, { BOTTOM_NAV_HEIGHT } from "./components/BottomNav";
 import QuickLinks from "./components/QuickLinks";
 import StreakCard from "./components/StreakCard";
 import CountdownBanner from "./components/CountdownBanner";
+import { Session } from "./lib/session";
 import { C, D, palette } from "./lib/design";
 import { RefreshCw, Calculator, Newspaper, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -65,6 +66,7 @@ export default function Home() {
   const T = palette(darkMode);
 
   useEffect(() => {
+    Session.syncFromStorage();
     const dm = localStorage.getItem("darkMode") === "true";
     setDarkMode(dm);
     document.documentElement.setAttribute("data-dark", String(dm));

@@ -59,7 +59,7 @@ export default function AIChat() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!fileInputRef.current) fileInputRef.current = e.target;
+    
     e.target.value = "";
     if (!file) return;
     setFileError("");

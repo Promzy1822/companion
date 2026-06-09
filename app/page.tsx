@@ -51,7 +51,6 @@ export default function Home() {
     refresh:   fetchNews,
     setCategory: setNewsCategory,
     lastUpdated: newsLastUpdated,
-    isStale:   newsIsStale,
   } = useNews();
   const [cat,      setCat]      = useState("All");
   const [showCalc, setShowCalc] = useState(false);

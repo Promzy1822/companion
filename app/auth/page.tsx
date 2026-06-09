@@ -118,7 +118,7 @@ export default function Auth() {
     try {
       const _u = JSON.parse(localStorage.getItem("companion_user") || "{}");
       const _accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-      const _idx = _accs.findIndex((a) => a.email === _u.email);
+      const _idx = _accs.findIndex((a: Record<string, unknown>) => a.email === _u.email);
       if (_idx >= 0) _accs[_idx] = _u; else _accs.push(_u);
       localStorage.setItem("companion_accounts", JSON.stringify(_accs));
     } catch {}

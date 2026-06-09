@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import AppLoader from "../components/AppLoader";
 import Link from "next/link";
 import {
   CalendarDays, Target, BookOpen, Clock, CheckCircle,
@@ -191,7 +192,7 @@ RULES:
     }
   };
 
-  if (!mounted) return null;
+  if (!mounted) return <AppLoader fullScreen dark={typeof dark !== "undefined" ? dark : false} />;
 
   const T         = palette(dark);
   const today     = todayWAT();

@@ -39,7 +39,7 @@ function SubjectsContent() {
     setReady(true);
   }, []);
 
-  if (!ready) return null;
+  if (!ready) return <AppLoader fullScreen />;
   const T = palette(dark);
 
   // split into my subjects vs others

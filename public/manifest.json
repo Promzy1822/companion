@@ -5,8 +5,8 @@
   "start_url": "/?pwa=1",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ea580c",
-  "theme_color": "#ea580c",
+  "background_color": "#ffffff",
+  "theme_color": "#1877F2",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": [
@@ -24,9 +24,9 @@
     }
   ],
   "shortcuts": [
-    { "name": "Ask AI", "url": "/ai", "icons": [{"src": "/icon-192.png", "sizes": "192x192"}] },
-    { "name": "Study Plan", "url": "/studyplan", "icons": [{"src": "/icon-192.png", "sizes": "192x192"}] },
-    { "name": "Mock Exam", "url": "/mock", "icons": [{"src": "/icon-192.png", "sizes": "192x192"}] }
+    { "name": "Ask AI",     "url": "/ai",        "icons": [{"src": "/icon-192.png", "sizes": "192x192"}] },
+    { "name": "Study Plan", "url": "/studyplan",  "icons": [{"src": "/icon-192.png", "sizes": "192x192"}] },
+    { "name": "Mock Exam",  "url": "/mock",       "icons": [{"src": "/icon-192.png", "sizes": "192x192"}] }
   ],
   "categories": ["education", "productivity"]
 }

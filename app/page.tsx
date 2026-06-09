@@ -102,7 +102,7 @@ export default function Home() {
     }
   };
 
-  if (!ready) return null;
+  if (!ready) return <AppLoader fullScreen />;
 
   const filteredNews = cat === "All" ? news : news.filter(n=>n.category===cat);
 

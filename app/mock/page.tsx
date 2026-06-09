@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import AppLoader from "../components/AppLoader";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, ClipboardList, Trophy, BarChart3, AlertTriangle } from "lucide-react";
@@ -86,7 +87,7 @@ export default function MockExam() {
   const timePct = questions.length?(timeLeft/(questions.length*90))*100:100;
   const timerCol = timePct>50?"#31A24C":timePct>25?"#F7B928":"#FA3E3E";
 
-  if (!mounted) return null;
+  if (!mounted) return <AppLoader fullScreen dark={typeof dark !== "undefined" ? dark : false} />;
   const T = palette(dark);
 
   // ── SETUP ──────────────────────────────────────────────────────

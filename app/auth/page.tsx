@@ -11,7 +11,6 @@ import { Session } from "../lib/session";
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
 const ALL_SUBJECTS = ["Mathematics","Physics","Chemistry","Biology","Government","Economics","Literature in English","Geography","CRS","IRS","Commerce","Agricultural Science","Further Mathematics"];
-
 const COMP_COLOR: Record<string,string> = { "Very High":"#FA3E3E","High":"#EA580C","Moderate":C.primary,"Low":"#31A24C" };
 
 export default function Auth() {
@@ -28,8 +27,10 @@ export default function Auth() {
   });
 
   useEffect(() => {
-    const u = localStorage.getItem("companion_user");
-    if (u) router.replace("/");
+    try {
+      const u = localStorage.getItem("companion_user");
+      if (u) { Session.set(); router.replace("/"); }
+    } catch {}
   }, [router]);
 
   useEffect(() => {
@@ -49,52 +50,56 @@ export default function Auth() {
     update("subjects", [...cur, s]);
   };
 
+  // ── LOGIN ────────────────────────────────────────────────────────────────────
   const handleLogin = () => {
     setError("");
     if (!form.email.trim() || !form.password.trim()) { setError("Please fill all fields"); return; }
     if (!validateEmail(form.email)) { setError("Enter a valid email address"); return; }
     setLoading(true);
+
     setTimeout(() => {
       try {
         const email = form.email.toLowerCase().trim();
         let account: Record<string,unknown> | null = null;
 
-        // Check companion_accounts array first
+        // 1. Check companion_accounts array
         try {
-          const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-          account = accs.find((a: Record<string,unknown>) => a.email === email) || null;
+          const accs: Record<string,unknown>[] = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+          account = accs.find((a) => a.email === email) ?? null;
         } catch {}
 
-        // Fall back to companion_user
+        // 2. Fall back to companion_user
         if (!account) {
-          const legacy = localStorage.getItem("companion_user");
-          if (legacy) {
-            try {
+          try {
+            const legacy = localStorage.getItem("companion_user");
+            if (legacy) {
               const u = JSON.parse(legacy);
               if (u.email === email) account = u;
-            } catch {}
-          }
+            }
+          } catch {}
         }
 
-        if (!account) { setError("No account found. Please sign up."); return; }
+        if (!account) { setError("No account found with that email. Please sign up."); return; }
 
+        // 3. Verify password
         const pwOk = account.passwordHash
           ? verifyPassword(form.password, account.passwordHash as string)
-          : account.password === form.password;
+          : (account.password === form.password);
 
-        if (!pwOk) { setError("Wrong password. Please try again."); return; }
+        if (!pwOk) { setError("Incorrect password. Please try again."); return; }
 
-        // Upgrade plain password to hash if needed
+        // 4. Upgrade plain password to hash if needed
         if (!account.passwordHash) {
           account.passwordHash = hashPassword(form.password);
           delete account.password;
           try {
-            const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-            const idx = accs.findIndex((a: Record<string,unknown>) => a.email === account!.email);
+            const accs: Record<string,unknown>[] = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+            const idx = accs.findIndex((a) => a.email === account!.email);
             if (idx >= 0) { accs[idx] = account; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
           } catch {}
         }
 
+        // 5. Set active user + session cookie + navigate
         localStorage.setItem("companion_user", JSON.stringify(account));
         Session.set();
         router.replace("/");
@@ -104,26 +109,31 @@ export default function Auth() {
     }, 300);
   };
 
+  // ── SIGNUP STEPS ─────────────────────────────────────────────────────────────
   const nextStep = () => {
     setError("");
     if (step === 1) {
-      if (!form.name.trim()) { setError("Enter your full name"); return; }
-      if (!validateEmail(form.email)) { setError("Enter a valid email address"); return; }
+      if (!form.name.trim())         { setError("Enter your full name"); return; }
+      if (!validateEmail(form.email)){ setError("Enter a valid email address"); return; }
       const pw = validatePassword(form.password);
-      if (!pw.valid) { setError(pw.message); return; }
-      if (!form.institution) { setError("Select your target institution"); return; }
-      if (!form.course)      { setError("Select your desired course"); return; }
+      if (!pw.valid)                 { setError(pw.message); return; }
+      if (!form.institution)         { setError("Select your target institution"); return; }
+      if (!form.course)              { setError("Select your desired course"); return; }
     }
-    if (step === 2 && form.subjects.length < 3) { setError(`Select ${3 - form.subjects.length} more subject(s)`); return; }
+    if (step === 2 && form.subjects.length < 3) {
+      setError(`Select ${3 - form.subjects.length} more subject(s)`); return;
+    }
     setStep(s => s + 1);
   };
 
   const signup = () => {
     if (!form.deadline) { setError("Please select your exam date"); return; }
-    const cutoff = form.institution !== "Other" && form.course !== "Other"
+
+    const cutoff = (form.institution !== "Other" && form.course !== "Other")
       ? getCutoff(form.institution, form.course) : null;
 
-    const newUser = {
+    // Build clean user object — NO password field, only passwordHash
+    const newUser: Record<string, unknown> = {
       name:           form.name.trim(),
       email:          form.email.toLowerCase().trim(),
       passwordHash:   hashPassword(form.password),
@@ -134,20 +144,22 @@ export default function Auth() {
       deadline:       form.deadline,
       selfRating:     form.selfRating,
       cutoffData:     cutoff,
-      recommendation: rec?.text || null,
+      recommendation: rec?.text ?? null,
       createdAt:      new Date().toISOString(),
     };
 
+    // Save as active user
     localStorage.setItem("companion_user", JSON.stringify(newUser));
 
-    // Also save to accounts array for multi-account support
+    // Save to accounts array for login lookup
     try {
-      const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-      const idx = accs.findIndex((a: Record<string,unknown>) => a.email === newUser.email);
+      const accs: Record<string,unknown>[] = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+      const idx = accs.findIndex((a) => a.email === newUser.email);
       if (idx >= 0) accs[idx] = newUser; else accs.push(newUser);
       localStorage.setItem("companion_accounts", JSON.stringify(accs));
     } catch {}
 
+    // Set session cookie then navigate
     Session.set();
     router.replace("/");
   };
@@ -158,12 +170,10 @@ export default function Auth() {
   const inp: React.CSSProperties = {
     width:"100%", padding:"13px 16px", borderRadius:"10px",
     border:"1.5px solid #E4E6EB", fontSize:"15px", outline:"none",
-    background:"#F7F8FA", color:"#050505", boxSizing:"border-box",
-    fontFamily:"inherit",
+    background:"#F7F8FA", color:"#050505", boxSizing:"border-box", fontFamily:"inherit",
   };
   const lbl: React.CSSProperties = {
-    fontSize:"13px", fontWeight:600, color:"#65676B",
-    display:"block", marginBottom:"6px",
+    fontSize:"13px", fontWeight:600, color:"#65676B", display:"block", marginBottom:"6px",
   };
 
   return (
@@ -173,16 +183,13 @@ export default function Auth() {
       display:"flex", flexDirection:"column",
     }}>
       {/* Header */}
-      <div style={{
-        background: C.primary,
-        padding:"16px 20px 24px", flexShrink:0,
-      }}>
+      <div style={{ background:C.primary, padding:"16px 20px 24px", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
           <Link href="/landing" style={{
             width:34, height:34, borderRadius:"10px",
             background:"rgba(255,255,255,0.15)",
             display:"flex", alignItems:"center", justifyContent:"center",
-            textDecoration:"none", color:"#fff",
+            textDecoration:"none",
           }}>
             <ArrowLeft size={17} strokeWidth={2} color="#fff" />
           </Link>
@@ -190,12 +197,7 @@ export default function Auth() {
             {mode === "login" ? "Welcome Back" : "Create Account"}
           </div>
         </div>
-
-        {/* Mode toggle */}
-        <div style={{
-          display:"flex", background:"rgba(255,255,255,0.15)",
-          borderRadius:"12px", padding:"4px",
-        }}>
+        <div style={{ display:"flex", background:"rgba(255,255,255,0.15)", borderRadius:"12px", padding:"4px" }}>
           {(["login","signup"] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setStep(1); setError(""); }} style={{
               flex:1, padding:"10px", borderRadius:"9px", border:"none", cursor:"pointer",
@@ -212,12 +214,9 @@ export default function Auth() {
 
       {/* Body */}
       <div style={{ flex:1, overflowY:"auto", padding:"20px 16px 40px" }}>
-        <div style={{
-          background:"#fff", borderRadius:"16px",
-          padding:"24px", boxShadow:"0 1px 4px rgba(0,0,0,0.07)",
-        }}>
+        <div style={{ background:"#fff", borderRadius:"16px", padding:"24px", boxShadow:"0 1px 4px rgba(0,0,0,0.07)" }}>
 
-          {/* ── LOGIN ── */}
+          {/* ── LOGIN FORM ── */}
           {mode === "login" && (
             <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
               <div>
@@ -226,29 +225,20 @@ export default function Auth() {
               </div>
               <div>
                 <label style={lbl}>Email Address</label>
-                <input
-                  style={inp} type="email"
-                  placeholder="your@email.com"
-                  value={form.email}
-                  onChange={e => update("email", e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleLogin()}
-                />
+                <input style={inp} type="email" placeholder="your@email.com"
+                  value={form.email} onChange={e=>update("email",e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
               </div>
               <div>
                 <label style={lbl}>Password</label>
                 <div style={{ position:"relative" }}>
-                  <input
-                    style={{ ...inp, paddingRight:"44px" }}
-                    type={showPw ? "text" : "password"}
-                    placeholder="Your password"
-                    value={form.password}
-                    onChange={e => update("password", e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleLogin()}
-                  />
-                  <button onClick={() => setShowPw(p => !p)} style={{
+                  <input style={{ ...inp, paddingRight:"44px" }}
+                    type={showPw?"text":"password"} placeholder="Your password"
+                    value={form.password} onChange={e=>update("password",e.target.value)}
+                    onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+                  <button onClick={()=>setShowPw(p=>!p)} style={{
                     position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
-                    background:"none", border:"none", cursor:"pointer",
-                    display:"flex", alignItems:"center", color:"#65676B",
+                    background:"none", border:"none", cursor:"pointer", display:"flex", color:"#65676B",
                   }}>
                     {showPw ? <EyeOff size={18}/> : <Eye size={18}/>}
                   </button>
@@ -259,24 +249,19 @@ export default function Auth() {
                   ⚠️ {error}
                 </div>
               )}
-              <button
-                onClick={handleLogin}
-                disabled={loading}
-                style={{
-                  width:"100%", padding:"14px", borderRadius:"10px", border:"none",
-                  background: loading ? "#B0B3B8" : C.primary,
-                  color:"#fff", fontWeight:700, fontSize:"15px",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  boxShadow:`0 2px 10px rgba(24,119,242,0.3)`,
-                }}
-              >
+              <button onClick={handleLogin} disabled={loading} style={{
+                width:"100%", padding:"14px", borderRadius:"10px", border:"none",
+                background: loading ? "#B0B3B8" : C.primary,
+                color:"#fff", fontWeight:700, fontSize:"15px",
+                cursor: loading?"not-allowed":"pointer",
+                boxShadow:`0 2px 10px rgba(24,119,242,0.3)`,
+              }}>
                 {loading ? "Logging in…" : "Log In →"}
               </button>
               <p style={{ textAlign:"center", fontSize:"13px", color:"#65676B", margin:0 }}>
                 No account?{" "}
-                <button onClick={() => { setMode("signup"); setStep(1); setError(""); }} style={{
-                  background:"none", border:"none", color:C.primary,
-                  fontWeight:700, cursor:"pointer", fontSize:"13px",
+                <button onClick={()=>{setMode("signup");setStep(1);setError("");}} style={{
+                  background:"none", border:"none", color:C.primary, fontWeight:700, cursor:"pointer", fontSize:"13px",
                 }}>
                   Sign up free
                 </button>
@@ -284,46 +269,46 @@ export default function Auth() {
             </div>
           )}
 
-          {/* ── SIGNUP ── */}
+          {/* ── SIGNUP FORM ── */}
           {mode === "signup" && (
             <div>
               {/* Progress bar */}
               <div style={{ display:"flex", gap:"6px", marginBottom:"24px" }}>
-                {[1,2,3].map(s => (
+                {[1,2,3].map(s=>(
                   <div key={s} style={{
                     flex:1, height:"4px", borderRadius:"2px",
-                    background: s <= step ? C.primary : "#E4E6EB",
-                    transition:"background 0.3s",
-                  }} />
+                    background: s<=step ? C.primary : "#E4E6EB", transition:"background 0.3s",
+                  }}/>
                 ))}
               </div>
 
-              {/* Step 1 — Personal info */}
+              {/* Step 1 */}
               {step === 1 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
                   <div>
                     <h2 style={{ fontSize:"20px", fontWeight:800, color:"#050505", margin:"0 0 4px" }}>Personal Info</h2>
-                    <p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 1 of 3 — Your details</p>
+                    <p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 1 of 3</p>
                   </div>
                   <div>
                     <label style={lbl}>Full Name</label>
-                    <input style={inp} placeholder="e.g. Kelechi Promise" value={form.name} onChange={e=>update("name",e.target.value)} />
+                    <input style={inp} placeholder="e.g. Kelechi Promise"
+                      value={form.name} onChange={e=>update("name",e.target.value)} />
                   </div>
                   <div>
                     <label style={lbl}>Email Address</label>
-                    <input style={inp} type="email" placeholder="your@email.com" value={form.email} onChange={e=>update("email",e.target.value)} />
+                    <input style={inp} type="email" placeholder="your@email.com"
+                      value={form.email} onChange={e=>update("email",e.target.value)} />
                   </div>
                   <div>
                     <label style={lbl}>Password</label>
                     <div style={{ position:"relative" }}>
-                      <input
-                        style={{ ...inp, paddingRight:"44px" }}
-                        type={showPw ? "text" : "password"}
-                        placeholder="Min. 6 characters"
-                        value={form.password}
-                        onChange={e=>update("password",e.target.value)}
-                      />
-                      <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:"#65676B" }}>
+                      <input style={{ ...inp, paddingRight:"44px" }}
+                        type={showPw?"text":"password"} placeholder="Min. 6 characters"
+                        value={form.password} onChange={e=>update("password",e.target.value)} />
+                      <button onClick={()=>setShowPw(p=>!p)} style={{
+                        position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
+                        background:"none", border:"none", cursor:"pointer", display:"flex", color:"#65676B",
+                      }}>
                         {showPw ? <EyeOff size={18}/> : <Eye size={18}/>}
                       </button>
                     </div>
@@ -350,7 +335,7 @@ export default function Auth() {
                         </div>
                         <div style={{ fontSize:"13px", color:"#3C4043", lineHeight:1.5 }}>{rec.text}</div>
                       </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", padding:"10px 14px", background:"#fff" }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", padding:"10px 14px" }}>
                         {[{label:"Minimum",val:rec.minJamb,color:"#D0021B"},{label:"Recommended",val:rec.recJamb,color:"#31A24C"}].map((s,i)=>(
                           <div key={i} style={{ padding:"10px", borderRadius:"9px", background:"#F7F8FA", textAlign:"center", border:`1px solid ${s.color}33` }}>
                             <div style={{ fontSize:"11px", color:"#65676B", marginBottom:"3px" }}>{s.label}</div>
@@ -359,13 +344,13 @@ export default function Auth() {
                         ))}
                       </div>
                       {prob && (
-                        <div style={{ padding:"10px 14px", background:"#fff", borderTop:"1px solid #E4E6EB" }}>
+                        <div style={{ padding:"10px 14px", borderTop:"1px solid #E4E6EB" }}>
                           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"6px" }}>
-                            <span style={{ fontSize:"12px", color:"#65676B", fontWeight:600 }}>Chance with target {form.target}</span>
+                            <span style={{ fontSize:"12px", color:"#65676B", fontWeight:600 }}>Admission chance at {form.target}</span>
                             <span style={{ fontSize:"12px", fontWeight:700, color:prob.color }}>{prob.label}</span>
                           </div>
                           <div style={{ height:"7px", borderRadius:"4px", background:"#E4E6EB", overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${prob.percent}%`, background:prob.color, transition:"width 0.5s" }} />
+                            <div style={{ height:"100%", width:`${prob.percent}%`, background:prob.color, transition:"width 0.5s" }}/>
                           </div>
                         </div>
                       )}
@@ -374,7 +359,7 @@ export default function Auth() {
                 </div>
               )}
 
-              {/* Step 2 — Subjects */}
+              {/* Step 2 */}
               {step === 2 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
                   <div>
@@ -382,23 +367,21 @@ export default function Auth() {
                     <p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 2 of 3 — English is compulsory. Select 3 more.</p>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:"8px", padding:"10px 14px", borderRadius:"10px", background:"#E6F4EA", border:"1px solid #31A24C44" }}>
-                    <CheckCircle size={15} color="#31A24C" strokeWidth={2} />
+                    <CheckCircle size={15} color="#31A24C" strokeWidth={2}/>
                     <span style={{ fontSize:"13px", color:"#0D8050", fontWeight:600 }}>English Language (auto-included)</span>
                   </div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
-                    {ALL_SUBJECTS.map(s => {
+                    {ALL_SUBJECTS.map(s=>{
                       const sel = form.subjects.includes(s);
                       const max = !sel && form.subjects.length >= 3;
                       return (
                         <button key={s} onClick={()=>toggleSubject(s)} style={{
                           padding:"9px 14px", borderRadius:"50px", fontSize:"13px",
-                          cursor: max ? "not-allowed" : "pointer",
-                          border:`1.5px solid ${sel ? C.primary : "#E4E6EB"}`,
-                          background: sel ? C.primaryLight : "#fff",
-                          color: sel ? C.primary : max ? "#B0B3B8" : "#3C4043",
-                          fontWeight: sel ? 700 : 400,
-                          opacity: max ? 0.5 : 1,
-                          transition:"all 0.15s",
+                          cursor: max?"not-allowed":"pointer",
+                          border:`1.5px solid ${sel?C.primary:"#E4E6EB"}`,
+                          background: sel?C.primaryLight:"#fff",
+                          color: sel?C.primary:max?"#B0B3B8":"#3C4043",
+                          fontWeight: sel?700:400, opacity:max?0.5:1, transition:"all 0.15s",
                         }}>
                           {s}
                         </button>
@@ -407,29 +390,31 @@ export default function Auth() {
                   </div>
                   <div style={{
                     padding:"10px 14px", borderRadius:"10px",
-                    background: form.subjects.length===3 ? "#E6F4EA" : "#F0F7FF",
-                    border:`1px solid ${form.subjects.length===3 ? "#31A24C44" : `${C.primary}44`}`,
+                    background: form.subjects.length===3?"#E6F4EA":"#F0F7FF",
+                    border:`1px solid ${form.subjects.length===3?"#31A24C44":`${C.primary}44`}`,
                   }}>
                     <span style={{ fontSize:"13px", color:form.subjects.length===3?"#0D8050":C.primary, fontWeight:700 }}>
-                      {form.subjects.length}/3 {form.subjects.length===3 ? "✓ Complete!" : `— need ${3-form.subjects.length} more`}
+                      {form.subjects.length}/3 {form.subjects.length===3?"✓ Complete!":`— need ${3-form.subjects.length} more`}
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* Step 3 — Goals */}
+              {/* Step 3 */}
               {step === 3 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"18px" }}>
                   <div>
                     <h2 style={{ fontSize:"20px", fontWeight:800, color:"#050505", margin:"0 0 4px" }}>Set Your Goal</h2>
-                    <p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 3 of 3 — AI has pre-set your target</p>
+                    <p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 3 of 3</p>
                   </div>
                   <div>
                     <label style={{ ...lbl, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span>Target Score</span>
                       <span style={{ fontSize:"22px", fontWeight:900, color:C.primary }}>{form.target}</span>
                     </label>
-                    <input type="range" min="180" max="400" step="5" value={form.target} onChange={e=>update("target",e.target.value)} style={{ width:"100%", accentColor:C.primary }} />
+                    <input type="range" min="180" max="400" step="5" value={form.target}
+                      onChange={e=>update("target",e.target.value)}
+                      style={{ width:"100%", accentColor:C.primary }}/>
                     {prob && (
                       <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", marginTop:"6px" }}>
                         <span style={{ color:"#65676B" }}>Admission chance</span>
@@ -439,7 +424,8 @@ export default function Auth() {
                   </div>
                   <div>
                     <label style={lbl}>JAMB Exam Date</label>
-                    <input type="date" style={inp} value={form.deadline} onChange={e=>update("deadline",e.target.value)} />
+                    <input type="date" style={inp} value={form.deadline}
+                      onChange={e=>update("deadline",e.target.value)}/>
                   </div>
                   <div>
                     <label style={{ ...lbl, marginBottom:"10px" }}>Preparation Level</label>
@@ -447,11 +433,10 @@ export default function Auth() {
                       {[["1","😰 Not ready"],["2","😐 Just started"],["3","😊 Good progress"],["4","🔥 Almost ready"]].map(([v,l])=>(
                         <button key={v} onClick={()=>update("selfRating",v)} style={{
                           padding:"12px 8px", borderRadius:"10px", fontSize:"12px", cursor:"pointer",
-                          border:`1.5px solid ${form.selfRating===v ? C.primary : "#E4E6EB"}`,
-                          background: form.selfRating===v ? C.primaryLight : "#fff",
-                          color: form.selfRating===v ? C.primary : "#65676B",
-                          fontWeight: form.selfRating===v ? 700 : 400,
-                          transition:"all 0.15s",
+                          border:`1.5px solid ${form.selfRating===v?C.primary:"#E4E6EB"}`,
+                          background: form.selfRating===v?C.primaryLight:"#fff",
+                          color: form.selfRating===v?C.primary:"#65676B",
+                          fontWeight: form.selfRating===v?700:400, transition:"all 0.15s",
                         }}>
                           {l}
                         </button>
@@ -475,16 +460,15 @@ export default function Auth() {
                     color:C.primary, fontWeight:700, fontSize:"14px", cursor:"pointer",
                   }}>← Back</button>
                 )}
-                <button onClick={step < 3 ? nextStep : signup} style={{
+                <button onClick={step<3?nextStep:signup} style={{
                   flex:2, padding:"14px", borderRadius:"10px", border:"none",
-                  background:C.primary, color:"#fff", fontWeight:700,
-                  fontSize:"15px", cursor:"pointer",
-                  boxShadow:`0 2px 10px rgba(24,119,242,0.3)`,
+                  background:C.primary, color:"#fff", fontWeight:700, fontSize:"15px",
+                  cursor:"pointer", boxShadow:`0 2px 10px rgba(24,119,242,0.3)`,
                 }}>
-                  {step < 3 ? "Continue →" : "🚀 Start Studying!"}
+                  {step<3?"Continue →":"🚀 Start Studying!"}
                 </button>
               </div>
-              <p style={{ textAlign:"center", marginTop:"14px", fontSize:"13px", color:"#65676B", margin:0 }}>
+              <p style={{ textAlign:"center", marginTop:"14px", fontSize:"13px", color:"#65676B", margin:"14px 0 0" }}>
                 Already have an account?{" "}
                 <button onClick={()=>{setMode("login");setStep(1);setError("");}} style={{
                   background:"none", border:"none", color:C.primary,

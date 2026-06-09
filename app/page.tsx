@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import AppLoader from "./components/AppLoader";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar, { NAVBAR_HEIGHT } from "./components/Navbar";

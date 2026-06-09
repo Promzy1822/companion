@@ -60,7 +60,7 @@ export default function Auth() {
         let account = null;
         try {
           const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-          account = accs.find((a) => a.email === email) || null;
+          account = accs.find((a: Record<string, unknown>) => a.email === email) || null;
         } catch {}
         if (!account) {
           const legacy = localStorage.getItem("companion_user");

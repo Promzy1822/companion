@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../lib/cutoffs";
-import { hashPassword, verifyPassword, validateEmail, validatePassword } from "../lib/auth";
+import { hashPassword, verifyPassword, validateEmail, validatePassword, normaliseEmail } from "../lib/auth";
 import { C } from "../lib/design";
-import { Session } from "../lib/session";
+import { Session, AccountStore } from "../lib/session";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
@@ -26,19 +26,28 @@ export default function Auth() {
     subjects:[] as string[], target:"260", deadline:"", selfRating:"2",
   });
 
+  // If already logged in, go home
   useEffect(() => {
     try {
-      const u = localStorage.getItem("companion_user");
-      if (u) { Session.set(); router.replace("/"); }
+      const active = Session.getUser();
+      if (active) { router.replace("/"); }
     } catch {}
   }, [router]);
 
+  // Auto-set target score from cutoff database
   useEffect(() => {
     if (form.institution && form.course && form.institution !== "Other" && form.course !== "Other") {
       const c = getCutoff(form.institution, form.course);
-      setRec({ text: getSmartRecommendation(form.institution, form.course), minJamb: c.minJamb, recJamb: c.recommendedJamb, competition: c.competition });
+      setRec({
+        text:        getSmartRecommendation(form.institution, form.course),
+        minJamb:     c.minJamb,
+        recJamb:     c.recommendedJamb,
+        competition: c.competition,
+      });
       update("target", String(c.recommendedJamb));
-    } else setRec(null);
+    } else {
+      setRec(null);
+    }
   }, [form.institution, form.course]);
 
   const update = (k: string, v: string|string[]) => setForm(p => ({...p, [k]: v}));
@@ -57,59 +66,55 @@ export default function Auth() {
     if (!validateEmail(form.email)) { setError("Enter a valid email address"); return; }
     setLoading(true);
 
+    // Small delay so loading state renders before synchronous localStorage work
     setTimeout(() => {
       try {
-        const email = form.email.toLowerCase().trim();
-        let account: Record<string,unknown> | null = null;
+        const email = normaliseEmail(form.email);
 
-        // 1. Check companion_accounts array
-        try {
-          const accs: Record<string,unknown>[] = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-          account = accs.find((a) => a.email === email) ?? null;
-        } catch {}
+        // ── Step 1: Look up account in permanent store ────────────────────────
+        let account = AccountStore.findByEmail(email);
 
-        // 2. Fall back to companion_user
+        // ── Step 2: Legacy fallback — old users who signed up before AccountStore
         if (!account) {
           try {
             const legacy = localStorage.getItem("companion_user");
             if (legacy) {
               const u = JSON.parse(legacy);
-              if (u.email === email) account = u;
+              if (u.email === email) {
+                // Migrate this user into AccountStore so they're never lost again
+                account = u;
+                AccountStore.save(u);
+                console.log("[Auth] Migrated legacy user into AccountStore");
+              }
             }
           } catch {}
         }
 
-        if (!account) { setError("No account found with that email. Please sign up."); return; }
-
-        // 3. Verify password
-        const pwOk = account.passwordHash
-          ? verifyPassword(form.password, account.passwordHash as string)
-          : (account.password === form.password);
-
-        if (!pwOk) { setError("Incorrect password. Please try again."); return; }
-
-        // 4. Upgrade plain password to hash if needed
-        if (!account.passwordHash) {
-          account.passwordHash = hashPassword(form.password);
-          delete account.password;
-          try {
-            const accs: Record<string,unknown>[] = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-            const idx = accs.findIndex((a) => a.email === account!.email);
-            if (idx >= 0) { accs[idx] = account; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
-          } catch {}
+        // ── Step 3: Check if account exists ──────────────────────────────────
+        if (!account) {
+          // Generic error — don't reveal whether email exists (account enumeration)
+          setError("Invalid email or password.");
+          return;
         }
 
-        // 5. Set active user + session cookie + navigate
-        localStorage.setItem("companion_user", JSON.stringify(account));
-        Session.set();
+        // ── Step 4: Verify password ───────────────────────────────────────────
+        const pwOk = verifyPassword(form.password, account.passwordHash);
+        if (!pwOk) {
+          setError("Invalid email or password.");
+          return;
+        }
+
+        // ── Step 5: Start session ─────────────────────────────────────────────
+        Session.start(account);
         router.replace("/");
+
       } finally {
         setLoading(false);
       }
-    }, 300);
+    }, 100);
   };
 
-  // ── SIGNUP STEPS ─────────────────────────────────────────────────────────────
+  // ── SIGNUP STEP VALIDATION ───────────────────────────────────────────────────
   const nextStep = () => {
     setError("");
     if (step === 1) {
@@ -119,6 +124,12 @@ export default function Auth() {
       if (!pw.valid)                 { setError(pw.message); return; }
       if (!form.institution)         { setError("Select your target institution"); return; }
       if (!form.course)              { setError("Select your desired course"); return; }
+
+      // ── Email uniqueness check ────────────────────────────────────────────
+      if (AccountStore.emailExists(normaliseEmail(form.email))) {
+        setError("An account with this email already exists. Please log in instead.");
+        return;
+      }
     }
     if (step === 2 && form.subjects.length < 3) {
       setError(`Select ${3 - form.subjects.length} more subject(s)`); return;
@@ -126,16 +137,25 @@ export default function Auth() {
     setStep(s => s + 1);
   };
 
+  // ── SIGNUP COMPLETE ──────────────────────────────────────────────────────────
   const signup = () => {
     if (!form.deadline) { setError("Please select your exam date"); return; }
+
+    const email = normaliseEmail(form.email);
+
+    // Final uniqueness check (guards against race conditions)
+    if (AccountStore.emailExists(email)) {
+      setError("An account with this email already exists. Please log in.");
+      return;
+    }
 
     const cutoff = (form.institution !== "Other" && form.course !== "Other")
       ? getCutoff(form.institution, form.course) : null;
 
-    // Build clean user object — NO password field, only passwordHash
-    const newUser: Record<string, unknown> = {
+    // Build account — NO password field, only passwordHash
+    const newAccount = {
       name:           form.name.trim(),
-      email:          form.email.toLowerCase().trim(),
+      email,
       passwordHash:   hashPassword(form.password),
       institution:    form.institution,
       course:         form.course,
@@ -148,19 +168,12 @@ export default function Auth() {
       createdAt:      new Date().toISOString(),
     };
 
-    // Save as active user
-    localStorage.setItem("companion_user", JSON.stringify(newUser));
+    // ── Save to permanent store FIRST ─────────────────────────────────────────
+    AccountStore.save(newAccount);
 
-    // Save to accounts array for login lookup
-    try {
-      const accs: Record<string,unknown>[] = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-      const idx = accs.findIndex((a) => a.email === newUser.email);
-      if (idx >= 0) accs[idx] = newUser; else accs.push(newUser);
-      localStorage.setItem("companion_accounts", JSON.stringify(accs));
-    } catch {}
+    // ── Then start session ────────────────────────────────────────────────────
+    Session.start(newAccount);
 
-    // Set session cookie then navigate
-    Session.set();
     router.replace("/");
   };
 
@@ -182,14 +195,12 @@ export default function Auth() {
       fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",
       display:"flex", flexDirection:"column",
     }}>
-      {/* Header */}
+      {/* ── HEADER ── */}
       <div style={{ background:C.primary, padding:"16px 20px 24px", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
           <Link href="/landing" style={{
-            width:34, height:34, borderRadius:"10px",
-            background:"rgba(255,255,255,0.15)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            textDecoration:"none",
+            width:34, height:34, borderRadius:"10px", background:"rgba(255,255,255,0.15)",
+            display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none",
           }}>
             <ArrowLeft size={17} strokeWidth={2} color="#fff" />
           </Link>
@@ -212,7 +223,7 @@ export default function Auth() {
         </div>
       </div>
 
-      {/* Body */}
+      {/* ── BODY ── */}
       <div style={{ flex:1, overflowY:"auto", padding:"20px 16px 40px" }}>
         <div style={{ background:"#fff", borderRadius:"16px", padding:"24px", boxShadow:"0 1px 4px rgba(0,0,0,0.07)" }}>
 
@@ -227,7 +238,7 @@ export default function Auth() {
                 <label style={lbl}>Email Address</label>
                 <input style={inp} type="email" placeholder="your@email.com"
                   value={form.email} onChange={e=>update("email",e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+                  onKeyDown={e=>e.key==="Enter"&&handleLogin()} autoComplete="email" />
               </div>
               <div>
                 <label style={lbl}>Password</label>
@@ -235,7 +246,7 @@ export default function Auth() {
                   <input style={{ ...inp, paddingRight:"44px" }}
                     type={showPw?"text":"password"} placeholder="Your password"
                     value={form.password} onChange={e=>update("password",e.target.value)}
-                    onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+                    onKeyDown={e=>e.key==="Enter"&&handleLogin()} autoComplete="current-password" />
                   <button onClick={()=>setShowPw(p=>!p)} style={{
                     position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
                     background:"none", border:"none", cursor:"pointer", display:"flex", color:"#65676B",
@@ -262,9 +273,7 @@ export default function Auth() {
                 No account?{" "}
                 <button onClick={()=>{setMode("signup");setStep(1);setError("");}} style={{
                   background:"none", border:"none", color:C.primary, fontWeight:700, cursor:"pointer", fontSize:"13px",
-                }}>
-                  Sign up free
-                </button>
+                }}>Sign up free</button>
               </p>
             </div>
           )}
@@ -272,7 +281,6 @@ export default function Auth() {
           {/* ── SIGNUP FORM ── */}
           {mode === "signup" && (
             <div>
-              {/* Progress bar */}
               <div style={{ display:"flex", gap:"6px", marginBottom:"24px" }}>
                 {[1,2,3].map(s=>(
                   <div key={s} style={{
@@ -282,7 +290,7 @@ export default function Auth() {
                 ))}
               </div>
 
-              {/* Step 1 */}
+              {/* Step 1 — Personal info */}
               {step === 1 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
                   <div>
@@ -292,19 +300,19 @@ export default function Auth() {
                   <div>
                     <label style={lbl}>Full Name</label>
                     <input style={inp} placeholder="e.g. Kelechi Promise"
-                      value={form.name} onChange={e=>update("name",e.target.value)} />
+                      value={form.name} onChange={e=>update("name",e.target.value)} autoComplete="name" />
                   </div>
                   <div>
                     <label style={lbl}>Email Address</label>
                     <input style={inp} type="email" placeholder="your@email.com"
-                      value={form.email} onChange={e=>update("email",e.target.value)} />
+                      value={form.email} onChange={e=>update("email",e.target.value)} autoComplete="email" />
                   </div>
                   <div>
                     <label style={lbl}>Password</label>
                     <div style={{ position:"relative" }}>
                       <input style={{ ...inp, paddingRight:"44px" }}
                         type={showPw?"text":"password"} placeholder="Min. 6 characters"
-                        value={form.password} onChange={e=>update("password",e.target.value)} />
+                        value={form.password} onChange={e=>update("password",e.target.value)} autoComplete="new-password" />
                       <button onClick={()=>setShowPw(p=>!p)} style={{
                         position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
                         background:"none", border:"none", cursor:"pointer", display:"flex", color:"#65676B",
@@ -359,7 +367,7 @@ export default function Auth() {
                 </div>
               )}
 
-              {/* Step 2 */}
+              {/* Step 2 — Subjects */}
               {step === 2 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
                   <div>
@@ -400,7 +408,7 @@ export default function Auth() {
                 </div>
               )}
 
-              {/* Step 3 */}
+              {/* Step 3 — Goals */}
               {step === 3 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"18px" }}>
                   <div>
@@ -413,8 +421,7 @@ export default function Auth() {
                       <span style={{ fontSize:"22px", fontWeight:900, color:C.primary }}>{form.target}</span>
                     </label>
                     <input type="range" min="180" max="400" step="5" value={form.target}
-                      onChange={e=>update("target",e.target.value)}
-                      style={{ width:"100%", accentColor:C.primary }}/>
+                      onChange={e=>update("target",e.target.value)} style={{ width:"100%", accentColor:C.primary }}/>
                     {prob && (
                       <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", marginTop:"6px" }}>
                         <span style={{ color:"#65676B" }}>Admission chance</span>
@@ -424,8 +431,7 @@ export default function Auth() {
                   </div>
                   <div>
                     <label style={lbl}>JAMB Exam Date</label>
-                    <input type="date" style={inp} value={form.deadline}
-                      onChange={e=>update("deadline",e.target.value)}/>
+                    <input type="date" style={inp} value={form.deadline} onChange={e=>update("deadline",e.target.value)}/>
                   </div>
                   <div>
                     <label style={{ ...lbl, marginBottom:"10px" }}>Preparation Level</label>
@@ -471,11 +477,8 @@ export default function Auth() {
               <p style={{ textAlign:"center", marginTop:"14px", fontSize:"13px", color:"#65676B", margin:"14px 0 0" }}>
                 Already have an account?{" "}
                 <button onClick={()=>{setMode("login");setStep(1);setError("");}} style={{
-                  background:"none", border:"none", color:C.primary,
-                  fontWeight:700, cursor:"pointer", fontSize:"13px",
-                }}>
-                  Log in
-                </button>
+                  background:"none", border:"none", color:C.primary, fontWeight:700, cursor:"pointer", fontSize:"13px",
+                }}>Log in</button>
               </p>
             </div>
           )}

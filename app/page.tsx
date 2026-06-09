@@ -66,7 +66,7 @@ export default function Home() {
   const T = palette(darkMode);
 
   useEffect(() => {
-    Session.syncFromStorage();
+    Session.sync();
     const dm = localStorage.getItem("darkMode") === "true";
     setDarkMode(dm);
     document.documentElement.setAttribute("data-dark", String(dm));

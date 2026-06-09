@@ -76,7 +76,7 @@ export default function Auth() {
           delete account.password;
           try {
             const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-            const idx = accs.findIndex((a) => a.email === account.email);
+            const idx = accs.findIndex((a: Record<string, unknown>) => a.email === account.email);
             if (idx >= 0) { accs[idx] = account; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
           } catch {}
         }

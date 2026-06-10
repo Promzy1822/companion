@@ -48,7 +48,7 @@ export default function StreakCard({ darkMode }: Props) {
   const isFuture     = (d: number) => isoDate(d) > today;
 
   // ── Style helpers ────────────────────────────────────────────────
-  const C = {
+  const LC = {
     card:   darkMode ? "#1c1c1e" : "#fff",
     text:   darkMode ? "#f2f2f7" : "#1c1c1e",
     sub:    darkMode ? "#98989d" : "#6e6e73",
@@ -71,9 +71,9 @@ export default function StreakCard({ darkMode }: Props) {
 
   return (
     <div style={{
-      backgroundColor: C.card, borderRadius: "20px",
+      backgroundColor: LC.card, borderRadius: "20px",
       boxShadow: darkMode ? "0 2px 12px rgba(0,0,0,0.4)" : "0 2px 16px rgba(0,0,0,0.08)",
-      border: `1px solid ${C.border}`, marginBottom: "16px", overflow: "hidden"
+      border: `1px solid ${LC.border}`, marginBottom: "16px", overflow: "hidden"
     }}>
       {/* Header */}
       <div style={{
@@ -110,18 +110,18 @@ export default function StreakCard({ darkMode }: Props) {
       <div style={{ padding: "18px 20px" }}>
         {/* Month navigation */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-          <button onClick={prevMonth} style={{ background: "none", border: "none", cursor: "pointer", color: C.sub, fontSize: "18px", padding: "4px 8px" }}>‹</button>
-          <span style={{ fontSize: "14px", fontWeight: "700", color: C.text }}>{monthName}</span>
+          <button onClick={prevMonth} style={{ background: "none", border: "none", cursor: "pointer", color: LC.sub, fontSize: "18px", padding: "4px 8px" }}>‹</button>
+          <span style={{ fontSize: "14px", fontWeight: "700", color: LC.text }}>{monthName}</span>
           <button
             onClick={nextMonth}
             disabled={year === new Date().getFullYear() && month >= new Date().getMonth()}
-            style={{ background: "none", border: "none", cursor: "pointer", color: C.sub, fontSize: "18px", padding: "4px 8px", opacity: (year === new Date().getFullYear() && month >= new Date().getMonth()) ? 0.3 : 1 }}>›</button>
+            style={{ background: "none", border: "none", cursor: "pointer", color: LC.sub, fontSize: "18px", padding: "4px 8px", opacity: (year === new Date().getFullYear() && month >= new Date().getMonth()) ? 0.3 : 1 }}>›</button>
         </div>
 
         {/* Day-of-week headers */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "6px" }}>
           {daysOfWeek.map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontSize: "11px", color: C.sub, fontWeight: "600", padding: "2px 0" }}>{d}</div>
+            <div key={i} style={{ textAlign: "center", fontSize: "11px", color: LC.sub, fontWeight: "600", padding: "2px 0" }}>{d}</div>
           ))}
         </div>
 
@@ -139,7 +139,7 @@ export default function StreakCard({ darkMode }: Props) {
             const future  = isFuture(day);
 
             let bg = "transparent";
-            let color = C.sub;
+            let color = LC.sub;
             let border = "none";
             let emoji = "";
 
@@ -179,7 +179,7 @@ export default function StreakCard({ darkMode }: Props) {
           ].map((l, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
               <div style={{ width: "10px", height: "10px", borderRadius: "3px", backgroundColor: l.color }} />
-              <span style={{ fontSize: "11px", color: C.sub }}>{l.label}</span>
+              <span style={{ fontSize: "11px", color: LC.sub }}>{l.label}</span>
             </div>
           ))}
         </div>

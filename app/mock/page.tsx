@@ -36,7 +36,8 @@ export default function MockExam() {
   const [generating,setGenerating]= useState(false);
   const [numQ,      setNumQ]      = useState(10);
   const [history,   setHistory]   = useState<{score:number;total:number;jambEquivalent:number;date:string}[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval>|null>(null);
+  const timerRef   = useRef<ReturnType<typeof setInterval>|null>(null);
+  const submitRef  = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -47,7 +48,7 @@ export default function MockExam() {
   useEffect(() => {
     if (phase==="exam" && timeLeft>0) {
       timerRef.current = setInterval(()=>setTimeLeft(t=>{
-        if(t<=1){clearInterval(timerRef.current!);submitExam();return 0;}
+        if(t<=1){clearInterval(timerRef.current!);submitRef.current?.();return 0;}
         return t-1;
       }), 1000);
     }
@@ -68,6 +69,8 @@ export default function MockExam() {
     setTimeLeft(numQ*90); setAnswers({}); setCurrent(0); setPhase("exam"); setGenerating(false);
   };
 
+  // Always keep submitRef pointing to latest submitExam
+  // so the timer interval closure never calls a stale version
   const submitExam = () => {
     if(timerRef.current) clearInterval(timerRef.current);
     let score=0; const bySubject:Record<string,{correct:number;total:number}>={};

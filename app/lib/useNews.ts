@@ -119,9 +119,8 @@ export function useNews(): UseNewsReturn {
   }, []); // ← EMPTY DEPS: this callback never changes reference
 
   // ── Keep fetchRef always pointing to the latest doFetch ───────────────────
-  // This is the key fix: the interval closure calls fetchRef.current,
-  // which is always the current function, without re-running the effect.
-  fetchRef.current = doFetch;
+  // Wrapped in useEffect so it only runs after render, not during render.
+  useEffect(() => { fetchRef.current = doFetch; }, [doFetch]);
 
   // ── Setup: initial fetch + polling (runs ONCE on mount) ───────────────────
   useEffect(() => {

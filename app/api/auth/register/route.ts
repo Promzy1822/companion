@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { kv } from "@vercel/kv";
 import { hashPassword, validateEmail, validatePassword, normaliseEmail } from "../../../lib/auth";
 import { sendVerificationEmail } from "../../../lib/email";
 import { getCutoff, getSmartRecommendation } from "../../../lib/cutoffs";
@@ -6,42 +7,23 @@ import { getCutoff, getSmartRecommendation } from "../../../lib/cutoffs";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// In-memory OTP store (works without KV configured)
-// KV is used when available for persistence across serverless instances
-const memOTPStore = new Map<string, { code: string; expiresAt: number; attempts: number; pending: unknown; name: string }>();
-
 const regLimitMap = new Map<string, { count: number; resetAt: number }>();
 function checkRegLimit(ip: string): boolean {
   const now = Date.now();
   const entry = regLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) { regLimitMap.set(ip, { count: 1, resetAt: now + 60_000 }); return true; }
+  if (!entry || now > entry.resetAt) {
+    regLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
   if (entry.count >= 5) return false;
-  entry.count++; return true;
+  entry.count++;
+  return true;
 }
 
 function generateOTP(): string {
-  const digits = "0123456789";
   let otp = "";
-  for (let i = 0; i < 6; i++) {
-    otp += digits[Math.floor(Math.random() * 10)];
-  }
+  for (let i = 0; i < 6; i++) otp += Math.floor(Math.random() * 10).toString();
   return otp;
-}
-
-async function saveOTP(email: string, code: string, pending: unknown, name: string) {
-  const record = { code, expiresAt: Date.now() + 10 * 60 * 1000, attempts: 0, pending, name };
-  // Always save to memory first
-  memOTPStore.set(email, record);
-  // Try KV if available
-  try {
-    const kvUrl = process.env.KV_REST_API_URL;
-    if (kvUrl) {
-      const { kv } = await import("@vercel/kv");
-      await kv.set(`otp:${email}`, record, { ex: 600 });
-    }
-  } catch (e) {
-    console.warn("[register] KV unavailable, using memory store:", e);
-  }
 }
 
 export async function POST(req: NextRequest) {
@@ -70,25 +52,21 @@ export async function POST(req: NextRequest) {
 
     const normEmail = normaliseEmail(email);
 
-    // Check duplicate
-    try {
-      const kvUrl = process.env.KV_REST_API_URL;
-      if (kvUrl) {
-        const { kv } = await import("@vercel/kv");
-        const existing = await kv.get(`account:${normEmail}`);
-        if (existing) {
-          return NextResponse.json({ success: true, message: "If this email is new, a verification code has been sent." });
-        }
-      }
-    } catch (e) {
-      console.warn("[register] KV check failed, continuing:", e);
+    // Check if account already exists and verified
+    const existingAccount = await kv.get(`account:${normEmail}`);
+    if (existingAccount) {
+      return NextResponse.json({
+        success: true,
+        message: "If this email is new, a verification code has been sent.",
+      });
     }
 
-    const cutoff = (
+    const cutoff =
       institution && course &&
       institution !== "Other" && course !== "Other" &&
       typeof institution === "string" && typeof course === "string"
-    ) ? getCutoff(institution, course) : null;
+        ? getCutoff(institution, course)
+        : null;
 
     const pending = {
       email:          normEmail,
@@ -101,24 +79,48 @@ export async function POST(req: NextRequest) {
       deadline:       (deadline as string) || "",
       selfRating:     (selfRating as string) || "2",
       cutoffData:     cutoff,
-      recommendation: cutoff && typeof institution === "string" && typeof course === "string"
-        ? getSmartRecommendation(institution, course) : null,
-      createdAt:      new Date().toISOString(),
+      recommendation:
+        cutoff && typeof institution === "string" && typeof course === "string"
+          ? getSmartRecommendation(institution, course)
+          : null,
+      createdAt: new Date().toISOString(),
     };
 
-    const otp = generateOTP();
-    await saveOTP(normEmail, otp, pending, (name as string).trim());
+    const otp    = generateOTP();
+    const otpKey = `otp:${normEmail}`;
+    const record = {
+      code:      otp,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+      attempts:  0,
+      name:      (name as string).trim(),
+      pending,
+    };
+
+    // Save OTP to KV with 11-minute TTL
+    await kv.set(otpKey, record, { ex: 660 });
+
+    // Confirm it was saved
+    const saved = await kv.get(otpKey);
+    if (!saved) {
+      console.error("[register] OTP not persisted in KV for:", normEmail);
+      return NextResponse.json({ error: "Failed to save verification code. Please try again." }, { status: 500 });
+    }
+
+    console.log("[register] OTP saved to KV for:", normEmail);
 
     const sent = await sendVerificationEmail(normEmail, (name as string).trim(), otp);
     if (!sent) {
-      return NextResponse.json({ error: "Failed to send verification email. Please check your email address and try again." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to send verification email. Please check your email address." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, message: "Verification code sent to your email." });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[register] Fatal error:", msg);
-    return NextResponse.json({ error: "Server error: " + msg.slice(0, 100) }, { status: 500 });
+    console.error("[register] Fatal:", msg);
+    return NextResponse.json({ error: "Server error: " + msg.slice(0, 200) }, { status: 500 });
   }
 }

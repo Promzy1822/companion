@@ -1,51 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { kv } from "@vercel/kv";
 import { validateEmail, normaliseEmail } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Shared memory store — must match register route
-// In production with multiple serverless instances, KV is used
-const memOTPStore = new Map<string, { code: string; expiresAt: number; attempts: number; pending: unknown; name: string }>();
-
-async function getOTP(email: string) {
-  // Try KV first
-  try {
-    const kvUrl = process.env.KV_REST_API_URL;
-    if (kvUrl) {
-      const { kv } = await import("@vercel/kv");
-      const record = await kv.get<{ code: string; expiresAt: number; attempts: number; pending: unknown; name: string }>(`otp:${email}`);
-      if (record) return { record, source: "kv" as const };
-    }
-  } catch (e) {
-    console.warn("[verify-email] KV unavailable:", e);
-  }
-  // Fall back to memory
-  const record = memOTPStore.get(email);
-  return record ? { record, source: "memory" as const } : null;
-}
-
-async function saveAccount(email: string, account: unknown) {
-  try {
-    const kvUrl = process.env.KV_REST_API_URL;
-    if (kvUrl) {
-      const { kv } = await import("@vercel/kv");
-      await kv.set(`account:${email}`, account);
-    }
-  } catch (e) {
-    console.warn("[verify-email] KV save failed:", e);
-  }
-}
-
-async function deleteOTP(email: string) {
-  memOTPStore.delete(email);
-  try {
-    const kvUrl = process.env.KV_REST_API_URL;
-    if (kvUrl) {
-      const { kv } = await import("@vercel/kv");
-      await kv.del(`otp:${email}`);
-    }
-  } catch {}
+interface OTPRecord {
+  code:      string;
+  expiresAt: number;
+  attempts:  number;
+  name:      string;
+  pending:   Record<string, unknown>;
 }
 
 export async function POST(req: NextRequest) {
@@ -62,33 +27,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Enter the 6-digit code" }, { status: 400 });
 
     const normEmail = normaliseEmail(email);
-    const result = await getOTP(normEmail);
+    const otpKey    = `otp:${normEmail}`;
 
-    if (!result)
-      return NextResponse.json({ error: "Code expired or not found. Please request a new one." }, { status: 400 });
+    console.log("[verify-email] Looking up OTP for:", normEmail);
 
-    const { record } = result;
+    const record = await kv.get<OTPRecord>(otpKey);
 
-    if (Date.now() > record.expiresAt)
-      return NextResponse.json({ error: "Code has expired. Please request a new one." }, { status: 400 });
-    if (record.attempts >= 5)
-      return NextResponse.json({ error: "Too many attempts. Please request a new code." }, { status: 400 });
-    if (record.code !== code.trim()) {
-      record.attempts++;
-      const left = 5 - record.attempts;
-      return NextResponse.json({ error: `Incorrect code. ${left} attempt${left === 1 ? "" : "s"} remaining.` }, { status: 400 });
+    console.log("[verify-email] OTP record found:", record ? "YES" : "NO");
+
+    if (!record) {
+      return NextResponse.json(
+        { error: "Code expired or not found. Please request a new one." },
+        { status: 400 }
+      );
     }
 
-    // Valid — save verified account
-    const account = { ...record.pending as object, verified: true };
-    await saveAccount(normEmail, account);
-    await deleteOTP(normEmail);
+    if (Date.now() > record.expiresAt) {
+      await kv.del(otpKey);
+      return NextResponse.json(
+        { error: "Code has expired. Please request a new one." },
+        { status: 400 }
+      );
+    }
+
+    if (record.attempts >= 5) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please request a new code." },
+        { status: 400 }
+      );
+    }
+
+    if (record.code !== code.trim()) {
+      // Increment attempts in KV
+      await kv.set(otpKey, { ...record, attempts: record.attempts + 1 }, { ex: 660 });
+      const left = 5 - record.attempts - 1;
+      return NextResponse.json(
+        { error: `Incorrect code. ${left} attempt${left === 1 ? "" : "s"} remaining.` },
+        { status: 400 }
+      );
+    }
+
+    // ── Valid OTP ────────────────────────────────────────────────────────────
+    const account = { ...record.pending, verified: true };
+    const accountKey = `account:${normEmail}`;
+
+    await kv.set(accountKey, account);
+    await kv.del(otpKey);
+
+    // Confirm account was saved
+    const saved = await kv.get(accountKey);
+    console.log("[verify-email] Account saved:", saved ? "YES" : "NO");
 
     return NextResponse.json({ success: true, account });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[verify-email] Fatal:", msg);
-    return NextResponse.json({ error: "Server error: " + msg.slice(0, 100) }, { status: 500 });
+    return NextResponse.json({ error: "Server error: " + msg.slice(0, 200) }, { status: 500 });
   }
 }

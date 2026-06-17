@@ -144,7 +144,9 @@ export default function Auth() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
-      router.push(`/verify-email?email=${encodeURIComponent(normaliseEmail(form.email))}&name=${encodeURIComponent(form.name.trim())}`);
+      // Account created — start session immediately
+      Session.start(data.account);
+      router.replace("/");
     } catch {
       setError("Network error. Please try again.");
     } finally {

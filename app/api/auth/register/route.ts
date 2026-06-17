@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { hashPassword, validateEmail, validatePassword, normaliseEmail } from "../../../lib/auth";
-import { sendVerificationEmail } from "../../../lib/email";
 import { getCutoff, getSmartRecommendation } from "../../../lib/cutoffs";
 
 export const dynamic = "force-dynamic";
@@ -11,27 +10,17 @@ const regLimitMap = new Map<string, { count: number; resetAt: number }>();
 function checkRegLimit(ip: string): boolean {
   const now = Date.now();
   const entry = regLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    regLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
+  if (!entry || now > entry.resetAt) { regLimitMap.set(ip, { count: 1, resetAt: now + 60_000 }); return true; }
   if (entry.count >= 5) return false;
   entry.count++;
   return true;
 }
 
-function generateOTP(): string {
-  let otp = "";
-  for (let i = 0; i < 6; i++) otp += Math.floor(Math.random() * 10).toString();
-  return otp;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (!checkRegLimit(ip)) {
+    if (!checkRegLimit(ip))
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
-    }
 
     let body: Record<string, unknown>;
     try { body = await req.json(); }
@@ -52,23 +41,23 @@ export async function POST(req: NextRequest) {
 
     const normEmail = normaliseEmail(email);
 
-    // Check if account already exists and verified
-    const existingAccount = await kv.get(`account:${normEmail}`);
-    if (existingAccount) {
-      return NextResponse.json({
-        success: true,
-        message: "If this email is new, a verification code has been sent.",
-      });
+    // ── Email uniqueness check ─────────────────────────────────────────────
+    const existing = await kv.get(`account:${normEmail}`);
+    if (existing) {
+      return NextResponse.json(
+        { error: "An account with this email already exists. Please log in." },
+        { status: 409 }
+      );
     }
 
     const cutoff =
       institution && course &&
       institution !== "Other" && course !== "Other" &&
       typeof institution === "string" && typeof course === "string"
-        ? getCutoff(institution, course)
-        : null;
+        ? getCutoff(institution, course) : null;
 
-    const pending = {
+    // ── Save account immediately — no verification needed ──────────────────
+    const account = {
       email:          normEmail,
       name:           (name as string).trim(),
       passwordHash:   hashPassword(password as string),
@@ -79,44 +68,15 @@ export async function POST(req: NextRequest) {
       deadline:       (deadline as string) || "",
       selfRating:     (selfRating as string) || "2",
       cutoffData:     cutoff,
-      recommendation:
-        cutoff && typeof institution === "string" && typeof course === "string"
-          ? getSmartRecommendation(institution, course)
-          : null,
-      createdAt: new Date().toISOString(),
+      recommendation: cutoff && typeof institution === "string" && typeof course === "string"
+        ? getSmartRecommendation(institution, course) : null,
+      verified:       true,
+      createdAt:      new Date().toISOString(),
     };
 
-    const otp    = generateOTP();
-    const otpKey = `otp:${normEmail}`;
-    const record = {
-      code:      otp,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-      attempts:  0,
-      name:      (name as string).trim(),
-      pending,
-    };
+    await kv.set(`account:${normEmail}`, account);
 
-    // Save OTP to KV with 11-minute TTL
-    await kv.set(otpKey, record, { ex: 660 });
-
-    // Confirm it was saved
-    const saved = await kv.get(otpKey);
-    if (!saved) {
-      console.error("[register] OTP not persisted in KV for:", normEmail);
-      return NextResponse.json({ error: "Failed to save verification code. Please try again." }, { status: 500 });
-    }
-
-    console.log("[register] OTP saved to KV for:", normEmail);
-
-    const sent = await sendVerificationEmail(normEmail, (name as string).trim(), otp);
-    if (!sent) {
-      return NextResponse.json(
-        { error: "Failed to send verification email. Please check your email address." },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ success: true, message: "Verification code sent to your email." });
+    return NextResponse.json({ success: true, account });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

@@ -129,7 +129,6 @@ function SyllabusContent() {
                     cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
                     flexShrink:0,
                     boxShadow: isDone?"0 2px 8px rgba(49,162,76,0.3)":"none",
-                    border: isDone?"none":`1.5px solid ${T.border}`,
                   }}>
                     <CheckCircle size={16} color={isDone?"#fff":T.muted} strokeWidth={isDone?2.5:1.5} />
                   </button>

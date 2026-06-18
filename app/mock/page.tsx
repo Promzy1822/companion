@@ -1,4 +1,5 @@
 "use client";
+import { buildMockExamPrompt } from "../lib/syllabus";
 import { useState, useEffect, useRef } from "react";
 import AppLoader from "../components/AppLoader";
 import Link from "next/link";
@@ -60,7 +61,7 @@ export default function MockExam() {
     const user = (() => { try { return JSON.parse(localStorage.getItem("companion_user")||"{}"); } catch { return {}; }})();
     const subjects = user.subjects || ["Mathematics","English Language","Physics","Chemistry","Biology"];
     try {
-      const res  = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`Generate exactly ${numQ} JAMB MCQs for: ${subjects.join(", ")}. Return ONLY JSON array: [{id,subject,question,options:[A,B,C,D],correct,explanation}] correct is 0-indexed.`})});
+      const res  = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:buildMockExamPrompt(subjects, numQ), subjects})});
       const data = await res.json();
       const match = (data.reply||"").match(/\[[\s\S]*\]/);
       if(match){ const p=JSON.parse(match[0]); if(Array.isArray(p)&&p.length) setQuestions(p); else setQuestions(FALLBACK.slice(0,numQ)); }

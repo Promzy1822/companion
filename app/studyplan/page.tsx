@@ -1,4 +1,5 @@
 "use client";
+import { generateSyllabusAlignedPlan } from "../lib/syllabus";
 import { useState, useEffect } from "react";
 import AppLoader from "../components/AppLoader";
 import Link from "next/link";
@@ -160,7 +161,7 @@ RULES:
     } catch {
       // Fallback: real JAMB topics from library
       const start     = new Date(Date.now() + 3600000);
-      const scheduled = buildScheduleTopics(subs, weeks, weak);
+      const syllabusItems = generateSyllabusAlignedPlan(subs, weeks, weak);
       let ti = 0, off = 0;
       const fb: WeekPlan[] = Array.from({ length: weeks }, (_, wi) => ({
         week: wi + 1,
@@ -171,7 +172,7 @@ RULES:
           dt.setDate(start.getDate() + off++);
           const isRest = di === 6;
           const isPrac = di === 4;
-          const t = !isRest && !isPrac ? scheduled[ti++] : null;
+          const t = !isRest && !isPrac ? syllabusItems[ti++] : null;
           return {
             day:      di + 1,
             date:     dt.toISOString().slice(0, 10),

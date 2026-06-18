@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     }
 
     const messages: unknown[] = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: getSystemPrompt(Array.isArray((b as Record<string,unknown>).subjects) ? (b as Record<string,unknown>).subjects as string[] : []) },
     ];
 
     for (const item of history) {

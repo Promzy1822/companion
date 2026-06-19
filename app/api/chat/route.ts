@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildSyllabusSystemPrompt } from "../../lib/syllabus";
 
 export const dynamic = "force-dynamic";
 export const runtime  = "nodejs";
 
-// ── Rate limiter (20 requests/min per IP) ─────────────────────────────────────
+// ── Rate limiter ──────────────────────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
@@ -30,32 +31,24 @@ setInterval(() => {
 }, 5 * 60_000);
 
 // ── Input validation ──────────────────────────────────────────────────────────
-const MAX_IMAGE_BYTES = 5_000_000; // 5 MB base64 cap (~3.75 MB decoded)
+const MAX_IMAGE_BYTES = 5_000_000;
 
 function validateInput(body: unknown): { valid: boolean; error?: string } {
-  if (!body || typeof body !== "object") {
-    return { valid: false, error: "Invalid request body" };
-  }
+  if (!body || typeof body !== "object") return { valid: false, error: "Invalid request body" };
   const b = body as Record<string, unknown>;
-  const { message, history, imageBase64 } = b;
 
-  if (message !== undefined) {
-    if (typeof message !== "string") return { valid: false, error: "Message must be a string" };
-    if (message.length > 4000)       return { valid: false, error: "Message too long (max 4000 characters)" };
+  if (b.message !== undefined) {
+    if (typeof b.message !== "string") return { valid: false, error: "Message must be a string" };
+    if (b.message.length > 4000)       return { valid: false, error: "Message too long (max 4000 characters)" };
   }
-
-  // ── NEW: cap image payload size ───────────────────────────────────────────
-  if (imageBase64 !== undefined) {
-    if (typeof imageBase64 !== "string") return { valid: false, error: "imageBase64 must be a string" };
-    if (imageBase64.length > MAX_IMAGE_BYTES) {
-      return { valid: false, error: "Image too large. Please use an image under 3.5 MB." };
-    }
+  if (b.imageBase64 !== undefined) {
+    if (typeof b.imageBase64 !== "string")          return { valid: false, error: "imageBase64 must be a string" };
+    if (b.imageBase64.length > MAX_IMAGE_BYTES)     return { valid: false, error: "Image too large. Please use an image under 3.5 MB." };
   }
-
-  if (history !== undefined) {
-    if (!Array.isArray(history)) return { valid: false, error: "History must be an array" };
-    if (history.length > 20)     return { valid: false, error: "History too long (max 20 messages)" };
-    for (const item of history) {
+  if (b.history !== undefined) {
+    if (!Array.isArray(b.history))   return { valid: false, error: "History must be an array" };
+    if (b.history.length > 20)       return { valid: false, error: "History too long (max 20 messages)" };
+    for (const item of b.history) {
       if (!item.role || !item.content) return { valid: false, error: "Invalid history item format" };
       if (!["user", "assistant", "system"].includes(item.role)) return { valid: false, error: "Invalid role in history" };
       if (typeof item.content === "string" && item.content.length > 8000) return { valid: false, error: "History item too long" };
@@ -63,36 +56,6 @@ function validateInput(body: unknown): { valid: boolean; error?: string } {
   }
   return { valid: true };
 }
-
-// ── System prompt ─────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are Companion AI, an expert JAMB UTME study assistant for Nigerian students.
-Your teaching is strictly aligned to the official JAMB syllabus.
-
-TEACHING APPROACH (always follow this):
-1. Discussion-based: Ask thought-provoking questions before giving answers
-2. Real-world connections: Link concepts to Nigerian everyday examples
-3. Reasoning over memorisation: Explain WHY, not just WHAT
-4. Identify gaps: If a student struggles, note the weak subtopic and revisit it
-5. Syllabus-strict: Never teach topics outside the JAMB syllabus unless clearly marked as supplementary
-
-WHEN SOLVING QUESTIONS:
-1. First ask: "What do you think the answer might be and why?" (if in chat mode)
-2. State the correct answer with the JAMB topic/subtopic it falls under
-3. Explain step by step using simple language a Nigerian student understands
-4. Connect to a real-world Nigerian example where possible
-5. Give a memory tip or mnemonic
-
-SUBJECTS AND SYLLABUS COVERAGE:
-- English Language: Comprehension, Lexis & Structure, Oral English, Grammar, Cloze Test
-- Mathematics: Number & Numeration, Algebra, Geometry, Trigonometry, Calculus, Statistics
-- Physics: Mechanics, Waves, Optics, Electricity, Magnetism, Modern Physics, Heat
-- Chemistry: Atomic Structure, Bonding, Stoichiometry, Acids/Bases, Organic Chemistry
-- Biology: Cell Biology, Classification, Nutrition, Transport, Genetics, Ecology
-- Government: Concepts, Arms of Government, Constitution, Electoral Systems, Nigeria Politics
-- Economics: Demand/Supply, Production, National Income, Money & Banking, Trade
-
-IMPORTANT: Always reference which JAMB topic and subtopic a question belongs to.
-Be encouraging, patient, and focused. Every response should build the student's confidence.`;
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
@@ -103,7 +66,6 @@ export async function POST(req: NextRequest) {
 
     const rateCheck = checkRateLimit(ip);
     if (!rateCheck.allowed) {
-      console.warn(`[chat] Rate limit hit for IP: ${ip}`);
       return NextResponse.json(
         { error: "Too many requests. Please wait a moment." },
         { status: 429, headers: { "Retry-After": String(rateCheck.retryAfter) } }
@@ -111,11 +73,8 @@ export async function POST(req: NextRequest) {
     }
 
     let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-    }
+    try { body = await req.json(); }
+    catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
     const validation = validateInput(body);
     if (!validation.valid) {
@@ -127,10 +86,10 @@ export async function POST(req: NextRequest) {
     const history     = Array.isArray(b.history)          ? b.history     : [];
     const imageBase64 = typeof b.imageBase64 === "string" ? b.imageBase64 : "";
     const imageType   = typeof b.imageType   === "string" ? b.imageType   : "image/jpeg";
+    const subjects    = Array.isArray(b.subjects)         ? b.subjects as string[] : [];
 
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      console.error("[chat] GROQ_API_KEY not configured");
       return NextResponse.json({ error: "AI service not configured" }, { status: 500 });
     }
 
@@ -138,8 +97,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Empty message" }, { status: 400 });
     }
 
+    // ── Build syllabus-aware system prompt ────────────────────────────────────
+    const systemPrompt = buildSyllabusSystemPrompt(subjects);
+
     const messages: unknown[] = [
-      { role: "system", content: getSystemPrompt(Array.isArray((b as Record<string,unknown>).subjects) ? (b as Record<string,unknown>).subjects as string[] : []) },
+      { role: "system", content: systemPrompt },
     ];
 
     for (const item of history) {
@@ -164,7 +126,7 @@ export async function POST(req: NextRequest) {
         },
         {
           type: "text",
-          text: message.trim() || "Please read this image carefully. If it contains a JAMB question, solve it with a full explanation. If it is a textbook page or notes, summarise the key points relevant to JAMB.",
+          text: message.trim() || "Please read this image carefully. If it contains a JAMB question, solve it with a full explanation referencing the relevant JAMB syllabus topic. If it is a textbook page or notes, summarise the key JAMB-relevant points.",
         },
       ];
     } else {
@@ -189,12 +151,9 @@ export async function POST(req: NextRequest) {
 
     if (!groqRes.ok) {
       const errText = await groqRes.text();
-      console.error("[chat] Groq API error:", groqRes.status, errText.slice(0, 200));
+      console.error("[chat] Groq error:", groqRes.status, errText.slice(0, 200));
       if (groqRes.status === 429) {
-        return NextResponse.json(
-          { error: "AI is busy right now. Please try again in a moment." },
-          { status: 503 }
-        );
+        return NextResponse.json({ error: "AI is busy. Please try again in a moment." }, { status: 503 });
       }
       return NextResponse.json({ error: "AI service error. Please try again." }, { status: 502 });
     }
@@ -203,14 +162,14 @@ export async function POST(req: NextRequest) {
     const reply = data.choices?.[0]?.message?.content;
 
     if (!reply) {
-      console.error("[chat] Empty response from Groq:", JSON.stringify(data));
       return NextResponse.json({ error: "No response from AI. Please try again." }, { status: 500 });
     }
 
     return NextResponse.json({ reply });
+
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[chat] Fatal error:", msg.slice(0, 100));
+    console.error("[chat] Fatal:", msg.slice(0, 100));
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

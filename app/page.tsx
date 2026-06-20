@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import AppLoader from "./components/AppLoader";
+import AppLoader, { PageSkeleton } from "./components/AppLoader";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar, { NAVBAR_HEIGHT } from "./components/Navbar";
@@ -103,7 +103,7 @@ export default function Home() {
     }
   };
 
-  if (!ready) return <AppLoader fullScreen />;
+  if (!ready) return <PageSkeleton />;
 
   const filteredNews = cat === "All" ? news : news.filter(n=>n.category===cat);
 

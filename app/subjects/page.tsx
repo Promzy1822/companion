@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import AppLoader from "../components/AppLoader";
+import AppLoader, { PageSkeleton } from "../components/AppLoader";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, PenTool, Star } from "lucide-react";
@@ -40,7 +40,7 @@ function SubjectsContent() {
     setReady(true);
   }, []);
 
-  if (!ready) return <AppLoader fullScreen />;
+  if (!ready) return <PageSkeleton />;
   const T = palette(dark);
 
   // split into my subjects vs others

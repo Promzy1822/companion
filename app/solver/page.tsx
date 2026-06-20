@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, Suspense } from "react";
-import AppLoader from "../components/AppLoader";
+import AppLoader, { PageSkeleton } from "../components/AppLoader";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -87,7 +87,7 @@ function SolverContent() {
     setHistory(loadHistory());
   }, []);
 
-  if (!mounted) return <AppLoader fullScreen dark={typeof dark !== "undefined" ? dark : false} />;
+  if (!mounted) return <PageSkeleton dark={typeof dark !== "undefined" ? dark : false} />;
 
   const T = palette(dark);
 

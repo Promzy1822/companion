@@ -19,7 +19,7 @@ export default function BottomNav({ darkMode = false }: { darkMode?: boolean }) 
   const T        = palette(darkMode);
 
   return (
-    <nav style={{
+    <nav className="navbar-fixed" style={{
       position:      "fixed",
       bottom:        0,
       left:          0,

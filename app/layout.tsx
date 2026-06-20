@@ -74,7 +74,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           `}} />
         </div>
 
-        {children}
+        <div className="app-shell">
+          {children}
+        </div>
 
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {

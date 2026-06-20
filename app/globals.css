@@ -246,3 +246,42 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
   animation: shimmer 1.6s infinite;
   border-radius: var(--radius-md);
 }
+
+/* ── Responsive app shell ──────────────────────────────────────── */
+/*
+ * On mobile (< 640px): full width, no padding
+ * On tablet/desktop (>= 640px): centered column, max 480px,
+ *   neutral background on sides — intentional mobile-first design
+ */
+.app-shell {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+@media (min-width: 640px) {
+  /* Outer background — visible on sides on desktop */
+  body {
+    background: #D8DCE3;
+  }
+
+  /* Center the app column */
+  .app-shell {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    box-shadow: 0 0 60px rgba(0,0,0,0.15);
+  }
+
+  /* Fixed elements (Navbar, BottomNav) must respect the column */
+  .navbar-fixed {
+    max-width: 480px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+@media (min-width: 640px) and (prefers-color-scheme: dark) {
+  body { background: #111213; }
+}

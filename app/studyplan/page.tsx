@@ -193,7 +193,7 @@ RULES:
     }
   };
 
-  if (!mounted) return <PageSkeleton dark={typeof dark !== "undefined" ? dark : false} />;
+  if (!mounted) return null;
 
   const T         = palette(dark);
   const today     = todayWAT();

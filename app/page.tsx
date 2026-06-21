@@ -103,7 +103,7 @@ export default function Home() {
     }
   };
 
-  if (!ready) return <PageSkeleton />;
+  if (!ready) return null;
 
   const filteredNews = cat === "All" ? news : news.filter(n=>n.category===cat);
 

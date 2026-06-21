@@ -27,19 +27,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest"         href="/manifest.json" />
         <link rel="icon"             href="/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
-        <meta name="apple-mobile-web-app-capable"        content="yes" />
-        <meta name="apple-mobile-web-app-title"          content="Companion" />
+        <meta name="apple-mobile-web-app-capable"          content="yes" />
+        <meta name="apple-mobile-web-app-title"            content="Companion" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="mobile-web-app-capable"              content="yes" />
-        <meta name="theme-color"                         content="#1877F2" />
+        <meta name="mobile-web-app-capable"                content="yes" />
+        <meta name="theme-color"                           content="#1877F2" />
       </head>
+
+      {/*
+        body has background: var(--sidebar-bg) set in globals.css
+        This is the colour shown on sides of the app column on desktop.
+        On mobile it is invisible because app-shell fills the full width.
+      */}
       <body style={{ margin: 0, padding: 0 }}>
 
-        {/*
-          Native-feel splash screen rendered before React hydrates.
-          Shown immediately on HTML parse — no blank screen ever.
-          Fades out automatically once React takes over.
-        */}
+        {/* Cold-start splash — shown only before React hydrates */}
         <div id="companion-splash">
           <div style={{
             width: 88, height: 88, borderRadius: 24,
@@ -61,10 +63,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             width: 32, height: 32, borderRadius: "50%",
             border: "3px solid #F0F2F5",
             borderTopColor: "#EA580C",
-            animation: "spin 0.8s linear infinite",
+            animation: "companionSpin 0.8s linear infinite",
           }} />
           <style dangerouslySetInnerHTML={{ __html: `
-            @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+            @keyframes companionSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
             #companion-splash {
               position:fixed; inset:0; z-index:99999; background:#fff;
               display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -74,29 +76,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           `}} />
         </div>
 
+        {/*
+          app-shell: on mobile = full width.
+          On desktop = 480px centered column with shadow.
+          Navbar and BottomNav use position:fixed with the same max-width
+          so they stay inside the column on desktop.
+        */}
         <div className="app-shell">
           {children}
         </div>
 
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            // Register service worker
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.register('/sw.js').catch(function(){});
             }
-
-            // PWA install prompt
             window.deferredPrompt = null;
             window.addEventListener('beforeinstallprompt', function(e) {
               e.preventDefault();
               window.deferredPrompt = e;
             });
-
-            // Hide splash once React has hydrated and first paint is done
-            // Uses a short minimum display time (600ms) so it doesn't flash
             var splashShownAt = Date.now();
             var MIN_SPLASH_MS = 600;
-
             function hideSplash() {
               var el = document.getElementById('companion-splash');
               if (!el) return;
@@ -107,8 +108,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 setTimeout(function() { el.style.display = 'none'; }, 350);
               }, delay);
             }
-
-            // Hide after DOMContentLoaded + one frame
             if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', function() {
                 requestAnimationFrame(function() { requestAnimationFrame(hideSplash); });

@@ -40,7 +40,7 @@ function SubjectsContent() {
     setReady(true);
   }, []);
 
-  if (!ready) return <PageSkeleton />;
+  if (!ready) return null;
   const T = palette(dark);
 
   // split into my subjects vs others

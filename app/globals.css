@@ -247,41 +247,50 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
   border-radius: var(--radius-md);
 }
 
-/* ── Responsive app shell ──────────────────────────────────────── */
+/* ── Responsive app shell ──────────────────────────────────────────────────── */
 /*
- * On mobile (< 640px): full width, no padding
- * On tablet/desktop (>= 640px): centered column, max 480px,
- *   neutral background on sides — intentional mobile-first design
+ * Mobile  (<640px): full width, no decoration — standard mobile PWA
+ * Desktop (≥640px): 480px column centered, sides match the app's own
+ *   background colour so nothing looks "out of place"
  */
+
+/* Desktop sidebar background — uses the same grey as the app bg */
+body {
+  background: #E4E6EB; /* light mode desktop sides */
+}
+[data-dark="true"] body,
+body[data-dark="true"] {
+  background: #111213; /* dark mode desktop sides */
+}
+
+/* The app column itself */
 .app-shell {
   min-height: 100vh;
   background: var(--bg);
+  position: relative;
 }
 
 @media (min-width: 640px) {
-  /* Outer background — visible on sides on desktop */
-  body {
-    background: #D8DCE3;
-  }
-
-  /* Center the app column */
   .app-shell {
     max-width: 480px;
     margin: 0 auto;
-    min-height: 100vh;
-    background: var(--bg);
-    position: relative;
-    box-shadow: 0 0 60px rgba(0,0,0,0.15);
+    box-shadow:
+      -1px 0 0 rgba(0,0,0,0.08),
+       1px 0 0 rgba(0,0,0,0.08),
+       0 0 40px rgba(0,0,0,0.08);
   }
 
-  /* Fixed elements (Navbar, BottomNav) must respect the column */
+  /*
+   * Navbar and BottomNav use position:fixed relative to the VIEWPORT.
+   * On desktop we need them to stay inside the 480px column.
+   * Strategy: set left:50%, then use translateX(-50%) and
+   * max-width:480px so they align perfectly with the app-shell.
+   */
   .navbar-fixed {
-    max-width: 480px !important;
     left: 50% !important;
+    right: auto !important;
+    width: 100% !important;
+    max-width: 480px !important;
     transform: translateX(-50%) !important;
   }
-}
-
-@media (min-width: 640px) and (prefers-color-scheme: dark) {
-  body { background: #111213; }
 }

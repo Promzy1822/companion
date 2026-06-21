@@ -87,7 +87,7 @@ function SolverContent() {
     setHistory(loadHistory());
   }, []);
 
-  if (!mounted) return <PageSkeleton dark={typeof dark !== "undefined" ? dark : false} />;
+  if (!mounted) return null;
 
   const T = palette(dark);
 

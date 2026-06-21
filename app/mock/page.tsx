@@ -91,7 +91,7 @@ export default function MockExam() {
   const timePct = questions.length?(timeLeft/(questions.length*90))*100:100;
   const timerCol = timePct>50?"#31A24C":timePct>25?"#F7B928":"#FA3E3E";
 
-  if (!mounted) return <PageSkeleton dark={typeof dark !== "undefined" ? dark : false} />;
+  if (!mounted) return null;
   const T = palette(dark);
 
   // ── SETUP ──────────────────────────────────────────────────────

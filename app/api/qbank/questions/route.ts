@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+export const runtime  = "nodejs";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const subject = searchParams.get("subject")?.toLowerCase() ?? "";
   const year    = searchParams.get("year") ?? "";
-  const limit   = Math.min(parseInt(searchParams.get("limit") ?? "50"), 100);
+  const limit   = Math.min(parseInt(searchParams.get("limit") ?? "100"), 200);
   const offset  = parseInt(searchParams.get("offset") ?? "0");
 
   if (!subject) {
@@ -16,32 +16,33 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Get index of all question IDs for this subject
-    const indexKey = `qbank:index:${subject}`;
-    const allIds   = await kv.get<string[]>(indexKey) ?? [];
+    const allIds = await kv.get<string[]>(`qbank:index:${subject}`) ?? [];
 
-    // Filter by year if provided
-    const filtered = year
+    const filtered = year && year !== "All"
       ? allIds.filter(id => id.includes(`:${year}:`))
       : allIds;
 
-    // Paginate
     const pageIds = filtered.slice(offset, offset + limit);
 
-    // Fetch each question
-    const questions = await Promise.all(
-      pageIds.map(id => kv.get(`question:${id}`))
-    );
+    if (pageIds.length === 0) {
+      return NextResponse.json({ subject, year, total: 0, questions: [] });
+    }
 
-    const valid = questions.filter(Boolean);
+    // Batch fetch all questions
+    const pipeline = kv.pipeline();
+    for (const id of pageIds) {
+      pipeline.get(`question:${id}`);
+    }
+    const results = await pipeline.exec();
+    const questions = results.filter(Boolean);
 
     return NextResponse.json({
       subject,
-      year:  year || "all",
-      total: filtered.length,
+      year:      year || "all",
+      total:     filtered.length,
       offset,
       limit,
-      questions: valid,
+      questions,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

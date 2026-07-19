@@ -1,19 +1,17 @@
 /**
  * session.ts
  *
- * ARCHITECTURE:
- *   companion_accounts  = PERMANENT account store (array, never deleted on logout)
- *   companion_user      = ACTIVE SESSION only (deleted on logout, restored on login)
- *   companion_session   = Cookie presence marker for middleware
+ * ARCHITECTURE (simplified — Supabase-style):
+ *   Vercel KV (via /api/auth/* routes) is the ONLY permanent account store.
+ *   This file only caches the currently logged-in user on this device
+ *   (companion_user) and sets a cookie marker for middleware.
  *
- * RULE: logout ONLY removes companion_user and the cookie.
- *       It NEVER touches companion_accounts.
- *       Accounts are permanent until the user explicitly deletes their account.
+ * RULE: logout removes the local session cache + cookie only.
+ *       Nothing in this file is a database — accounts live exclusively in KV.
  */
 
 const SESSION_COOKIE  = "companion_session";
-const ACTIVE_USER_KEY = "companion_user";      // session only
-const ACCOUNTS_KEY    = "companion_accounts";  // permanent store
+const ACTIVE_USER_KEY = "companion_user"; // local cache of the logged-in session
 
 export interface UserAccount {
   email:          string;
@@ -27,6 +25,7 @@ export interface UserAccount {
   selfRating:     string;
   cutoffData:     unknown;
   recommendation: string | null;
+  verified?:      boolean;
   createdAt:      string;
   updatedAt?:     string;
 }
@@ -44,53 +43,10 @@ function clearCookie(): void {
   document.cookie = `${SESSION_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 }
 
-// ── Account store (permanent) ─────────────────────────────────────────────────
-
-export const AccountStore = {
-  /** Read all accounts */
-  getAll(): UserAccount[] {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = localStorage.getItem(ACCOUNTS_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
-  },
-
-  /** Find by email (case-insensitive) */
-  findByEmail(email: string): UserAccount | null {
-    const e = email.toLowerCase().trim();
-    return AccountStore.getAll().find(a => a.email === e) ?? null;
-  },
-
-  /** Check if email already exists */
-  emailExists(email: string): boolean {
-    return AccountStore.findByEmail(email) !== null;
-  },
-
-  /** Save or update an account — enforces email uniqueness */
-  save(account: UserAccount): void {
-    if (typeof window === "undefined") return;
-    const accounts = AccountStore.getAll();
-    const idx = accounts.findIndex(a => a.email === account.email);
-    if (idx >= 0) {
-      accounts[idx] = { ...accounts[idx], ...account, updatedAt: new Date().toISOString() };
-    } else {
-      accounts.push(account);
-    }
-    try {
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-    } catch (e: unknown) {
-      console.error("[AccountStore] Failed to save account:", e);
-    }
-  },
-};
-
 // ── Session (active login) ────────────────────────────────────────────────────
 
 export const Session = {
-  /** Start a session for a user — sets active user + cookie */
+  /** Start a session for a user — caches account locally + sets cookie */
   start(account: UserAccount): void {
     if (typeof window === "undefined") return;
     try {
@@ -101,7 +57,7 @@ export const Session = {
     }
   },
 
-  /** Get the currently active user */
+  /** Get the currently active user (from local cache) */
   getUser(): UserAccount | null {
     if (typeof window === "undefined") return null;
     try {
@@ -110,43 +66,21 @@ export const Session = {
     } catch { return null; }
   },
 
-  /** Update the active session data (e.g. after profile edit) */
-  updateUser(updates: Partial<UserAccount>): void {
-    const current = Session.getUser();
-    if (!current) return;
-    const updated = { ...current, ...updates, updatedAt: new Date().toISOString() };
-    // Update both session and permanent store
-    Session.start(updated);
-    AccountStore.save(updated);
-  },
-
   /**
    * END SESSION ONLY — does NOT delete the account.
-   * Only removes companion_user (active session) and the cookie.
-   * companion_accounts (permanent store) is NEVER touched here.
+   * The account lives permanently in Vercel KV regardless of this call.
    */
   logout(): void {
     if (typeof window === "undefined") return;
     localStorage.removeItem(ACTIVE_USER_KEY);
     clearCookie();
-    // Explicitly do NOT remove companion_accounts
   },
 
-  /**
-   * Called on app boot — if companion_user exists, refresh the cookie.
-   * Also repairs accounts if companion_user exists but companion_accounts is missing it.
-   */
+  /** Called on app boot — refreshes the cookie if a local session exists */
   sync(): void {
     if (typeof window === "undefined") return;
-    const activeUser = Session.getUser();
-    if (!activeUser) return;
-    // Refresh the session cookie
+    if (!Session.getUser()) return;
     setCookie();
-    // Repair: ensure the active user is also in the permanent accounts store
-    if (!AccountStore.emailExists(activeUser.email)) {
-      console.log("[Session] Repairing: active user not in accounts store, re-adding");
-      AccountStore.save(activeUser);
-    }
   },
 
   /** Set the session cookie (alias for external use) */

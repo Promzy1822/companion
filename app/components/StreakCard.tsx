@@ -15,11 +15,6 @@ export default function StreakCard({ darkMode }: Props) {
     setStreak(Progress.getStreak());
   }, []);
 
-  const checkIn = () => {
-    const updated = Progress.recordActivity("plan");
-    setStreak({ ...updated });
-  };
-
   if (!mounted) return null;
 
   const today = todayWAT();
@@ -184,24 +179,24 @@ export default function StreakCard({ darkMode }: Props) {
           ))}
         </div>
 
-        {/* Check-in / done state */}
+        {/* Today's status — fully automatic, no manual check-in */}
         <div style={{ marginTop: "14px" }}>
-          {!todayDone ? (
-            <button onClick={checkIn} style={{
-              width: "100%", padding: "13px", borderRadius: "14px", border: "none",
-              background: "linear-gradient(135deg,#c2410c,#ea580c)",
-              color: "#fff", fontWeight: "700", fontSize: "14px", cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(234,88,12,0.3)", transition: "transform 0.1s",
-            }}>
-              ✅ Mark Today as Studied
-            </button>
-          ) : (
+          {todayDone ? (
             <div style={{
               textAlign: "center", padding: "12px", borderRadius: "14px",
               backgroundColor: darkMode ? "#0a1a0a" : "#f0fdf4", border: "1px solid #86efac"
             }}>
               <span style={{ fontSize: "13px", color: "#16a34a", fontWeight: "700" }}>
                 🎉 Day {streak.current} complete! Come back tomorrow
+              </span>
+            </div>
+          ) : (
+            <div style={{
+              textAlign: "center", padding: "12px", borderRadius: "14px",
+              backgroundColor: darkMode ? "#1c1c1e" : "#f7f7f8", border: `1px dashed ${LC.border}`
+            }}>
+              <span style={{ fontSize: "13px", color: LC.sub, fontWeight: "600" }}>
+                No study activity yet today — finish a lesson, exercise, or mock to start your streak 🔥
               </span>
             </div>
           )}

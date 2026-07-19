@@ -58,13 +58,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
-    if (!account.verified) {
-      return NextResponse.json(
-        { error: "Please verify your email first.", unverified: true },
-        { status: 403 }
-      );
-    }
-
     const pwOk = verifyPassword(password, account.passwordHash as string);
     if (!pwOk) {
       recordFail(normEmail);

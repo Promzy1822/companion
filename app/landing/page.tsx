@@ -62,7 +62,7 @@ export default function Landing() {
           }}>
             Log In
           </Link>
-          <Link href="/signup" style={{
+          <Link href="/auth" style={{
             background: C.primary, color: "#fff",
             borderRadius: "50px", padding: "8px 16px",
             fontSize: "13px", fontWeight: 700, textDecoration: "none",
@@ -101,7 +101,7 @@ export default function Landing() {
           <p style={{ fontSize: "16px", color: "#65676B", lineHeight: 1.6, margin: "0 0 32px" }}>
             Learn smarter, practice daily, and get instant answers from your AI tutor. Built specifically for Nigerian students.
           </p>
-          <Link href="/signup" style={{
+          <Link href="/auth" style={{
             display: "inline-flex", alignItems: "center", gap: "8px",
             background: C.primary, color: "#fff",
             borderRadius: "50px", padding: "16px 32px",
@@ -197,7 +197,7 @@ export default function Landing() {
         <p style={{ color:"rgba(255,255,255,0.8)", fontSize:"14px", margin:"0 0 28px" }}>
           Join thousands of students already using Companion
         </p>
-        <Link href="/signup" style={{
+        <Link href="/auth" style={{
           display:"inline-flex", alignItems:"center", gap:"8px",
           background:"#fff", color:C.primary,
           borderRadius:"50px", padding:"16px 32px",

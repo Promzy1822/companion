@@ -6,7 +6,7 @@ import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { C } from "../lib/design";
 import { Session } from "../lib/session";
 import { validatePassword } from "../lib/auth";
-import type { KVAccount } from "../lib/kvAuth";
+import type { UserAccount } from "../lib/session";
 
 function ResetContent() {
   const router       = useRouter();
@@ -42,7 +42,7 @@ function ResetContent() {
       if (!res.ok) { setError(data.error || "Reset failed. Try again."); return; }
       setSuccess(true);
       // Auto login and redirect after 2 seconds
-      const account = data.account as KVAccount;
+      const account = data.account as UserAccount;
       Session.start(account as Parameters<typeof Session.start>[0]);
       setTimeout(() => router.replace("/"), 2000);
     } catch {

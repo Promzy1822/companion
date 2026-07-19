@@ -7,7 +7,7 @@ import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../l
 import { validateEmail, validatePassword, normaliseEmail } from "../lib/auth";
 import { C } from "../lib/design";
 import { Session } from "../lib/session";
-import type { KVAccount } from "../lib/kvAuth";
+import type { UserAccount } from "../lib/session";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
@@ -65,15 +65,10 @@ export default function Auth() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.unverified) {
-          setError("Please verify your email first.");
-          setTimeout(() => router.push(`/verify-email?email=${encodeURIComponent(normaliseEmail(form.email))}&name=there`), 1500);
-          return;
-        }
         setError(data.error || "Login failed");
         return;
       }
-      const account = data.account as KVAccount;
+      const account = data.account as UserAccount;
       Session.start(account as Parameters<typeof Session.start>[0]);
       router.replace("/");
     } catch {

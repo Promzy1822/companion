@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Bot, PenTool, ClipboardList, User } from "lucide-react";
+import { Home, Bot, BookOpen, ClipboardList, User } from "lucide-react";
 import { C, palette } from "../lib/design";
 
 export const BOTTOM_NAV_HEIGHT = 60;
@@ -9,7 +9,7 @@ export const BOTTOM_NAV_HEIGHT = 60;
 const TABS = [
   { icon: Home,          label: "Home",     href: "/",                        basePath: "/"         },
   { icon: Bot,           label: "AI",       href: "/ai",                      basePath: "/ai"        },
-  { icon: PenTool,       label: "Practice", href: "/subjects?mode=practice",  basePath: "/subjects"  },
+  { icon: BookOpen,      label: "Learn",    href: "/subjects?mode=learn",     basePath: "/subjects"  },
   { icon: ClipboardList, label: "Mock",     href: "/mock",                    basePath: "/mock"      },
   { icon: User,          label: "Profile",  href: "/profile",                 basePath: "/profile"   },
 ];
@@ -35,15 +35,6 @@ export default function BottomNav({ darkMode = false }: { darkMode?: boolean }) 
     }}>
       {TABS.map(tab => {
         const Icon = tab.icon;
-        /*
-          usePathname() never includes query strings.
-          Match against basePath (the path segment only) so that
-          /subjects?mode=practice correctly activates the Practice tab
-          regardless of which query string is present.
-
-          Special case for "/" — only exact match, otherwise every
-          route would activate Home.
-        */
         const active =
           tab.basePath === "/"
             ? pathname === "/"

@@ -105,6 +105,18 @@ export const Progress = {
     return new Set(Object.keys(s.activityLog));
   },
 
+  /** Returns a Set of topicIds that have at least one completed 'lesson' activity */
+  getCompletedTopics(): Set<string> {
+    const s = Progress.getStreak();
+    const ids = new Set<string>();
+    for (const day of Object.values(s.activityLog)) {
+      for (const a of day) {
+        if (a.type === 'lesson' && a.topicId) ids.add(a.topicId);
+      }
+    }
+    return ids;
+  },
+
   // ── Practice stats ──────────────────────────────────────────────
 
   getPracticeStats(): Record<string, { correct: number; total: number }> {

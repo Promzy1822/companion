@@ -53,7 +53,7 @@ function SubjectsContent() {
   const other = SUBJECTS.filter(s => !isMine(s));
 
   const SubjectCard = (s: typeof SUBJECTS[0], mine: boolean) => (
-    <Link key={s.id} href={`/questions?subject=${s.id}&mode=${mode}`} style={{ textDecoration:"none" }}>
+    <Link key={s.id} href={mode === "learn" ? `/learn/${s.id}` : `/questions?subject=${s.id}&mode=${mode}`} style={{ textDecoration:"none" }}>
       <div style={{
         background: T.surface, borderRadius:"16px", padding:"18px 14px",
         border: mine ? `2px solid ${s.color}55` : `1px solid ${T.border}`,

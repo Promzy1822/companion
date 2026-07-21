@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  Home, Bot, BookOpen, PenTool, ClipboardList,
+  Home, Bot, BookOpen, ClipboardList,
   CalendarDays, Settings, LogOut, ChevronDown,
   Sun, Moon, Sparkles,
 } from "lucide-react";
@@ -17,7 +17,6 @@ const NAV = [
   { icon: Home,          label: "Dashboard",  href: "/"                       },
   { icon: Bot,           label: "Ask AI",      href: "/ai"                     },
   { icon: BookOpen,      label: "Learn",       href: "/subjects?mode=learn"    },
-  { icon: PenTool,       label: "Practice",    href: "/subjects?mode=practice" },
   { icon: ClipboardList, label: "Mock Exam",   href: "/mock"                   },
   { icon: CalendarDays,  label: "Study Plan",  href: "/studyplan"              },
   { icon: Settings,      label: "Profile",     href: "/profile"                },

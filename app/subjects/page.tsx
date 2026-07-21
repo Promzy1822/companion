@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import AppLoader, { PageSkeleton } from "../components/AppLoader";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, PenTool, Star } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
@@ -81,31 +81,14 @@ function SubjectsContent() {
       <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
 
       <div style={{ background: dark?"linear-gradient(135deg,#1A2A4A,#1877F2)":"linear-gradient(135deg,#1877F2,#0C5FD1)", padding:"20px 20px 32px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"16px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
           <Link href="/" style={{ width:34, height:34, borderRadius:"10px", backgroundColor:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", textDecoration:"none", flexShrink:0 }}>
             <ArrowLeft size={16} color="#fff" strokeWidth={2} />
           </Link>
           <div>
-            <div style={{ color:"#fff", fontWeight:800, fontSize:"18px" }}>{mode==="learn"?"Learn":"Practice"}</div>
-            <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px" }}>{mode==="learn"?"Choose a subject to study":"Choose a subject to practice"}</div>
+            <div style={{ color:"#fff", fontWeight:800, fontSize:"18px" }}>Learn</div>
+            <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px" }}>Choose a subject to study</div>
           </div>
-        </div>
-        <div style={{ display:"flex", gap:"8px", background:"rgba(255,255,255,0.12)", borderRadius:"12px", padding:"4px" }}>
-          {(["learn","practice"] as const).map(m=>{
-            const Icon = m==="learn" ? BookOpen : PenTool;
-            return (
-              <button key={m} onClick={()=>router.push(`/subjects?mode=${m}`)} style={{
-                flex:1, padding:"10px", borderRadius:"9px", border:"none", cursor:"pointer",
-                fontWeight:700, fontSize:"14px",
-                background: mode===m?"#fff":"transparent",
-                color: mode===m?C.primary:"rgba(255,255,255,0.75)",
-                display:"flex", alignItems:"center", justifyContent:"center", gap:"6px",
-                transition:"all 0.2s", boxShadow: mode===m?"0 2px 8px rgba(0,0,0,0.15)":"none",
-              }}>
-                <Icon size={15} strokeWidth={2}/>{m==="learn"?"Learn":"Practice"}
-              </button>
-            );
-          })}
         </div>
       </div>
 

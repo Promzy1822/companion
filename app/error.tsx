@@ -1,7 +1,30 @@
 "use client";
 import { useEffect } from "react";
+
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
-  useEffect(() => { console.error(error); }, [error]);
+  useEffect(() => {
+    console.error(error);
+
+    // After a new deploy, a tab/PWA session already open is still running the OLD
+    // JS runtime, which has no record of newly added routes/chunks. Navigating into
+    // one throws a ChunkLoadError — reset() can't fix this since the runtime itself
+    // is stale. A one-time hard reload fetches the current build and self-heals.
+    const signature = `${error?.name || ""} ${error?.message || ""}`.toLowerCase();
+    const isStaleDeployError =
+      signature.includes("chunkloaderror") ||
+      signature.includes("loading chunk") ||
+      signature.includes("failed to fetch dynamically imported module") ||
+      signature.includes("importing a module script failed");
+
+    if (isStaleDeployError) {
+      const guardKey = "companion_reload_once";
+      if (!sessionStorage.getItem(guardKey)) {
+        sessionStorage.setItem(guardKey, "1");
+        window.location.reload();
+      }
+    }
+  }, [error]);
+
   return (
     <div style={{
       minHeight: "100vh",

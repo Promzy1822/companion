@@ -26,8 +26,7 @@ const FALLBACK: Question[] = [
 ];
 
 export default function MockExam() {
-  const [mounted,   setMounted]   = useState(false);
-  const [dark,      setDark]      = useState(false);
+  const [dark,      setDark]      = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode")==="true");
   const [phase,     setPhase]     = useState<"setup"|"exam"|"result">("setup");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [current,   setCurrent]   = useState(0);
@@ -36,15 +35,12 @@ export default function MockExam() {
   const [result,    setResult]    = useState<Result|null>(null);
   const [generating,setGenerating]= useState(false);
   const [numQ,      setNumQ]      = useState(10);
-  const [history,   setHistory]   = useState<{score:number;total:number;jambEquivalent:number;date:string}[]>([]);
+  const [history,   setHistory]   = useState<{score:number;total:number;jambEquivalent:number;date:string}[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem("mock_history")||"[]"); } catch { return []; }
+  });
   const timerRef   = useRef<ReturnType<typeof setInterval>|null>(null);
   const submitRef  = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-    setDark(localStorage.getItem("darkMode")==="true");
-    try { setHistory(JSON.parse(localStorage.getItem("mock_history")||"[]")); } catch {}
-  }, []);
 
   useEffect(() => {
     if (phase==="exam" && timeLeft>0) {

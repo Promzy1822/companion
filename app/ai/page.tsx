@@ -29,23 +29,17 @@ const WELCOME: Message = {
 
 export default function AIChat() {
   const [input,      setInput]      = useState("");
-  const [dark,       setDark]       = useState(false);
+  const [dark,       setDark]       = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
   const [messages,   setMessages]   = useState<Message[]>([WELCOME]);
   const [loading,    setLoading]    = useState(false);
   const [attachment, setAttachment] = useState<{ file: File; preview: string; base64: string; type: "image" | "text" } | null>(null);
   const [focused,    setFocused]    = useState(false);
-  const [mounted,    setMounted]    = useState(false);
   const [fileError,  setFileError]  = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
   const fileInputRef   = useRef<HTMLInputElement>(null);
   const msgId          = useRef(1);
-
-  useEffect(() => {
-    setMounted(true);
-    setDark(localStorage.getItem("darkMode") === "true");
-  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -135,8 +129,6 @@ export default function AIChat() {
       setLoading(false);
     }
   };
-
-  if (!mounted) return null;
 
   const T          = palette(dark);
   const bg         = dark ? "#0D0D0F" : "#F8F9FB";

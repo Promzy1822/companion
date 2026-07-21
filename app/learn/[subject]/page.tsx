@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, PlayCircle } from "lucide-react";
 import Navbar, { NAVBAR_HEIGHT } from "../../components/Navbar";
@@ -11,17 +11,11 @@ import { Progress } from "../../lib/progress";
 
 export default function LearnSubjectPage({ params }: { params: { subject: string } }) {
   const { subject } = params;
-  const [dark, setDark]           = useState(false);
-  const [ready, setReady]         = useState(false);
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [dark] = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const [completed] = useState<Set<string>>(() =>
+    typeof window !== "undefined" ? Progress.getCompletedTopics() : new Set()
+  );
 
-  useEffect(() => {
-    setDark(localStorage.getItem("darkMode") === "true");
-    setCompleted(Progress.getCompletedTopics());
-    setReady(true);
-  }, []);
-
-  if (!ready) return null;
   const T = palette(dark);
   const subjectInfo = getSubjectSyllabus(subject);
   const topics = getTopics(subject);

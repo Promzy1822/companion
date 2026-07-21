@@ -25,22 +25,16 @@ function SubjectsContent() {
   const searchParams = useSearchParams();
   const mode   = searchParams.get("mode") || "learn";
   const router = useRouter();
-  const [dark,  setDark]         = useState(false);
-  const [ready, setReady]        = useState(false);
-  const [mySubjects, setMySubjects] = useState<string[]>([]);
-
-  useEffect(() => {
-    setDark(localStorage.getItem("darkMode") === "true");
+  const [dark,  setDark] = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const [mySubjects] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const u = JSON.parse(localStorage.getItem("companion_user") || "{}");
       const subs: string[] = u.subjects || [];
-      // normalise to lowercase ids for comparison
-      setMySubjects(subs.map((s: string) => s.toLowerCase().replace(/ /g, "").replace("language","").replace("english","english")));
-    } catch {}
-    setReady(true);
-  }, []);
+      return subs.map((s: string) => s.toLowerCase().replace(/ /g, "").replace("language","").replace("english","english"));
+    } catch { return []; }
+  });
 
-  if (!ready) return null;
   const T = palette(dark);
 
   // split into my subjects vs others

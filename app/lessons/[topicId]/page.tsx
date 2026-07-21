@@ -29,8 +29,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const { topicId } = params;
   const router = useRouter();
 
-  const [dark, setDark]       = useState(false);
-  const [ready, setReady]     = useState(false);
+  const [dark]                = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
   const [data, setData]       = useState<LessonData | null>(null);
@@ -41,12 +40,6 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const [answers, setAnswers]   = useState<boolean[]>([]);
 
   useEffect(() => {
-    setDark(localStorage.getItem("darkMode") === "true");
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -65,9 +58,9 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
       }
     })();
     return () => { cancelled = true; };
-  }, [ready, topicId]);
+  }, [topicId]);
 
-  if (!ready || loading) {
+  if (loading) {
     return <div style={{ minHeight: "100vh", background: "#F0F2F5" }} />;
   }
 

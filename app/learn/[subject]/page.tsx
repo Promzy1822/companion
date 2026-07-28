@@ -38,7 +38,7 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {topics.map(t => {
             const done = completed.has(t.id);
-            const hasVideo = !!getLessonVideo(t.id);
+            const hasVideo = Boolean(getLessonVideo(t.id));
             return (
               <Link key={t.id} href={`/lessons/${t.id}`} style={{ textDecoration: "none" }}>
                 <div style={{

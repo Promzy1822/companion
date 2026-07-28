@@ -215,7 +215,7 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
 /* ── Full screen loader ────────────────────────────────────────── */
 #companion-splash {
   position: fixed; inset: 0; z-index: 99999;
-  background: #fff;
+  background: var(--bg);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   transition: opacity 0.3s ease;

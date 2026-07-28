@@ -36,6 +36,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ margin: 0, padding: 0 }}>
 
         {/*
+          Detect theme BEFORE the splash paints, synchronously, so it never
+          flashes the wrong theme. This is a plain (non-async) script, so the
+          browser blocks rendering until it runs.
+        */}
+        <script dangerouslySetInnerHTML={{ __html:
+          "document.documentElement.setAttribute('data-dark', localStorage.getItem('darkMode') === 'true' ? 'true' : 'false');"
+        }} />
+
+        {/*
           Cold-start splash screen.
           Rendered in raw HTML so it shows BEFORE React hydrates.
           The script below removes it from the DOM entirely after first load.
@@ -53,14 +62,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               style={{ borderRadius: 12 }} />
           </div>
           <div style={{
-            fontWeight: 800, fontSize: 22, color: "#1a1a1a",
+            fontWeight: 800, fontSize: 22, color: "var(--text)",
             marginBottom: 4, letterSpacing: "-0.5px",
             fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
           }}>
             companion
           </div>
           <div style={{
-            fontSize: 11, color: "#8A8D91", marginBottom: 40,
+            fontSize: 11, color: "var(--text-muted)", marginBottom: 40,
             letterSpacing: "0.5px",
             fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
           }}>
@@ -68,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
-            border: "3px solid #F0F2F5",
+            border: "3px solid var(--surface-3)",
             borderTopColor: "#EA580C",
             animation: "companionSpin 0.8s linear infinite",
           }} />
@@ -153,7 +162,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             position: fixed;
             inset: 0;
             z-index: 99999;
-            background: #ffffff;
+            background: var(--bg);
             display: flex;
             flex-direction: column;
             align-items: center;

@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
         "Content-Type":  "application/json",
       },
       body: JSON.stringify({
-        model:       "meta-llama/llama-4-maverick-17b-128e-instruct",
+        model:       "qwen/qwen3.6-27b",
         max_tokens:  1024,
         temperature: 0.4,
         messages,
@@ -155,12 +155,7 @@ export async function POST(req: NextRequest) {
       if (groqRes.status === 429) {
         return NextResponse.json({ error: "AI is busy. Please try again in a moment." }, { status: 503 });
       }
-      // TEMPORARY: surfacing the real Groq error for diagnosis — revert to a generic
-      // message once the root cause is confirmed and fixed.
-      return NextResponse.json(
-        { error: `DEBUG (${groqRes.status}): ${errText.slice(0, 300)}` },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "AI service error. Please try again." }, { status: 502 });
     }
 
     const data  = await groqRes.json();

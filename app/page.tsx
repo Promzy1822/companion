@@ -44,8 +44,14 @@ const FALLBACK: NewsItem[] = [
 ];
 
 export default function Home() {
-  const [darkMode,   setDarkMode]   = useState(false);
-  const [user,       setUser]       = useState<User|null>(null);
+  const [darkMode,   setDarkMode]   = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const [user,       setUser]       = useState<User|null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const u = localStorage.getItem("companion_user");
+      return u ? JSON.parse(u) : null;
+    } catch { return null; }
+  });
   const {
     filtered:  news,
     loading:   newsLoad,
@@ -62,19 +68,13 @@ export default function Home() {
   const [result,   setResult]   = useState<{agg:number;jamb:number;post:number;grade:string;color:string}|null>(null);
   const [calcErr,  setCalcErr]  = useState("");
   const [pressed,  setPressed]  = useState<number|null>(null);
-  const [ready,    setReady]    = useState(false);
   const router = useRouter();
   const T = palette(darkMode);
 
   useEffect(() => {
     Session.sync();
-    const dm = localStorage.getItem("darkMode") === "true";
-    setDarkMode(dm);
-    document.documentElement.setAttribute("data-dark", String(dm));
-    const u = localStorage.getItem("companion_user");
-    if (!u) { router.replace("/landing"); return; }
-    setUser(JSON.parse(u));
-    setReady(true);
+    document.documentElement.setAttribute("data-dark", String(darkMode));
+    if (!user) { router.replace("/landing"); return; }
     fetchNews();
   }, [router]);
 
@@ -103,7 +103,7 @@ export default function Home() {
     }
   };
 
-  if (!ready) return null;
+  if (!user) return null;
 
   const filteredNews = cat === "All" ? news : news.filter(n=>n.category===cat);
 

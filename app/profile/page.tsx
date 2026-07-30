@@ -46,12 +46,17 @@ function CardHeader({ title, action, darkMode }: { title: string; action?: React
 }
 
 export default function Profile() {
-  const [user,      setUser]      = useState<UserData | null>(null);
-  const [dark,      setDark]      = useState(false);
+  const [user,      setUser]      = useState<UserData | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("companion_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  const [dark,      setDark]      = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
   const [editing,   setEditing]   = useState(false);
-  const [form,      setForm]      = useState<Partial<UserData>>({});
+  const [form,      setForm]      = useState<Partial<UserData>>(() => user || {});
   const [saved,     setSaved]     = useState(false);
-  const [ready,     setReady]     = useState(false);
   const [showPwForm,setShowPwForm]= useState(false);
   const [oldPw,     setOldPw]     = useState("");
   const [newPw,     setNewPw]     = useState("");
@@ -63,16 +68,8 @@ export default function Profile() {
   const router = useRouter();
 
   useEffect(() => {
-    const dm = localStorage.getItem("darkMode") === "true";
-    setDark(dm);
-    document.documentElement.setAttribute("data-dark", String(dm));
-    try {
-      const raw = localStorage.getItem("companion_user");
-      if (!raw) { router.replace("/landing"); return; }
-      const parsed: UserData = JSON.parse(raw);
-      setUser(parsed); setForm(parsed);
-    } catch { router.replace("/landing"); return; }
-    setReady(true);
+    document.documentElement.setAttribute("data-dark", String(dark));
+    if (!user) { router.replace("/landing"); }
   }, [router]);
 
   const toggleDark = () => {
@@ -110,7 +107,7 @@ export default function Profile() {
 
   const logout = () => { Session.logout(); router.replace("/landing"); };
 
-  if (!ready || !user) return null;
+  if (!user) return null;
 
   const T = palette(dark);
   const daysLeft = user.deadline ? Math.max(0, Math.ceil((new Date(user.deadline).getTime() - Date.now()) / 86400000)) : null;

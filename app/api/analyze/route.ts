@@ -145,7 +145,7 @@ Return ONLY a raw JSON object with no markdown, no backticks, no explanation:
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model:       'qwen/qwen3.6-27b',
+        model:       'meta-llama/llama-4-maverick-17b-128e-instruct',
         messages:    [{ role: 'user', content: prompt }],
         max_tokens:  512,
         temperature: 0.2,

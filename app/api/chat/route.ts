@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
         "Content-Type":  "application/json",
       },
       body: JSON.stringify({
-        model:       "qwen/qwen3.6-27b",
+        model:       "meta-llama/llama-4-maverick-17b-128e-instruct",
         max_tokens:  1024,
         temperature: 0.4,
         messages,

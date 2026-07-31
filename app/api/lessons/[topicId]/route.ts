@@ -27,9 +27,9 @@ async function generateLessonContent(
   topicName: string,
   subtopics: string[],
   objectives: string[]
-): Promise<LessonContent | null> {
+): Promise<{ content: LessonContent | null; debugReason: string }> {
   const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { content: null, debugReason: "GROQ_API_KEY not set" };
 
   const prompt = `You are an expert JAMB (Nigerian UTME) tutor writing a self-contained lesson.
 
@@ -68,23 +68,39 @@ Return ONLY a raw JSON object, no markdown, no backticks, no explanation outside
     });
 
     if (!res.ok) {
-      console.error("[lessons] Groq error:", res.status);
-      return null;
+      const errText = await res.text();
+      console.error("[lessons] Groq error:", res.status, errText.slice(0, 200));
+      return { content: null, debugReason: `Groq HTTP ${res.status}: ${errText.slice(0, 300)}` };
     }
 
     const data    = await res.json();
     const text    = data?.choices?.[0]?.message?.content ?? "{}";
     const cleaned = text.replace(/```json|```/g, "").trim();
     const match   = cleaned.match(/\{[\s\S]*\}/);
-    if (!match) return null;
+    if (!match) {
+      return { content: null, debugReason: `No JSON found in model output. Raw (first 300 chars): ${text.slice(0, 300)}` };
+    }
 
-    const parsed = JSON.parse(match[0]);
-    if (typeof parsed.summary !== "string" || !Array.isArray(parsed.exercises)) return null;
+    let parsed;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch (parseErr) {
+      const pMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      return { content: null, debugReason: `JSON.parse failed (${pMsg}). Matched text (first 300 chars): ${match[0].slice(0, 300)}` };
+    }
 
-    return { summary: parsed.summary, exercises: parsed.exercises };
+    if (typeof parsed.summary !== "string" || !Array.isArray(parsed.exercises)) {
+      return {
+        content: null,
+        debugReason: `Unexpected shape — summary type: ${typeof parsed.summary}, exercises: ${Array.isArray(parsed.exercises) ? "array len " + parsed.exercises.length : typeof parsed.exercises}`,
+      };
+    }
+
+    return { content: { summary: parsed.summary, exercises: parsed.exercises }, debugReason: "" };
   } catch (err) {
-    console.error("[lessons] Fatal generating content:", err instanceof Error ? err.message : err);
-    return null;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[lessons] Fatal generating content:", msg);
+    return { content: null, debugReason: `Fatal exception: ${msg.slice(0, 300)}` };
   }
 }
 
@@ -113,13 +129,13 @@ export async function GET(
     console.error("[lessons] KV read failed:", err instanceof Error ? err.message : err);
   }
 
-  const generated = await generateLessonContent(
+  const { content: generated, debugReason } = await generateLessonContent(
     subject.display_name, topic.topic, topic.subtopics, topic.objectives
   );
 
   if (!generated) {
     return NextResponse.json(
-      { error: "Could not generate lesson content. Please try again." },
+      { error: `DEBUG-LESSON: ${debugReason}` },
       { status: 502 }
     );
   }

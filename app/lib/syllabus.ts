@@ -1186,16 +1186,30 @@ export function getCrossSubjectLinks(topicId: string): Array<{ subject: SubjectS
  * Used by /api/chat to make all AI responses syllabus-aligned.
  */
 export function buildSyllabusSystemPrompt(subjects: string[]): string {
-  const relevantSubjects = subjects.length > 0
-    ? subjects.map(s => getSubjectSyllabus(s)).filter((s): s is SubjectSyllabus => s !== null)
-    : Object.values(JAMB_SYLLABUS);
+  let syllabusContext: string;
 
-  const syllabusContext = relevantSubjects.map(s => {
-    const topicList = s.topics.map(t =>
-      `  • ${t.topic}: ${t.subtopics.slice(0, 5).join(", ")}${t.subtopics.length > 5 ? ` (+${t.subtopics.length - 5} more)` : ""}`
-    ).join("\n");
-    return `${s.display_name.toUpperCase()} (${s.code}):\n${topicList}`;
-  }).join("\n\n");
+  if (subjects.length > 0) {
+    const relevantSubjects = subjects
+      .map(s => getSubjectSyllabus(s))
+      .filter((s): s is SubjectSyllabus => s !== null);
+
+    syllabusContext = relevantSubjects.map(s => {
+      const topicList = s.topics.map(t =>
+        `  • ${t.topic}: ${t.subtopics.slice(0, 5).join(", ")}${t.subtopics.length > 5 ? ` (+${t.subtopics.length - 5} more)` : ""}`
+      ).join("\n");
+      return `${s.display_name.toUpperCase()} (${s.code}):\n${topicList}`;
+    }).join("\n\n");
+  } else {
+    // No specific subjects passed (this is the common case — the chat UI
+    // doesn't currently send the user's registered subjects). Dumping the
+    // full syllabus with subtopics for all 10 subjects blows well past the
+    // account's tokens-per-minute limit on a single message. Send topic
+    // names only instead — still syllabus-grounded, far fewer tokens.
+    syllabusContext = Object.values(JAMB_SYLLABUS).map(s => {
+      const topicNames = s.topics.map(t => t.topic).join(", ");
+      return `${s.display_name.toUpperCase()}: ${topicNames}`;
+    }).join("\n");
+  }
 
   return `You are Companion AI — the official JAMB UTME study assistant for Nigerian students.
 

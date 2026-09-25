@@ -7,7 +7,6 @@ import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../l
 import { validateEmail, validatePassword, normaliseEmail } from "../lib/auth";
 import { C } from "../lib/design";
 import { Session } from "../lib/session";
-import type { UserAccount } from "../lib/session";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
@@ -68,8 +67,7 @@ export default function Auth() {
         setError(data.error || "Login failed");
         return;
       }
-      const account = data.account as UserAccount;
-      Session.start(account as Parameters<typeof Session.start>[0]);
+      Session.start(data.user);
       router.replace("/");
     } catch {
       setError("Network error. Please check your connection.");
@@ -140,7 +138,7 @@ export default function Auth() {
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
       // Account created — start session immediately
-      Session.start(data.account);
+      Session.start(data.user);
       router.replace("/");
     } catch {
       setError("Network error. Please try again.");

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
-import { verifyPassword, validateEmail, normaliseEmail } from "../../../lib/auth";
+import { createClient } from "../../../lib/supabase/server";
+import { validateEmail, normaliseEmail } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -49,23 +49,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const account = await kv.get<Record<string, unknown>>(`account:${normEmail}`);
+    const supabase = createClient();
 
-    console.log("[login] Account found for", normEmail, ":", account ? "YES" : "NO");
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normEmail,
+      password,
+    });
 
-    if (!account) {
+    if (error || !data.user) {
       recordFail(normEmail);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
-    const pwOk = verifyPassword(password, account.passwordHash as string);
-    if (!pwOk) {
-      recordFail(normEmail);
-      return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error("[login] Profile fetch failed:", profileError?.message);
+      return NextResponse.json(
+        { error: "Could not load profile. Please contact support." },
+        { status: 500 }
+      );
     }
 
     loginAttempts.delete(normEmail);
-    return NextResponse.json({ success: true, account });
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id:             data.user.id,
+        email:          normEmail,
+        name:           profile.name,
+        institution:    profile.institution,
+        course:         profile.course,
+        subjects:       profile.subjects,
+        target:         profile.target,
+        deadline:       profile.deadline,
+        selfRating:     profile.self_rating,
+        cutoffData:     profile.cutoff_data,
+        recommendation: profile.recommendation,
+      },
+    });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

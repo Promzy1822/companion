@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
-import { hashPassword, validateEmail, validatePassword, normaliseEmail } from "../../../lib/auth";
+import { createClient } from "../../../lib/supabase/server";
+import { validateEmail, validatePassword, normaliseEmail } from "../../../lib/auth";
 import { getCutoff, getSmartRecommendation } from "../../../lib/cutoffs";
 
 export const dynamic = "force-dynamic";
@@ -40,15 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: pwCheck.message }, { status: 400 });
 
     const normEmail = normaliseEmail(email);
-
-    // ── Email uniqueness check ─────────────────────────────────────────────
-    const existing = await kv.get(`account:${normEmail}`);
-    if (existing) {
-      return NextResponse.json(
-        { error: "An account with this email already exists. Please log in." },
-        { status: 409 }
-      );
-    }
+    const supabase = createClient();
 
     const cutoff =
       institution && course &&
@@ -56,27 +48,66 @@ export async function POST(req: NextRequest) {
       typeof institution === "string" && typeof course === "string"
         ? getCutoff(institution, course) : null;
 
-    // ── Save account immediately — no verification needed ──────────────────
-    const account = {
-      email:          normEmail,
-      name:           (name as string).trim(),
-      passwordHash:   hashPassword(password as string),
+    const recommendation = cutoff && typeof institution === "string" && typeof course === "string"
+      ? getSmartRecommendation(institution, course) : null;
+
+    const { data, error } = await supabase.auth.signUp({
+      email: normEmail,
+      password: password,
+    });
+
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists") || error.status === 422) {
+        return NextResponse.json(
+          { error: "An account with this email already exists. Please log in." },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (!data.user) {
+      return NextResponse.json({ error: "Registration failed. Please try again." }, { status: 500 });
+    }
+
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id:             data.user.id,
+      name:           name.trim(),
       institution:    (institution as string) || "",
       course:         (course as string) || "",
       subjects:       Array.isArray(subjects) ? subjects : [],
       target:         (target as string) || "260",
       deadline:       (deadline as string) || "",
-      selfRating:     (selfRating as string) || "2",
-      cutoffData:     cutoff,
-      recommendation: cutoff && typeof institution === "string" && typeof course === "string"
-        ? getSmartRecommendation(institution, course) : null,
-      verified:       true,
-      createdAt:      new Date().toISOString(),
-    };
+      self_rating:    (selfRating as string) || "2",
+      cutoff_data:    cutoff,
+      recommendation: recommendation,
+    });
 
-    await kv.set(`account:${normEmail}`, account);
+    if (profileError) {
+      console.error("[register] Profile insert failed:", profileError.message);
+      return NextResponse.json(
+        { error: "Account created but profile setup failed. Please contact support." },
+        { status: 500 }
+      );
+    }
 
-    return NextResponse.json({ success: true, account });
+    return NextResponse.json({
+      success: true,
+      user: {
+        id:             data.user.id,
+        email:          normEmail,
+        name:           name.trim(),
+        institution:    (institution as string) || "",
+        course:         (course as string) || "",
+        subjects:       Array.isArray(subjects) ? subjects : [],
+        target:         (target as string) || "260",
+        deadline:       (deadline as string) || "",
+        selfRating:     (selfRating as string) || "2",
+        cutoffData:     cutoff,
+        recommendation,
+      },
+    });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

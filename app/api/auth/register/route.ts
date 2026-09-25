@@ -40,6 +40,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: pwCheck.message }, { status: 400 });
 
     const normEmail = normaliseEmail(email);
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: `DEBUG-ENV: url=${supabaseUrl ? "set" : "MISSING"} key=${supabaseKey ? "set" : "MISSING"}` },
+        { status: 500 }
+      );
+    }
+
     const supabase = createClient();
 
     const cutoff =
@@ -64,7 +74,10 @@ export async function POST(req: NextRequest) {
           { status: 409 }
         );
       }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json(
+        { error: `DEBUG-SIGNUP (status ${error.status}, code ${error.code ?? "none"}): ${error.message}` },
+        { status: 400 }
+      );
     }
 
     if (!data.user) {
@@ -87,7 +100,7 @@ export async function POST(req: NextRequest) {
     if (profileError) {
       console.error("[register] Profile insert failed:", profileError.message);
       return NextResponse.json(
-        { error: "Account created but profile setup failed. Please contact support." },
+        { error: `DEBUG-PROFILE (${profileError.code ?? "?"}): ${profileError.message} ${profileError.details ?? ""} ${profileError.hint ?? ""}` },
         { status: 500 }
       );
     }

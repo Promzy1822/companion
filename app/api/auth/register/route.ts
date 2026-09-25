@@ -6,25 +6,45 @@ import { getCutoff, getSmartRecommendation } from "../../../lib/cutoffs";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Initialize the Supabase Admin client with the Service Role key to bypass RLS for server-side profile creation
-function getAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const regLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing Supabase URL or Service Role Key in environment variables.");
+function checkRegLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = regLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    regLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
+  if (entry.count >= 5) return false;
+  entry.count++;
+  return true;
+}
+
+function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error("Missing Supabase server env vars");
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
-      autoRefreshToken: false,
       persistSession: false,
+      autoRefreshToken: false,
     },
   });
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!checkRegLimit(ip)) {
+      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
+
     let body: Record<string, unknown>;
     try {
       body = await req.json();
@@ -34,13 +54,14 @@ export async function POST(req: NextRequest) {
 
     const { name, email, password, institution, course, subjects, target, deadline, selfRating } = body;
 
-    // 1. Input Validation
     if (!name || typeof name !== "string" || !name.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
+
     if (!email || typeof email !== "string" || !validateEmail(email)) {
       return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
     }
+
     if (!password || typeof password !== "string") {
       return NextResponse.json({ error: "Password is required" }, { status: 400 });
     }
@@ -52,94 +73,121 @@ export async function POST(req: NextRequest) {
 
     const normEmail = normaliseEmail(email);
 
-    // 2. Initialize Supabase Admin Client
-    let supabaseAdmin;
-    try {
-      supabaseAdmin = getAdminClient();
-    } catch (envError) {
-      console.error("[register] Configuration error:", envError);
-      return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { error: "Supabase is not configured on this server." },
+        { status: 500 }
+      );
     }
 
-    // 3. Compute Recommendations / Cutoffs
+    // regular client for sign-up/auth operations
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+
     const cutoff =
-      institution && course &&
-      institution !== "Other" && course !== "Other" &&
-      typeof institution === "string" && typeof course === "string"
+      institution &&
+      course &&
+      institution !== "Other" &&
+      course !== "Other" &&
+      typeof institution === "string" &&
+      typeof course === "string"
         ? getCutoff(institution, course)
         : null;
 
-    const recommendation = cutoff && typeof institution === "string" && typeof course === "string"
-      ? getSmartRecommendation(institution, course)
-      : null;
+    const recommendation =
+      cutoff && typeof institution === "string" && typeof course === "string"
+        ? getSmartRecommendation(institution, course)
+        : null;
 
-    // 4. Create User in Supabase Auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: normEmail,
-      password: password,
+      password,
+      options: {
+        data: {
+          full_name: name.trim(),
+        },
+      },
     });
 
-    if (authError) {
-      const msg = authError.message.toLowerCase();
-      if (msg.includes("already registered") || msg.includes("already exists") || authError.status === 422) {
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists") || error.status === 422) {
         return NextResponse.json(
           { error: "An account with this email already exists. Please log in." },
           { status: 409 }
         );
       }
-      console.error("[register] SignUp error:", authError);
-      return NextResponse.json({ error: "Failed to create account. Please try again." }, { status: 400 });
+
+      return NextResponse.json(
+        { error: "Registration failed. Please try again." },
+        { status: 400 }
+      );
     }
 
-    if (!authData.user) {
+    if (!data.user) {
       return NextResponse.json({ error: "Registration failed. Please try again." }, { status: 500 });
     }
 
-    // 5. Insert Profile Row using Service Role (Bypasses RLS constraints)
-    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
-      id: authData.user.id,
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return NextResponse.json({ error: "Server misconfiguration." }, { status: 500 });
+    }
+
+    const { error: profileError } = await adminClient.from("profiles").insert({
+      id: data.user.id,
       name: name.trim(),
-      institution: (institution as string) || "",
-      course: (course as string) || "",
+      institution: typeof institution === "string" ? institution : "",
+      course: typeof course === "string" ? course : "",
       subjects: Array.isArray(subjects) ? subjects : [],
-      target: (target as string) || "260",
-      deadline: (deadline as string) || "",
-      self_rating: (selfRating as string) || "2",
+      target: typeof target === "string" ? target : "260",
+      deadline: typeof deadline === "string" ? deadline : "",
+      self_rating: typeof selfRating === "string" ? selfRating : "2",
       cutoff_data: cutoff,
-      recommendation: recommendation,
+      recommendation,
     });
 
     if (profileError) {
       console.error("[register] Profile insert failed:", profileError);
 
-      // Cleanup auth user to avoid orphan accounts if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      try {
+        await adminClient.auth.admin.deleteUser(data.user.id);
+      } catch (cleanupErr) {
+        console.error("[register] Cleanup failed:", cleanupErr);
+      }
 
-      return NextResponse.json({ error: "Could not complete account setup. Please try again." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Could not create your profile. Please try again." },
+        { status: 500 }
+      );
     }
 
-    // 6. Return Success Response
     return NextResponse.json({
       success: true,
-      message: "Registration successful.",
       user: {
-        id: authData.user.id,
+        id: data.user.id,
         email: normEmail,
         name: name.trim(),
-        institution: (institution as string) || "",
-        course: (course as string) || "",
+        institution: typeof institution === "string" ? institution : "",
+        course: typeof course === "string" ? course : "",
         subjects: Array.isArray(subjects) ? subjects : [],
-        target: (target as string) || "260",
-        deadline: (deadline as string) || "",
-        selfRating: (selfRating as string) || "2",
+        target: typeof target === "string" ? target : "260",
+        deadline: typeof deadline === "string" ? deadline : "",
+        selfRating: typeof selfRating === "string" ? selfRating : "2",
         cutoffData: cutoff,
         recommendation,
       },
     });
-
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[register] Fatal server error:", msg);
-    return NextResponse.json({ error: "An unexpected server error occurred." }, { status: 500 });
+    console.error("[register] Fatal:", msg);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

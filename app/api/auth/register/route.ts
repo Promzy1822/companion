@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "../../../lib/supabase/server";
 import { validateEmail, validatePassword, normaliseEmail } from "../../../lib/auth";
 import { getCutoff, getSmartRecommendation } from "../../../lib/cutoffs";
 
@@ -7,112 +7,57 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const regLimitMap = new Map<string, { count: number; resetAt: number }>();
-
 function checkRegLimit(ip: string): boolean {
   const now = Date.now();
   const entry = regLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    regLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-
+  if (!entry || now > entry.resetAt) { regLimitMap.set(ip, { count: 1, resetAt: now + 60_000 }); return true; }
   if (entry.count >= 5) return false;
   entry.count++;
   return true;
 }
 
-function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error("Missing Supabase server env vars");
-  }
-
-  return createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-}
-
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (!checkRegLimit(ip)) {
+    if (!checkRegLimit(ip))
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
-    }
 
     let body: Record<string, unknown>;
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-    }
+    try { body = await req.json(); }
+    catch { return NextResponse.json({ error: "Invalid request body" }, { status: 400 }); }
 
     const { name, email, password, institution, course, subjects, target, deadline, selfRating } = body;
 
-    if (!name || typeof name !== "string" || !name.trim()) {
+    if (!name || typeof name !== "string" || !name.trim())
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
-    }
-
-    if (!email || typeof email !== "string" || !validateEmail(email)) {
+    if (!email || typeof email !== "string" || !validateEmail(email))
       return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
-    }
-
-    if (!password || typeof password !== "string") {
+    if (!password || typeof password !== "string")
       return NextResponse.json({ error: "Password is required" }, { status: 400 });
-    }
 
     const pwCheck = validatePassword(password);
-    if (!pwCheck.valid) {
+    if (!pwCheck.valid)
       return NextResponse.json({ error: pwCheck.message }, { status: 400 });
-    }
 
     const normEmail = normaliseEmail(email);
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return NextResponse.json(
-        { error: "Supabase is not configured on this server." },
-        { status: 500 }
-      );
-    }
-
-    // regular client for sign-up/auth operations
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
+    const supabase = createClient();
 
     const cutoff =
-      institution &&
-      course &&
-      institution !== "Other" &&
-      course !== "Other" &&
-      typeof institution === "string" &&
-      typeof course === "string"
-        ? getCutoff(institution, course)
-        : null;
+      institution && course &&
+      institution !== "Other" && course !== "Other" &&
+      typeof institution === "string" && typeof course === "string"
+        ? getCutoff(institution, course) : null;
 
-    const recommendation =
-      cutoff && typeof institution === "string" && typeof course === "string"
-        ? getSmartRecommendation(institution, course)
-        : null;
+    const recommendation = cutoff && typeof institution === "string" && typeof course === "string"
+      ? getSmartRecommendation(institution, course) : null;
 
+    // A database trigger (on_auth_user_created) auto-creates a bare profiles
+    // row the moment this succeeds. full_name goes in user metadata so the
+    // trigger can use it immediately.
     const { data, error } = await supabase.auth.signUp({
       email: normEmail,
-      password,
-      options: {
-        data: {
-          full_name: name.trim(),
-        },
-      },
+      password: password,
+      options: { data: { full_name: name.trim() } },
     });
 
     if (error) {
@@ -123,9 +68,14 @@ export async function POST(req: NextRequest) {
           { status: 409 }
         );
       }
-
+      if (error.status === 429) {
+        return NextResponse.json(
+          { error: "Too many attempts with this email. Please wait a minute and try again, or use a different email." },
+          { status: 429 }
+        );
+      }
       return NextResponse.json(
-        { error: "Registration failed. Please try again." },
+        { error: `DEBUG-SIGNUP (status ${error.status}, code ${error.code ?? "none"}): ${error.message}` },
         { status: 400 }
       );
     }
@@ -134,37 +84,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Registration failed. Please try again." }, { status: 500 });
     }
 
-    let adminClient;
-    try {
-      adminClient = createAdminClient();
-    } catch {
-      return NextResponse.json({ error: "Server misconfiguration." }, { status: 500 });
+    if (!data.session) {
+      return NextResponse.json(
+        { error: "DEBUG-NOSESSION: signUp succeeded but returned no session — 'Confirm email' is likely still enabled in Supabase settings." },
+        { status: 500 }
+      );
     }
 
-    const { error: profileError } = await adminClient.from("profiles").insert({
-      id: data.user.id,
-      name: name.trim(),
-      institution: typeof institution === "string" ? institution : "",
-      course: typeof course === "string" ? course : "",
-      subjects: Array.isArray(subjects) ? subjects : [],
-      target: typeof target === "string" ? target : "260",
-      deadline: typeof deadline === "string" ? deadline : "",
-      self_rating: typeof selfRating === "string" ? selfRating : "2",
-      cutoff_data: cutoff,
-      recommendation,
-    });
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({
+        name:           name.trim(),
+        institution:    (institution as string) || "",
+        course:         (course as string) || "",
+        subjects:       Array.isArray(subjects) ? subjects : [],
+        target:         (target as string) || "260",
+        deadline:       (deadline as string) || "",
+        self_rating:    (selfRating as string) || "2",
+        cutoff_data:    cutoff,
+        recommendation: recommendation,
+      })
+      .eq("id", data.user.id);
 
     if (profileError) {
-      console.error("[register] Profile insert failed:", profileError);
-
-      try {
-        await adminClient.auth.admin.deleteUser(data.user.id);
-      } catch (cleanupErr) {
-        console.error("[register] Cleanup failed:", cleanupErr);
-      }
-
+      console.error("[register] Profile update failed:", profileError.message);
       return NextResponse.json(
-        { error: "Could not create your profile. Please try again." },
+        { error: `DEBUG-PROFILE (${profileError.code ?? "?"}): ${profileError.message} ${profileError.details ?? ""} ${profileError.hint ?? ""}` },
         { status: 500 }
       );
     }
@@ -172,22 +117,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       user: {
-        id: data.user.id,
-        email: normEmail,
-        name: name.trim(),
-        institution: typeof institution === "string" ? institution : "",
-        course: typeof course === "string" ? course : "",
-        subjects: Array.isArray(subjects) ? subjects : [],
-        target: typeof target === "string" ? target : "260",
-        deadline: typeof deadline === "string" ? deadline : "",
-        selfRating: typeof selfRating === "string" ? selfRating : "2",
-        cutoffData: cutoff,
+        id:             data.user.id,
+        email:          normEmail,
+        name:           name.trim(),
+        institution:    (institution as string) || "",
+        course:         (course as string) || "",
+        subjects:       Array.isArray(subjects) ? subjects : [],
+        target:         (target as string) || "260",
+        deadline:       (deadline as string) || "",
+        selfRating:     (selfRating as string) || "2",
+        cutoffData:     cutoff,
         recommendation,
       },
     });
+
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[register] Fatal:", msg);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: "Server error: " + msg.slice(0, 200) }, { status: 500 });
   }
 }

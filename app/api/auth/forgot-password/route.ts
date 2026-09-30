@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "../../../lib/supabase/server";
 import { validateEmail, normaliseEmail } from "../../../lib/auth";
-import { sendPasswordResetEmail } from "../../../lib/email";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,35 +11,6 @@ function checkResetLimit(ip: string): boolean {
   if (!entry || now > entry.resetAt) { resetLimitMap.set(ip, { count: 1, resetAt: now + 60_000 }); return true; }
   if (entry.count >= 3) return false;
   entry.count++; return true;
-}
-
-function generateToken(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function getAccount(email: string) {
-  try {
-    const kvUrl = process.env.KV_REST_API_URL;
-    if (kvUrl) {
-      const { kv } = await import("@vercel/kv");
-      return await kv.get<Record<string, unknown>>(`account:${email}`);
-    }
-  } catch {}
-  return null;
-}
-
-async function saveResetToken(email: string, token: string) {
-  try {
-    const kvUrl = process.env.KV_REST_API_URL;
-    if (kvUrl) {
-      const { kv } = await import("@vercel/kv");
-      await kv.set(`reset:${token}`, { email, expiresAt: Date.now() + 60 * 60 * 1000, used: false }, { ex: 3600 });
-    }
-  } catch (e) {
-    console.warn("[forgot-password] KV save failed:", e);
-  }
 }
 
 export async function POST(req: NextRequest) {
@@ -57,19 +28,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
 
     const normEmail = normaliseEmail(email);
-    const GENERIC = { success: true, message: "If an account exists, a reset link has been sent." };
-
-    const account = await getAccount(normEmail);
-    if (!account) return NextResponse.json(GENERIC);
-
-    const token  = generateToken();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://companion-eta.vercel.app";
-    const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
-    await saveResetToken(normEmail, token);
-    await sendPasswordResetEmail(normEmail, account.name as string, resetUrl);
+    const supabase = createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(normEmail, {
+      redirectTo: `${appUrl}/auth/confirm?next=/reset-password`,
+    });
 
-    return NextResponse.json(GENERIC);
+    if (error) {
+      console.error("[forgot-password] Supabase error:", error.message);
+    }
+
+    return NextResponse.json({ success: true, message: "If an account exists, a reset link has been sent." });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

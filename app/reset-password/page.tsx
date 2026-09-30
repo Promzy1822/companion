@@ -1,17 +1,15 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { C } from "../lib/design";
 import { Session } from "../lib/session";
 import { validatePassword } from "../lib/auth";
-import type { UserAccount } from "../lib/session";
+import { createClient } from "../lib/supabase/client";
 
 function ResetContent() {
-  const router       = useRouter();
-  const searchParams = useSearchParams();
-  const token        = searchParams.get("token") || "";
+  const router = useRouter();
 
   const [password,  setPassword]  = useState("");
   const [confirm,   setConfirm]   = useState("");
@@ -19,31 +17,51 @@ function ResetContent() {
   const [error,     setError]     = useState("");
   const [loading,   setLoading]   = useState(false);
   const [success,   setSuccess]   = useState(false);
-  const [tokenOk,   setTokenOk]   = useState<boolean|null>(null);
+  const [sessionOk, setSessionOk] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!token) { setTokenOk(false); return; }
-    setTokenOk(true);
-  }, [token]);
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setSessionOk(!!data.user);
+    });
+  }, []);
 
   const handleReset = async () => {
     setError("");
     const pwCheck = validatePassword(password);
-    if (!pwCheck.valid)      { setError(pwCheck.message); return; }
+    if (!pwCheck.valid)       { setError(pwCheck.message); return; }
     if (password !== confirm) { setError("Passwords do not match"); return; }
     setLoading(true);
     try {
-      const res  = await fetch("/api/auth/reset-password", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ token, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Reset failed. Try again."); return; }
+      const supabase = createClient();
+      const { data: userData, error: updateErr } = await supabase.auth.updateUser({ password });
+      if (updateErr) { setError(updateErr.message); return; }
+
       setSuccess(true);
-      // Auto login and redirect after 2 seconds
-      const account = data.account as UserAccount;
-      Session.start(account as Parameters<typeof Session.start>[0]);
+
+      if (userData.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userData.user.id)
+          .single();
+        if (profile) {
+          Session.start({
+            id:             userData.user.id,
+            email:          userData.user.email || "",
+            name:           profile.name,
+            institution:    profile.institution,
+            course:         profile.course,
+            subjects:       profile.subjects,
+            target:         profile.target,
+            deadline:       profile.deadline,
+            selfRating:     profile.self_rating,
+            cutoffData:     profile.cutoff_data,
+            recommendation: profile.recommendation,
+          } as unknown as Parameters<typeof Session.start>[0]);
+        }
+      }
+
       setTimeout(() => router.replace("/"), 2000);
     } catch {
       setError("Network error. Please try again.");
@@ -58,7 +76,7 @@ function ResetContent() {
     background:"#F7F8FA", color:"#050505", boxSizing:"border-box", fontFamily:"inherit",
   };
 
-  if (tokenOk === false) return (
+  if (sessionOk === false) return (
     <div style={{ minHeight:"100vh", background:"#F0F2F5", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"-apple-system,sans-serif" }}>
       <div style={{ background:"#fff", borderRadius:"16px", padding:"32px 24px", textAlign:"center", maxWidth:360 }}>
         <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>

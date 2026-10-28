@@ -36,7 +36,13 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
-      console.error("[forgot-password] Supabase error:", error.message);
+      console.error("[forgot-password] Supabase error:", error.status, error.message);
+      if (error.status === 429 || /rate limit/i.test(error.message)) {
+        return NextResponse.json(
+          { error: "Email limit reached. Please try again in a little while." },
+          { status: 429 }
+        );
+      }
     }
 
     return NextResponse.json({ success: true, message: "If an account exists, a reset link has been sent." });

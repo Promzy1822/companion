@@ -1,0 +1,242 @@
+## Project tree
+./app/ai/page.tsx
+./app/api/analyze/route.ts
+./app/api/auth/forgot-password/route.ts
+./app/api/auth/login/route.ts
+./app/api/auth/register/route.ts
+./app/api/auth/reset-password/route.ts
+./app/api/chat/route.ts
+./app/api/lessons/[topicId]/route.ts
+./app/api/news/route.ts
+./app/api/qbank/ingest/route.ts
+./app/api/qbank/questions/route.ts
+./app/api/qbank/stats/route.ts
+./app/api/syllabus/route.ts
+./app/auth/confirm/route.ts
+./app/auth/page.tsx
+./app/components/AIIcon.tsx
+./app/components/AppLoader.tsx
+./app/components/AppLogo.tsx
+./app/components/BottomNav.tsx
+./app/components/CountdownBanner.tsx
+./app/components/Logo.tsx
+./app/components/Navbar.tsx
+./app/components/PageShell.tsx
+./app/components/QuickLinks.tsx
+./app/components/StreakCard.tsx
+./app/error.tsx
+./app/landing/page.tsx
+./app/layout.tsx
+./app/learn/[subject]/page.tsx
+./app/lessons/[topicId]/page.tsx
+./app/lib/auth.ts
+./app/lib/cutoffs.ts
+./app/lib/design.ts
+./app/lib/email.ts
+./app/lib/jamb-topics.ts
+./app/lib/lesson-videos.ts
+./app/lib/news-engine.ts
+./app/lib/progress.ts
+./app/lib/question-pipeline.ts
+./app/lib/rateLimit.ts
+./app/lib/session.ts
+./app/lib/storage.ts
+./app/lib/subjectCombinations.ts
+./app/lib/supabase/client.ts
+./app/lib/supabase/server.ts
+./app/lib/syllabus.ts
+./app/lib/useNews.ts
+./app/lib/validate.ts
+./app/loading.tsx
+./app/mock/page.tsx
+./app/page.tsx
+./app/profile/page.tsx
+./app/questions/page.tsx
+./app/reset-password/page.tsx
+./app/solver/page.tsx
+./app/studyplan/page.tsx
+./app/subjects/page.tsx
+./app/syllabus/page.tsx
+./middleware.ts
+./next-env.d.ts
+./package.json
+./package-lock.json
+./public/manifest.json
+./scripts/questions_backup.json
+./tsconfig.json
+./.vscode/launch.json
+
+## localStorage usage
+app/ai/page.tsx:32:  const [dark,       setDark]       = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+app/ai/page.tsx:51:    localStorage.setItem("darkMode", String(n));
+app/page.tsx:47:  const [darkMode,   setDarkMode]   = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+app/page.tsx:51:      const u = localStorage.getItem("companion_user");
+app/page.tsx:84:    localStorage.setItem("darkMode", String(next));
+app/subjects/page.tsx:28:  const [dark,  setDark] = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+app/subjects/page.tsx:32:      const u = JSON.parse(localStorage.getItem("companion_user") || "{}");
+app/subjects/page.tsx:75:      <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
+app/lessons/[topicId]/page.tsx:32:  const [dark]                = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+app/questions/page.tsx:67:    setDark(localStorage.getItem("darkMode") === "true");
+app/syllabus/page.tsx:33:    setDark(localStorage.getItem("darkMode") === "true");
+app/syllabus/page.tsx:35:      const saved = JSON.parse(localStorage.getItem("companion_syllabus_progress") || "[]");
+app/syllabus/page.tsx:54:      localStorage.setItem("companion_syllabus_progress", JSON.stringify([...next]));
+app/components/CountdownBanner.tsx:13:      const user = JSON.parse(localStorage.getItem("companion_user") || "{}");
+app/components/Navbar.tsx:44:      const u = localStorage.getItem("companion_user");
+app/components/PageShell.tsx:13: * and localStorage is readable (client-side hydration complete).
+app/learn/[subject]/page.tsx:14:  const [dark] = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+app/mock/page.tsx:29:  const [dark,      setDark]      = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode")==="true");
+app/mock/page.tsx:40:    try { return JSON.parse(localStorage.getItem("mock_history")||"[]"); } catch { return []; }
+app/mock/page.tsx:57:    const user = (() => { try { return JSON.parse(localStorage.getItem("companion_user")||"{}"); } catch { return {}; }})();
+app/mock/page.tsx:83:    localStorage.setItem("mock_history",JSON.stringify(newH)); setHistory(newH);
+app/mock/page.tsx:95:      <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
+app/mock/page.tsx:226:    const user = (()=>{ try{return JSON.parse(localStorage.getItem("companion_user")||"{}");} catch{return {};} })();
+app/layout.tsx:44:          "document.documentElement.setAttribute('data-dark', localStorage.getItem('darkMode') === 'true' ? 'true' : 'false');"
+app/studyplan/page.tsx:63:    setDark(localStorage.getItem("darkMode") === "true");
+app/studyplan/page.tsx:65:      const u = localStorage.getItem("companion_user");
+app/studyplan/page.tsx:67:      const saved = localStorage.getItem("companion_study_plan_v2");
+app/studyplan/page.tsx:87:    localStorage.setItem("companion_study_plan_v2", JSON.stringify(updated));
+app/studyplan/page.tsx:155:        localStorage.setItem("companion_study_plan_v2", JSON.stringify(parsed));
+app/studyplan/page.tsx:189:      localStorage.setItem("companion_study_plan_v2", JSON.stringify(fb));
+app/studyplan/page.tsx:572:                localStorage.removeItem("companion_study_plan_v2");
+app/landing/page.tsx:13:    const user = localStorage.getItem("companion_user");
+app/lib/progress.ts:42:      const raw = localStorage.getItem(STREAK_KEY);
+app/lib/progress.ts:45:      const old = localStorage.getItem('study_streak');
+app/lib/progress.ts:71:    localStorage.setItem(STREAK_KEY, JSON.stringify({ ...s, activityLog: trimmed }));
+app/lib/progress.ts:125:      const raw = localStorage.getItem(STATS_KEY);
+app/lib/progress.ts:138:    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+app/lib/storage.ts:1:// Safe localStorage wrapper with versioning and migration
+app/lib/storage.ts:9:    const version = parseInt(localStorage.getItem(VERSION_KEY) || '1');
+app/lib/storage.ts:12:      localStorage.setItem(VERSION_KEY, String(STORAGE_VERSION));
+app/lib/storage.ts:21:        const userStr = localStorage.getItem('companion_user');
+app/lib/storage.ts:37:            localStorage.setItem('companion_user', JSON.stringify(user));
+app/lib/storage.ts:50:      return JSON.parse(localStorage.getItem('companion_user') || 'null');
+app/lib/storage.ts:56:    try { localStorage.setItem('companion_user', JSON.stringify(user)); }
+app/lib/storage.ts:62:    localStorage.removeItem('companion_user');
+app/lib/storage.ts:70:      const val = localStorage.getItem(key);
+app/lib/storage.ts:77:    try { localStorage.setItem(key, JSON.stringify(value)); }
+app/lib/storage.ts:80:        console.error('localStorage quota exceeded — clearing old data');
+app/lib/storage.ts:82:        localStorage.removeItem('chat_sessions');
+app/lib/storage.ts:83:        try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+app/lib/storage.ts:90:    localStorage.removeItem(key);
+app/lib/session.ts:53:      localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(account));
+app/lib/session.ts:64:      const raw = localStorage.getItem(ACTIVE_USER_KEY);
+app/lib/session.ts:75:    localStorage.removeItem(ACTIVE_USER_KEY);
+app/lib/useNews.ts:52:  // ── Load localStorage immediately (instant first paint) ──────────────────
+app/lib/useNews.ts:55:      const raw = localStorage.getItem(LS_ARTICLES);
+app/lib/useNews.ts:56:      const ts  = localStorage.getItem(LS_TS);
+app/lib/useNews.ts:95:          localStorage.setItem(LS_ARTICLES, JSON.stringify(fresh));
+app/lib/useNews.ts:96:          localStorage.setItem(LS_TS, String(now));
+app/lib/useNews.ts:127:    // Check if localStorage cache is still fresh enough to skip initial fetch
+app/lib/useNews.ts:128:    const ts       = Number(localStorage.getItem(LS_TS) ?? "0");
+app/lib/useNews.ts:153:        const ts2     = Number(localStorage.getItem(LS_TS) ?? "0");
+app/solver/page.tsx:48:    const raw = localStorage.getItem(LS_KEY);
+app/solver/page.tsx:54:  try { localStorage.setItem(LS_KEY, JSON.stringify(items.slice(0, MAX_HISTORY))); }
+app/solver/page.tsx:86:    setDark(localStorage.getItem("darkMode") === "true");
+app/profile/page.tsx:52:      const raw = localStorage.getItem("companion_user");
+app/profile/page.tsx:56:  const [dark,      setDark]      = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+app/profile/page.tsx:77:    localStorage.setItem("darkMode", String(n));
+app/profile/page.tsx:84:    localStorage.setItem("companion_user", JSON.stringify(updated));
+app/profile/page.tsx:98:    localStorage.setItem("companion_user", JSON.stringify(updated));
+app/profile/page.tsx:100:      const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+app/profile/page.tsx:102:      if (idx >= 0) { accs[idx] = updated; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
+
+## KV usage
+app/api/lessons/[topicId]/route.ts:2:import { kv } from "@vercel/kv";
+app/api/lessons/[topicId]/route.ts:121:    const cached = await kv.get<LessonContent>(cacheKey(topicId));
+app/api/lessons/[topicId]/route.ts:144:    await kv.set(cacheKey(topicId), generated);
+app/api/qbank/questions/route.ts:2:import { kv } from "@vercel/kv";
+app/api/qbank/questions/route.ts:19:    const allIds = await kv.get<string[]>(`qbank:index:${subject}`) ?? [];
+app/api/qbank/questions/route.ts:32:    const pipeline = kv.pipeline();
+app/api/qbank/stats/route.ts:16:    const kvUrl = process.env.KV_REST_API_URL;
+app/api/qbank/stats/route.ts:20:    const { kv } = await import("@vercel/kv");
+app/api/qbank/stats/route.ts:24:        kv.get<number>("qbank:total"),
+app/api/qbank/stats/route.ts:25:        kv.llen("qbank:sub:Mathematics"),
+app/api/qbank/stats/route.ts:26:        kv.llen("qbank:sub:English Language"),
+app/api/qbank/stats/route.ts:27:        kv.llen("qbank:sub:Physics"),
+app/api/qbank/stats/route.ts:28:        kv.llen("qbank:sub:Chemistry"),
+app/api/qbank/stats/route.ts:29:        kv.llen("qbank:sub:Biology"),
+app/api/qbank/stats/route.ts:30:        kv.llen("qbank:sub:Government"),
+app/api/qbank/stats/route.ts:31:        kv.llen("qbank:sub:Economics"),
+app/api/qbank/ingest/route.ts:25:    const kvUrl = process.env.KV_REST_API_URL;
+app/api/qbank/ingest/route.ts:26:    const kvToken = process.env.KV_REST_API_TOKEN;
+app/api/qbank/ingest/route.ts:28:    const { kv } = await import("@vercel/kv");
+app/api/qbank/ingest/route.ts:61:    const existing  = await kv.get(dupKey);
+app/api/qbank/ingest/route.ts:73:      kv.set(dupKey, "1", { ex: 90 * 24 * 3600 }),
+app/api/qbank/ingest/route.ts:75:      kv.set(qKey, JSON.stringify({
+app/api/qbank/ingest/route.ts:85:      kv.lpush(subKey, q.id),
+app/api/qbank/ingest/route.ts:87:      kv.incr("qbank:total"),
+app/api/qbank/ingest/route.ts:91:    await kv.ltrim(subKey, 0, 9999);
+app/api/auth/reset-password/route.ts:9:    const kvUrl = process.env.KV_REST_API_URL;
+app/api/auth/reset-password/route.ts:11:      const { kv } = await import("@vercel/kv");
+app/api/auth/reset-password/route.ts:12:      return await kv.get<{ email: string; expiresAt: number; used: boolean }>(`reset:${token}`);
+app/api/auth/reset-password/route.ts:20:    const kvUrl = process.env.KV_REST_API_URL;
+app/api/auth/reset-password/route.ts:22:      const { kv } = await import("@vercel/kv");
+app/api/auth/reset-password/route.ts:23:      return await kv.get<Record<string, unknown>>(`account:${email}`);
+app/api/auth/reset-password/route.ts:31:    const kvUrl = process.env.KV_REST_API_URL;
+app/api/auth/reset-password/route.ts:33:      const { kv } = await import("@vercel/kv");
+app/api/auth/reset-password/route.ts:34:      await kv.set(`account:${email}`, account);
+app/api/auth/reset-password/route.ts:41:    const kvUrl = process.env.KV_REST_API_URL;
+app/api/auth/reset-password/route.ts:43:      const { kv } = await import("@vercel/kv");
+app/api/auth/reset-password/route.ts:44:      await kv.del(`reset:${token}`);
+
+## Supabase usage
+app/api/auth/register/route.ts:2:import { createClient } from "../../../lib/supabase/server";
+app/api/auth/register/route.ts:43:    const supabase = createClient();
+app/api/auth/register/route.ts:57:    const { data, error } = await supabase.auth.signUp({
+app/api/auth/register/route.ts:94:    const { error: profileError } = await supabase
+app/api/auth/login/route.ts:2:import { createClient } from "../../../lib/supabase/server";
+app/api/auth/login/route.ts:52:    const supabase = createClient();
+app/api/auth/login/route.ts:54:    const { data, error } = await supabase.auth.signInWithPassword({
+app/api/auth/login/route.ts:64:    const { data: profile, error: profileError } = await supabase
+app/api/auth/forgot-password/route.ts:2:import { createClient } from "../../../lib/supabase/server";
+app/api/auth/forgot-password/route.ts:33:    const supabase = createClient();
+app/api/auth/forgot-password/route.ts:34:    const { error } = await supabase.auth.resetPasswordForEmail(normEmail, {
+app/reset-password/page.tsx:9:import { createClient } from "../lib/supabase/client";
+app/reset-password/page.tsx:23:    const supabase = createClient();
+app/reset-password/page.tsx:24:    supabase.auth.getUser().then(({ data }) => {
+app/reset-password/page.tsx:36:      const supabase = createClient();
+app/reset-password/page.tsx:37:      const { data: userData, error: updateErr } = await supabase.auth.updateUser({ password });
+app/reset-password/page.tsx:43:        const { data: profile } = await supabase
+app/auth/confirm/route.ts:1:import { type EmailOtpType } from "@supabase/supabase-js";
+app/auth/confirm/route.ts:3:import { createClient } from "../../lib/supabase/server";
+app/auth/confirm/route.ts:14:    const supabase = createClient();
+app/auth/confirm/route.ts:15:    const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+app/lib/supabase/client.ts:1:import { createBrowserClient } from "@supabase/ssr";
+app/lib/supabase/server.ts:1:import { createServerClient } from "@supabase/ssr";
+
+## Auth/password routes
+./app/lib/auth.ts
+
+## package.json
+{
+  "name": "companion",
+  "version": "0.1.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@next/swc-linux-x64-gnu": "13.4.19",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.3",
+    "@vercel/kv": "^3.0.0",
+    "lucide-react": "^1.16.0",
+    "next": "14.2.29",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-markdown": "^9.0.1",
+    "resend": "^6.12.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}

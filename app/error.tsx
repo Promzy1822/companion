@@ -30,27 +30,27 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
       minHeight: "100vh",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      background: "#F0F2F5",
+      background: "#F4F5FA",
       fontFamily:"var(--font)",
       padding: "24px", textAlign: "center",
     }}>
       <img src="/icon-192.png" alt="Companion" width={56} height={56}
         style={{ borderRadius: "16px", marginBottom: "20px", opacity: 0.55 }} />
-      <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#050505", margin: "0 0 8px" }}>
+      <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#0F172A", margin: "0 0 8px" }}>
         Something went wrong
       </h2>
-      <p style={{ fontSize: "14px", color: "#65676B", margin: "0 0 24px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "14px", color: "#475569", margin: "0 0 24px", lineHeight: 1.5 }}>
         Your study data is safe. Try refreshing the page.
       </p>
       <button onClick={reset} style={{
         padding: "12px 28px", borderRadius: "50px", border: "none",
-        background: "#1877F2", color: "#fff", fontWeight: 700,
+        background: "#4F46E5", color: "#fff", fontWeight: 700,
         fontSize: "14px", cursor: "pointer", marginBottom: "10px",
       }}>
         Try Again
       </button>
       <button onClick={() => window.location.href="/"} style={{
-        background: "none", border: "none", color: "#1877F2",
+        background: "none", border: "none", color: "#4F46E5",
         fontWeight: 600, fontSize: "13px", cursor: "pointer",
       }}>
         Go to Dashboard

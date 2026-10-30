@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Progress, todayWAT } from "../lib/progress";
+import { AppIcon } from "./AppIcon";
 
 interface Props { darkMode: boolean; }
 
@@ -84,7 +85,7 @@ export default function StreakCard({ darkMode }: Props) {
             <span style={{ color: "#fff", fontSize: "40px", fontWeight: "900", lineHeight: 1, letterSpacing: "-2px" }}>
               {streak.current}
             </span>
-            <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px" }}>days 🔥</span>
+            <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px" }}>days <AppIcon e="🔥" /></span>
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", textAlign: "center" }}>
@@ -187,7 +188,7 @@ export default function StreakCard({ darkMode }: Props) {
               backgroundColor: darkMode ? "#0a1a0a" : "#f0fdf4", border: "1px solid #86efac"
             }}>
               <span style={{ fontSize: "13px", color: "#16a34a", fontWeight: "700" }}>
-                🎉 Day {streak.current} complete! Come back tomorrow
+                <AppIcon e="🎉" /> Day {streak.current} complete! Come back tomorrow
               </span>
             </div>
           ) : (
@@ -196,7 +197,7 @@ export default function StreakCard({ darkMode }: Props) {
               backgroundColor: darkMode ? "#1c1c1e" : "#f7f7f8", border: `1px dashed ${LC.border}`
             }}>
               <span style={{ fontSize: "13px", color: LC.sub, fontWeight: "600" }}>
-                No study activity yet today — finish a lesson, exercise, or mock to start your streak 🔥
+                No study activity yet today — finish a lesson, exercise, or mock to start your streak <AppIcon e="🔥" />
               </span>
             </div>
           )}

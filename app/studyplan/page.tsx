@@ -40,11 +40,11 @@ function focusName(week: number, total: number): string {
 }
 
 const SUB_COLORS: Record<string, string> = {
-  "English Language": "#1877F2", "Mathematics": "#7B3FBE",
+  "English Language": "#4F46E5", "Mathematics": "#7B3FBE",
   "Physics": "#B07D00", "Chemistry": "#0D8050",
   "Biology": "#C75B21", "Government": "#5B6ABF",
   "Economics": "#0D8080", "Literature in English": "#C75B21",
-  "ALL": "#FA3E3E", "REST": "#8A8D91",
+  "ALL": "#FA3E3E", "REST": "#6B7385",
 };
 
 export default function StudyPlan() {
@@ -214,7 +214,7 @@ RULES:
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily:"var(--font)" }}>
 
       {/* ── Header ── */}
-      <div style={{ background: "linear-gradient(135deg,#1877F2,#0C5FD1)", padding: "20px 20px 32px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(135deg,#4F46E5,#3730A3)", padding: "20px 20px 32px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
@@ -248,8 +248,8 @@ RULES:
         {/* ── Generate Screen ── */}
         {!generated ? (
           <div style={{ background: T.surface, borderRadius: 16, padding: 24, textAlign: "center", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-            <div style={{ width: 64, height: 64, borderRadius: 18, background: "#E7F0FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <CalendarDays size={30} color="#1877F2" strokeWidth={1.8} />
+            <div style={{ width: 64, height: 64, borderRadius: 18, background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <CalendarDays size={30} color="#4F46E5" strokeWidth={1.8} />
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: "0 0 10px", letterSpacing: "-0.3px" }}>
               Generate Your Study Plan
@@ -278,11 +278,11 @@ RULES:
               disabled={loading}
               style={{
                 width: "100%", padding: 14, borderRadius: 12, border: "none",
-                background: loading ? T.s3 : "linear-gradient(135deg,#1877F2,#0C5FD1)",
+                background: loading ? T.s3 : "linear-gradient(135deg,#4F46E5,#3730A3)",
                 color: loading ? T.muted : "#fff",
                 fontWeight: 700, fontSize: 15,
                 cursor: loading ? "not-allowed" : "pointer",
-                boxShadow: loading ? "none" : "0 4px 14px rgba(24,119,242,0.35)",
+                boxShadow: loading ? "none" : "0 4px 14px rgba(79,70,229,0.35)",
                 transition: "all 0.2s",
               }}
             >
@@ -311,7 +311,7 @@ RULES:
                     flex: 1, padding: "9px 6px", borderRadius: 9, border: "none",
                     cursor: "pointer", fontSize: 12, fontWeight: 700,
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                    background: view === tab.v ? "#1877F2" : "transparent",
+                    background: view === tab.v ? "#4F46E5" : "transparent",
                     color: view === tab.v ? "#fff" : T.sub,
                     transition: "all 0.2s",
                   }}
@@ -328,11 +328,11 @@ RULES:
                 {todayTask ? (
                   <div style={{ background: T.surface, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}`, marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                     {/* Task info */}
-                    <div style={{ padding: "16px 18px", background: `linear-gradient(135deg,${SUB_COLORS[todayTask.subject] || "#1877F2"}22,${SUB_COLORS[todayTask.subject] || "#1877F2"}08)`, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ padding: "16px 18px", background: `linear-gradient(135deg,${SUB_COLORS[todayTask.subject] || "#4F46E5"}22,${SUB_COLORS[todayTask.subject] || "#4F46E5"}08)`, borderBottom: `1px solid ${T.border}` }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>
                         Today's Task
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: SUB_COLORS[todayTask.subject] || "#1877F2", marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: SUB_COLORS[todayTask.subject] || "#4F46E5", marginBottom: 6 }}>
                         {todayTask.subject}
                       </div>
                       <div style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 4, letterSpacing: "-0.2px" }}>
@@ -378,7 +378,7 @@ RULES:
                             const di = plan[wi]?.days.findIndex(d => d.date === today);
                             if (wi >= 0 && di >= 0) markDone(wi, di);
                           }}
-                          style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "linear-gradient(135deg,#1877F2,#0C5FD1)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                          style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "linear-gradient(135deg,#4F46E5,#3730A3)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                         >
                           <CheckCircle size={14} strokeWidth={2.5} />
                           Mark Done
@@ -393,8 +393,8 @@ RULES:
                   </div>
                 ) : (
                   <div style={{ background: T.surface, borderRadius: 16, padding: 28, textAlign: "center", border: `1px solid ${T.border}`, marginBottom: 14 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: "#E7F0FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                      <CalendarDays size={24} color="#1877F2" strokeWidth={1.8} />
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                      <CalendarDays size={24} color="#4F46E5" strokeWidth={1.8} />
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>No task scheduled today</div>
                     <div style={{ fontSize: 13, color: T.sub, marginTop: 6 }}>Check back tomorrow or browse past topics below.</div>
@@ -408,7 +408,7 @@ RULES:
                   </div>
                   {plan.flatMap(w => w.days).filter(d => d.date > today).slice(0, 5).map((d, i, arr) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : "none" }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: SUB_COLORS[d.subject] || "#1877F2", flexShrink: 0 }} />
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: SUB_COLORS[d.subject] || "#4F46E5", flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.topic}</div>
                         <div style={{ fontSize: 11, color: T.sub }}>
@@ -431,7 +431,7 @@ RULES:
                     <button
                       key={i}
                       onClick={() => setActiveW(i)}
-                      style={{ flexShrink: 0, padding: "7px 16px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: activeW === i ? "#1877F2" : T.s2, color: activeW === i ? "#fff" : T.sub, transition: "all 0.2s" }}
+                      style={{ flexShrink: 0, padding: "7px 16px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: activeW === i ? "#4F46E5" : T.s2, color: activeW === i ? "#fff" : T.sub, transition: "all 0.2s" }}
                     >
                       W{w.week}
                     </button>
@@ -441,7 +441,7 @@ RULES:
                 {plan[activeW] && (
                   <div style={{ background: T.surface, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                     {/* Week header */}
-                    <div style={{ padding: "16px 18px", background: "linear-gradient(135deg,#1877F2,#42A5F5)" }}>
+                    <div style={{ padding: "16px 18px", background: "linear-gradient(135deg,#4F46E5,#818CF8)" }}>
                       <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, textTransform: "uppercase", letterSpacing: "1px" }}>
                         WEEK {plan[activeW].week}
                       </div>
@@ -467,12 +467,12 @@ RULES:
                             style={{
                               display: "flex", alignItems: "center", gap: 12,
                               padding: "11px 10px", borderRadius: 10, marginBottom: 4,
-                              background: isToday ? (dark ? "#1A2A4A" : "#EBF3FF") : "transparent",
-                              border: `1px solid ${isToday ? "#1877F2" : "transparent"}`,
+                              background: isToday ? (dark ? "#1F2050" : "#EBF3FF") : "transparent",
+                              border: `1px solid ${isToday ? "#4F46E5" : "transparent"}`,
                             }}
                           >
                             {/* Day indicator */}
-                            <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: done ? "#1877F2" : isRest ? T.s2 : T.s2, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: done ? "#4F46E5" : isRest ? T.s2 : T.s2, display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {done
                                 ? <CheckCircle size={15} color="#fff" strokeWidth={2.5} />
                                 : isRest
@@ -503,7 +503,7 @@ RULES:
                             {!done && !isRest && isToday && (
                               <button
                                 onClick={() => markDone(activeW, i)}
-                                style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#1877F2", color: "#fff", fontWeight: 700, fontSize: 11, cursor: "pointer", flexShrink: 0 }}
+                                style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#4F46E5", color: "#fff", fontWeight: 700, fontSize: 11, cursor: "pointer", flexShrink: 0 }}
                               >
                                 Done
                               </button>
@@ -524,10 +524,10 @@ RULES:
                 <div style={{ background: T.surface, borderRadius: 16, padding: "16px 18px", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Overall Progress</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: "#1877F2" }}>{pct}%</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: "#4F46E5" }}>{pct}%</span>
                   </div>
                   <div style={{ height: 10, borderRadius: 5, background: T.s3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#1877F2,#42A5F5)", borderRadius: 5, transition: "width 0.5s" }} />
+                    <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#4F46E5,#818CF8)", borderRadius: 5, transition: "width 0.5s" }} />
                   </div>
                   <div style={{ fontSize: 12, color: T.sub, marginTop: 6 }}>
                     {doneCt} of {allStudy.length} study sessions completed
@@ -542,7 +542,7 @@ RULES:
                     <button
                       key={wi}
                       onClick={() => { setActiveW(wi); setView("week"); }}
-                      style={{ background: T.surface, borderRadius: 14, padding: "14px 16px", border: `1px solid ${activeW === wi ? "#1877F2" : T.border}`, cursor: "pointer", textAlign: "left", width: "100%", transition: "border-color 0.2s" }}
+                      style={{ background: T.surface, borderRadius: 14, padding: "14px 16px", border: `1px solid ${activeW === wi ? "#4F46E5" : T.border}`, cursor: "pointer", textAlign: "left", width: "100%", transition: "border-color 0.2s" }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                         <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
@@ -550,12 +550,12 @@ RULES:
                           <div style={{ fontSize: 11, color: T.sub, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.goal}</div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: wp >= 70 ? "#31A24C" : "#1877F2" }}>{wp}%</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: wp >= 70 ? "#31A24C" : "#4F46E5" }}>{wp}%</div>
                           <div style={{ fontSize: 10, color: T.sub }}>{wDone}/{w.days.length}</div>
                         </div>
                       </div>
                       <div style={{ height: 5, borderRadius: 3, background: T.s3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${wp}%`, background: wp >= 70 ? "#31A24C" : "#1877F2", transition: "width 0.5s" }} />
+                        <div style={{ height: "100%", width: `${wp}%`, background: wp >= 70 ? "#31A24C" : "#4F46E5", transition: "width 0.5s" }} />
                       </div>
                     </button>
                   );

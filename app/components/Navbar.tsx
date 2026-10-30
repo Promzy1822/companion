@@ -126,7 +126,7 @@ export default function Navbar({
               >
                 <div style={{
                   width: 30, height: 30, borderRadius: "50%",
-                  background: "linear-gradient(135deg,#1877F2,#42A5F5)",
+                  background: "linear-gradient(135deg,#4F46E5,#818CF8)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "13px", fontWeight: 800, color: "#fff", flexShrink: 0,
                 }}>
@@ -170,7 +170,7 @@ export default function Navbar({
                     onClick={() => setOpen(false)}
                     style={{
                       display: "block", padding: "14px 16px",
-                      background: darkMode ? D.surface2 : "#F8FAFF",
+                      background: darkMode ? D.surface2 : "#F7F8FF",
                       borderBottom: `1px solid ${T.border}`,
                       textDecoration: "none",
                     }}
@@ -178,7 +178,7 @@ export default function Navbar({
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                       <div style={{
                         width: 40, height: 40, borderRadius: "50%",
-                        background: "linear-gradient(135deg,#1877F2,#42A5F5)",
+                        background: "linear-gradient(135deg,#4F46E5,#818CF8)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "17px", fontWeight: 800, color: "#fff",
                       }}>
@@ -214,7 +214,7 @@ export default function Navbar({
                           style={{
                             display: "flex", alignItems: "center", gap: "12px",
                             padding: "10px 16px", textDecoration: "none",
-                            background: active ? (darkMode ? "#1A2A4A" : C.primaryLight) : "transparent",
+                            background: active ? (darkMode ? "#1F2050" : C.primaryLight) : "transparent",
                             transition: "background 0.1s",
                           }}
                         >

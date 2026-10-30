@@ -5,38 +5,38 @@
 /* ── Design System ─────────────────────────────────────────────── */
 :root {
   /* Primary — Facebook blue */
-  --primary:        #1877F2;
-  --primary-hover:  #166FE5;
-  --primary-dark:   #0C5FD1;
-  --primary-light:  #E7F0FF;
-  --primary-soft:   #F0F7FF;
+  --primary:        #4F46E5;
+  --primary-hover:  #4338CA;
+  --primary-dark:   #3730A3;
+  --primary-light:  #EEF2FF;
+  --primary-soft:   #F5F7FF;
 
   /* Surfaces */
-  --bg:             #F0F2F5;
+  --bg:             #F4F5FA;
   --surface:        #FFFFFF;
-  --surface-2:      #F7F8FA;
-  --surface-3:      #EBEDF0;
+  --surface-2:      #F8F9FC;
+  --surface-3:      #EEF0F6;
 
   /* Borders */
-  --border:         #E4E6EB;
-  --border-light:   #F0F2F5;
+  --border:         #E3E6EF;
+  --border-light:   #F0F2F7;
 
   /* Text */
-  --text:           #050505;
-  --text-sub:       #65676B;
-  --text-muted:     #8A8D91;
+  --text:           #0F172A;
+  --text-sub:       #475569;
+  --text-muted:     #6B7385;
 
   /* Semantic */
-  --success:        #31A24C;
-  --success-light:  #E6F4EA;
-  --warning:        #F7B928;
-  --warning-light:  #FEF9E7;
-  --danger:         #FA3E3E;
-  --danger-light:   #FEE9E9;
+  --success:        #16A34A;
+  --success-light:  #E7F6EC;
+  --warning:        #F59E0B;
+  --warning-light:  #FEF6E4;
+  --danger:         #E5484D;
+  --danger-light:   #FDECEC;
 
   /* Brand accent (keep orange for accents only) */
   --accent:         #EA580C;
-  --accent-light:   #FFF3EE;
+  --accent-light:   #FFF1E8;
 
   /* Layout */
   --nav-h:          56px;
@@ -60,17 +60,17 @@
 
 /* Dark mode */
 [data-dark="true"] {
-  --bg:           #18191A;
-  --surface:      #242526;
-  --surface-2:    #3A3B3C;
-  --surface-3:    #4E4F50;
-  --border:       #3E4042;
-  --border-light: #3E4042;
-  --text:         #E4E6EB;
-  --text-sub:     #B0B3B8;
-  --text-muted:   #8A8D91;
-  --primary-soft: #1A2A4A;
-  --primary-light:#1C3A6E;
+  --bg:           #0E1018;
+  --surface:      #161925;
+  --surface-2:    #1E2230;
+  --surface-3:    #2A2F42;
+  --border:       #2A2E3F;
+  --border-light: #2A2E3F;
+  --text:         #E8EAF2;
+  --text-sub:     #A7AEC2;
+  --text-muted:   #7C849A;
+  --primary-soft: #1D1E45;
+  --primary-light:#2A2B63;
 }
 
 /* ── Reset ─────────────────────────────────────────────────────── */
@@ -140,7 +140,7 @@ body {
   cursor: pointer;
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
 }
-.btn-primary:hover  { background: var(--primary-hover); box-shadow: 0 4px 14px rgba(24,119,242,0.35); }
+.btn-primary:hover  { background: var(--primary-hover); box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
 .btn-primary:active { transform: scale(0.97); }
 
 .btn-secondary {
@@ -170,7 +170,7 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(24,119,242,0.12);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
 }
 
 .skeleton {
@@ -198,7 +198,7 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--primary);
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(24,119,242,0.5);
+  box-shadow: 0 1px 4px rgba(79,70,229,0.5);
   transition: transform 0.15s;
 }
 input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
@@ -292,8 +292,8 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
 
 /* Tablet and up: centered column */
 @media (min-width: 768px) {
-  body { background: #E4E6EB; }
-  [data-dark="true"] body { background: #111213; }
+  body { background: #E3E6EF; }
+  [data-dark="true"] body { background: #0A0C12; }
 
   .app-shell {
     max-width: 720px;
@@ -317,7 +317,7 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
 
   .app-shell {
     max-width: var(--content-max);
-    margin: 0 0 0 calc(var(--rail-w) + max(0px, (100vw - var(--rail-w) - var(--content-max)) / 2));
+    margin: 0 0 0 calc(var(--rail-w) + max(0px, (100% - var(--rail-w) - var(--content-max)) / 2));
     box-shadow: none;
   }
   .side-rail {
@@ -346,3 +346,27 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
 @media (prefers-reduced-motion: reduce) {
   .page-enter, .page-transition { animation: none; }
 }
+
+/* ── Polish: smooth navigation, visible scrollbar on laptops, hero ─────────── */
+html { scroll-behavior: auto; }
+
+/* Soft fade when a page appears (opacity only, and no fill-mode, so it never traps fixed children) */
+.app-shell > div { animation: routeFade 0.18s ease-out backwards; }
+@keyframes routeFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Mouse devices (laptops/desktops) get a slim visible scrollbar. Touch devices stay clean. */
+@media (hover: hover) and (pointer: fine) {
+  * { scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--surface-3); border-radius: 10px;
+    border: 2px solid transparent; background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); background-clip: content-box; }
+}
+
+@media (min-width: 768px)  { .hero-banner { margin: 14px 14px 0; border-radius: 20px; } }
+@media (min-width: 1024px) { .hero-banner { padding: 30px 32px 46px !important; } }
+
+@media (prefers-reduced-motion: reduce) { .app-shell > div { animation: none; } }

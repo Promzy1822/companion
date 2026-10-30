@@ -7,6 +7,7 @@ import {
   Sparkles, X, RotateCcw, Image, FileText,
 } from "lucide-react";
 import { palette } from "../lib/design";
+import { Rich } from "../components/AppIcon";
 
 interface Message {
   role:    "user" | "assistant";
@@ -136,14 +137,14 @@ export default function AIChat() {
   const aiBubBg    = dark ? "#1E1E24" : "#FFFFFF";
   const aiBubBord  = dark ? "#2A2A35" : "#E8EAED";
   const inputBg    = dark ? "#1E1E24" : "#F1F3F5";
-  const inputBord  = focused ? "#1877F2" : (dark ? "#2A2A35" : "#E0E3E8");
+  const inputBord  = focused ? "#4F46E5" : (dark ? "#2A2A35" : "#E0E3E8");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: bg, fontFamily:"var(--font)", overflow: "hidden" }}>
 
       {/* Header */}
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: headerBg, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href="/" style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F0F2F5", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+        <Link href="/" style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F4F5FA", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
           <ArrowLeft size={17} color={T.text} strokeWidth={2} />
         </Link>
         <div style={{ flex: 1 }}>
@@ -153,10 +154,10 @@ export default function AIChat() {
             Online · JAMB expert
           </div>
         </div>
-        <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F0F2F5", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F4F5FA", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {dark ? <Sun size={16} color={T.text} /> : <Moon size={16} color={T.text} />}
         </button>
-        <button onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F0F2F5", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F4F5FA", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <RotateCcw size={15} color={T.sub} strokeWidth={2} />
         </button>
       </div>
@@ -168,7 +169,7 @@ export default function AIChat() {
           return (
             <div key={m.id} style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 8, marginBottom: 2, animation: "fadeUp 0.2s ease both" }}>
               {!isUser && (
-                <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#1877F2,#42A5F5)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
                   <Sparkles size={13} color="#fff" strokeWidth={1.8} />
                 </div>
               )}
@@ -181,15 +182,15 @@ export default function AIChat() {
                   borderRadius: isUser
                     ? m.image ? "0 0 4px 18px" : "18px 18px 4px 18px"
                     : "4px 18px 18px 18px",
-                  background: isUser ? "#1877F2" : aiBubBg,
+                  background: isUser ? "#4F46E5" : aiBubBg,
                   border: isUser ? "none" : `1px solid ${aiBubBord}`,
                   color: isUser ? "#fff" : T.text,
                   fontSize: 14, lineHeight: 1.65,
-                  boxShadow: isUser ? "0 2px 12px rgba(24,119,242,0.3)" : (dark ? "0 1px 4px rgba(0,0,0,0.4)" : "0 1px 8px rgba(0,0,0,0.07)"),
+                  boxShadow: isUser ? "0 2px 12px rgba(79,70,229,0.3)" : (dark ? "0 1px 4px rgba(0,0,0,0.4)" : "0 1px 8px rgba(0,0,0,0.07)"),
                 }}>
                   {isUser
-                    ? <span>{m.content}</span>
-                    : <ReactMarkdown>{m.content}</ReactMarkdown>}
+                    ? <span><Rich>{m.content}</Rich></span>
+                    : <ReactMarkdown><Rich>{m.content}</Rich></ReactMarkdown>}
                 </div>
               </div>
             </div>
@@ -199,12 +200,12 @@ export default function AIChat() {
         {/* Typing indicator */}
         {loading && (
           <div style={{ display: "flex", alignItems: "flex-end", gap: 8, animation: "fadeUp 0.2s ease both" }}>
-            <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#1877F2,#42A5F5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Sparkles size={13} color="#fff" strokeWidth={1.8} />
             </div>
             <div style={{ padding: "13px 18px", borderRadius: "4px 18px 18px 18px", background: aiBubBg, border: `1px solid ${aiBubBord}`, display: "flex", gap: 5, alignItems: "center" }}>
               {[0,1,2].map(i => (
-                <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#1877F2", animation: `dot 1.2s ease-in-out ${i * 0.18}s infinite` }} />
+                <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#4F46E5", animation: `dot 1.2s ease-in-out ${i * 0.18}s infinite` }} />
               ))}
             </div>
           </div>
@@ -220,10 +221,10 @@ export default function AIChat() {
             flexShrink: 0, padding: "7px 13px", borderRadius: 20,
             border: `1px solid ${dark ? "#2A2A35" : "#E8EAED"}`,
             background: dark ? "#1E1E24" : "#fff",
-            color: dark ? "#B0B3B8" : "#65676B",
+            color: dark ? "#A7AEC2" : "#475569",
             fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
           }}>
-            {a.label}
+            <Rich>{a.label}</Rich>
           </button>
         ))}
       </div>
@@ -231,7 +232,7 @@ export default function AIChat() {
       {/* File error */}
       {fileError && (
         <div style={{ margin: "8px 16px 0", padding: "10px 14px", background: "#FEE2E2", border: "1px solid #FECACA", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ fontSize: 13, color: "#D0021B", fontWeight: 500 }}>{fileError}</span>
+          <span style={{ fontSize: 13, color: "#D0021B", fontWeight: 500 }}><Rich>{fileError}</Rich></span>
           <button onClick={() => setFileError("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
             <X size={14} color="#D0021B" strokeWidth={2} />
           </button>
@@ -240,17 +241,17 @@ export default function AIChat() {
 
       {/* Attachment preview */}
       {attachment && (
-        <div style={{ margin: "8px 16px 0", padding: "10px 14px", background: dark ? "#1E2A4A" : "#EBF3FF", border: "1px solid #1877F244", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ margin: "8px 16px 0", padding: "10px 14px", background: dark ? "#1E2A4A" : "#EBF3FF", border: "1px solid #4F46E544", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
           {attachment.type === "image" ? (
             <img src={attachment.preview} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
           ) : (
-            <div style={{ width: 44, height: 44, borderRadius: 8, background: "#1877F222", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <FileText size={20} color="#1877F2" strokeWidth={1.8} />
+            <div style={{ width: 44, height: 44, borderRadius: 8, background: "#4F46E522", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <FileText size={20} color="#4F46E5" strokeWidth={1.8} />
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {attachment.file.name}
+              <Rich>{attachment.file.name}</Rich>
             </div>
             <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>
               {attachment.type === "image" ? "Image — AI will read and solve" : "Text file — AI will analyse content"}
@@ -264,10 +265,10 @@ export default function AIChat() {
 
       {/* Input area */}
       <div style={{ padding: "10px 16px 28px", background: dark ? "rgba(13,13,15,0.95)" : "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderTop: `1px solid ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, marginTop: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: inputBg, borderRadius: 24, padding: "8px 8px 8px 14px", border: `1.5px solid ${inputBord}`, transition: "border-color 0.2s, box-shadow 0.2s", boxShadow: focused ? "0 0 0 3px rgba(24,119,242,0.12)" : "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: inputBg, borderRadius: 24, padding: "8px 8px 8px 14px", border: `1.5px solid ${inputBord}`, transition: "border-color 0.2s, box-shadow 0.2s", boxShadow: focused ? "0 0 0 3px rgba(79,70,229,0.12)" : "none" }}>
           <label style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "2px" }}>
             {attachment?.type === "image"
-              ? <Image size={18} color="#1877F2" strokeWidth={1.8} />
+              ? <Image size={18} color="#4F46E5" strokeWidth={1.8} />
               : <Paperclip size={17} color={T.muted} strokeWidth={1.8} />}
             <input
               ref={fileInputRef}
@@ -290,7 +291,7 @@ export default function AIChat() {
           <button
             onClick={() => sendMessage(input)}
             disabled={loading || (!input.trim() && !attachment)}
-            style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: loading || (!input.trim() && !attachment) ? (dark ? "#2A2A35" : "#E8EAED") : "#1877F2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: loading || (!input.trim() && !attachment) ? "not-allowed" : "pointer", transition: "background 0.2s", boxShadow: !loading && (input.trim() || attachment) ? "0 2px 10px rgba(24,119,242,0.4)" : "none" }}
+            style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: loading || (!input.trim() && !attachment) ? (dark ? "#2A2A35" : "#E8EAED") : "#4F46E5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: loading || (!input.trim() && !attachment) ? "not-allowed" : "pointer", transition: "background 0.2s", boxShadow: !loading && (input.trim() || attachment) ? "0 2px 10px rgba(79,70,229,0.4)" : "none" }}
           >
             <Send size={16} color="#fff" strokeWidth={2} style={{ transform: "translateX(1px)" }} />
           </button>

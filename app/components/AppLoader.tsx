@@ -12,9 +12,9 @@ interface AppLoaderProps {
  * Never shows the full splash screen — that's only for cold start.
  */
 export function PageSkeleton({ dark = false }: { dark?: boolean }) {
-  const bg      = dark ? "#18191A" : "#F0F2F5";
-  const surface = dark ? "#242526" : "#ffffff";
-  const border  = dark ? "#3E4042" : "#E4E6EB";
+  const bg      = dark ? "#0E1018" : "#F4F5FA";
+  const surface = dark ? "#161925" : "#ffffff";
+  const border  = dark ? "#2A2E3F" : "#E3E6EF";
 
   return (
     <div style={{ minHeight: "100vh", background: bg }}>
@@ -73,9 +73,9 @@ export function PageSkeleton({ dark = false }: { dark?: boolean }) {
  */
 export default function AppLoader({ fullScreen = false, message, dark = false }: AppLoaderProps) {
   const spinner = "#EA580C";
-  const track   = dark ? "#3A3B3C" : "#F0F2F5";
-  const textCol = dark ? "#B0B3B8" : "#8A8D91";
-  const bg      = dark ? "#18191A" : "#F0F2F5";
+  const track   = dark ? "#1E2230" : "#F4F5FA";
+  const textCol = dark ? "#A7AEC2" : "#6B7385";
+  const bg      = dark ? "#0E1018" : "#F4F5FA";
 
   // fullScreen inline loader — small spinner, no logo, not a splash
   if (fullScreen) {

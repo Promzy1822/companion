@@ -9,6 +9,7 @@ import {
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { palette, C } from "../lib/design";
 import { JAMB_SYLLABUS, SYLLABUS_STATS, searchSyllabus } from "../lib/syllabus";
+import { AppIcon, Rich } from "../components/AppIcon";
 
 const ICONS: Record<string, string> = {
   english:"📝", physics:"⚛️", mathematics:"📐",
@@ -79,18 +80,18 @@ function SyllabusContent() {
           <div style={{ flex:1 }}>
             <div style={{ color:"#fff", fontWeight:800, fontSize:17 }}>JAMB Syllabus</div>
             <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11 }}>
-              {SYLLABUS_STATS.totalTopics} topics · {SYLLABUS_STATS.totalSubtopics} subtopics · Official 2025 edition
+              <Rich>{SYLLABUS_STATS.totalTopics}</Rich> topics · <Rich>{SYLLABUS_STATS.totalSubtopics}</Rich> subtopics · Official 2025 edition
             </div>
           </div>
           <div style={{ textAlign:"right" }}>
-            <div style={{ color:"#FFF8DB", fontWeight:900, fontSize:20, lineHeight:1 }}>{overallPct}%</div>
+            <div style={{ color:"#FFF8DB", fontWeight:900, fontSize:20, lineHeight:1 }}><Rich>{overallPct}</Rich>%</div>
             <div style={{ color:"rgba(255,255,255,0.7)", fontSize:10 }}>overall</div>
           </div>
         </div>
 
         {/* Search bar */}
         <div style={{ position:"relative", marginBottom:14 }}>
-          <Search size={15} color="#8A8D91" style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
+          <Search size={15} color="#6B7385" style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
@@ -99,7 +100,7 @@ function SyllabusContent() {
               width:"100%", padding:"10px 12px 10px 36px",
               borderRadius:10, border:"none", outline:"none",
               fontSize:13, background:"rgba(255,255,255,0.95)",
-              color:"#050505", boxSizing:"border-box",
+              color:"#0F172A", boxSizing:"border-box",
             }}
           />
         </div>
@@ -118,10 +119,10 @@ function SyllabusContent() {
                   color: activeSubject===key ? C.primary : "rgba(255,255,255,0.85)",
                   transition:"all 0.2s", position:"relative",
                 }}>
-                  {ICONS[key] || "📖"} {s.display_name.split(" ")[0]}
+                  <Rich>{ICONS[key] || "📖"}</Rich> <Rich>{s.display_name.split(" ")[0]}</Rich>
                   {subPct > 0 && (
                     <span style={{ marginLeft:4, fontSize:10, color:activeSubject===key?C.primary:"rgba(255,255,255,0.7)" }}>
-                      {subPct}%
+                      <Rich>{subPct}</Rich>%
                     </span>
                   )}
                 </button>
@@ -137,7 +138,7 @@ function SyllabusContent() {
         {view === "search" && (
           <div>
             <div style={{ fontSize:13, color:T.sub, marginBottom:12 }}>
-              {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{searchQuery}"
+              <Rich>{searchResults.length}</Rich> result{searchResults.length !== 1 ? "s" : ""} for "<Rich>{searchQuery}</Rich>"
             </div>
             {searchResults.length === 0 ? (
               <div style={{ textAlign:"center", padding:"40px 20px", color:T.muted, fontSize:13 }}>
@@ -152,9 +153,9 @@ function SyllabusContent() {
                     display:"block", width:"100%",
                   }}>
                     <div style={{ fontSize:11, color:C.primary, fontWeight:700, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                      {r.subject.display_name} · {r.matchedIn}
+                      <Rich>{r.subject.display_name}</Rich> · <Rich>{r.matchedIn}</Rich>
                     </div>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.text }}>{r.topic.topic}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.text }}><Rich>{r.topic.topic}</Rich></div>
                   </button>
                 ))}
               </div>
@@ -168,8 +169,8 @@ function SyllabusContent() {
             {/* Subject progress */}
             <div style={{ background:T.surface, borderRadius:14, padding:16, marginBottom:14, border:`1px solid ${T.border}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                <span style={{ fontWeight:700, fontSize:14, color:T.text }}>{syllabus.display_name}</span>
-                <span style={{ fontSize:13, color:pct===100?"#31A24C":C.primary, fontWeight:700 }}>{done}/{topics.length} done</span>
+                <span style={{ fontWeight:700, fontSize:14, color:T.text }}><Rich>{syllabus.display_name}</Rich></span>
+                <span style={{ fontSize:13, color:pct===100?"#31A24C":C.primary, fontWeight:700 }}><Rich>{done}</Rich>/<Rich>{topics.length}</Rich> done</span>
               </div>
               <div style={{ height:6, borderRadius:3, background:T.s2, overflow:"hidden", marginBottom:6 }}>
                 <div style={{ height:"100%", width:`${pct}%`, background:pct===100?"#31A24C":C.primary, transition:"width 0.4s" }}/>
@@ -177,7 +178,7 @@ function SyllabusContent() {
               <div style={{ fontSize:11, color:T.sub }}>
                 {pct===0 && "Tap ✓ on each topic when studied"}
                 {pct>0&&pct<100 && `${pct}% — ${topics.length-done} topics remaining`}
-                {pct===100 && "✅ All topics covered! Keep reviewing."}
+                <Rich>{pct===100 && "✅ All topics covered! Keep reviewing."}</Rich>
               </div>
               {syllabus.general_objectives && (
                 <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
@@ -185,7 +186,7 @@ function SyllabusContent() {
                   {syllabus.general_objectives.map((obj, i) => (
                     <div key={i} style={{ display:"flex", gap:6, fontSize:12, color:T.sub, marginBottom:4, lineHeight:1.4 }}>
                       <span style={{ color:C.primary, flexShrink:0 }}>•</span>
-                      <span>{obj}</span>
+                      <span><Rich>{obj}</Rich></span>
                     </div>
                   ))}
                 </div>
@@ -216,10 +217,10 @@ function SyllabusContent() {
                         {idx+1}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontWeight:700, fontSize:13, color:T.text, lineHeight:1.3 }}>{topic.topic}</div>
-                        {topic.section && <div style={{ fontSize:10, color:T.muted, marginTop:2 }}>{topic.section}</div>}
+                        <div style={{ fontWeight:700, fontSize:13, color:T.text, lineHeight:1.3 }}><Rich>{topic.topic}</Rich></div>
+                        {topic.section && <div style={{ fontSize:10, color:T.muted, marginTop:2 }}><Rich>{topic.section}</Rich></div>}
                         <div style={{ fontSize:11, color:T.sub, marginTop:2 }}>
-                          {topic.subtopics.length} subtopics · {topic.objectives.length} objectives
+                          <Rich>{topic.subtopics.length}</Rich> subtopics · <Rich>{topic.objectives.length}</Rich> objectives
                         </div>
                       </div>
                       <button
@@ -244,12 +245,12 @@ function SyllabusContent() {
                         {/* Subtopics */}
                         <div style={{ marginBottom:14 }}>
                           <div style={{ fontSize:10, color:T.sub, fontWeight:700, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.5px", display:"flex", alignItems:"center", gap:4 }}>
-                            <BookOpen size={10} color={T.sub}/> Subtopics ({topic.subtopics.length})
+                            <BookOpen size={10} color={T.sub}/> Subtopics (<Rich>{topic.subtopics.length}</Rich>)
                           </div>
                           {topic.subtopics.map((sub, i) => (
                             <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:7, marginBottom:5 }}>
                               <div style={{ width:4, height:4, borderRadius:"50%", background:C.primary, marginTop:6, flexShrink:0 }}/>
-                              <span style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{sub}</span>
+                              <span style={{ fontSize:12, color:T.text, lineHeight:1.5 }}><Rich>{sub}</Rich></span>
                             </div>
                           ))}
                         </div>
@@ -262,7 +263,7 @@ function SyllabusContent() {
                           {topic.objectives.map((obj, i) => (
                             <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:7, marginBottom:5 }}>
                               <span style={{ color:"#31A24C", fontSize:11, flexShrink:0, marginTop:1 }}>✓</span>
-                              <span style={{ fontSize:12, color:T.sub, lineHeight:1.5 }}>{obj}</span>
+                              <span style={{ fontSize:12, color:T.sub, lineHeight:1.5 }}><Rich>{obj}</Rich></span>
                             </div>
                           ))}
                         </div>
@@ -279,7 +280,7 @@ function SyllabusContent() {
                                   <span key={lid}>
                                     {i > 0 && ", "}
                                     <button onClick={()=>{ const s = Object.entries(JAMB_SYLLABUS).find(([,sv]) => sv.topics.some(t=>t.id===lid)); if(s){ setActiveSubject(s[0]); setExpandedTopic(lid); }}} style={{ background:"none", border:"none", color:C.primary, cursor:"pointer", fontSize:11, fontWeight:600, padding:0 }}>
-                                      {found.topic}
+                                      <Rich>{found.topic}</Rich>
                                     </button>
                                   </span>
                                 ) : null;
@@ -292,15 +293,15 @@ function SyllabusContent() {
                         <div style={{ display:"flex", gap:8 }}>
                           <Link href={`/ai?q=Teach me ${encodeURIComponent(topic.topic)} for JAMB ${encodeURIComponent(syllabus.display_name)} step by step`}
                             style={{ flex:1, padding:"10px 8px", borderRadius:10, background:C.primaryLight, border:`1px solid ${C.primary}33`, textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:C.primary }}>
-                            🤖 Study with AI
+                            <AppIcon e="🤖" /> Study with AI
                           </Link>
                           <Link href={`/questions?subject=${activeSubject}&topic=${encodeURIComponent(topic.topic)}`}
                             style={{ flex:1, padding:"10px 8px", borderRadius:10, background:T.s2, border:`1px solid ${T.border}`, textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:T.text }}>
-                            ✏️ Practice
+                            <AppIcon e="✏️" /> Practice
                           </Link>
                           <Link href={`/mock?subject=${activeSubject}&topic=${encodeURIComponent(topic.topic)}`}
                             style={{ flex:1, padding:"10px 8px", borderRadius:10, background:"#E6F4EA", border:"1px solid #31A24C33", textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:"#31A24C" }}>
-                            📝 Mock
+                            <AppIcon e="📝" /> Mock
                           </Link>
                         </div>
                       </div>
@@ -313,7 +314,7 @@ function SyllabusContent() {
             {/* Source note */}
             <div style={{ margin:"14px 0", padding:"12px 14px", borderRadius:12, background:T.s2, border:`1px solid ${T.border}` }}>
               <div style={{ fontSize:11, color:T.sub, lineHeight:1.6 }}>
-                📋 <strong style={{ color:T.text }}>Source:</strong> {SYLLABUS_STATS.source} · {SYLLABUS_STATS.totalSubjects} subjects · {SYLLABUS_STATS.totalTopics} topics · {SYLLABUS_STATS.totalSubtopics} subtopics · {SYLLABUS_STATS.totalObjectives} learning objectives. All Companion lessons, mock exams, and study plans are aligned to this syllabus.
+                <AppIcon e="📋" /> <strong style={{ color:T.text }}>Source:</strong> <Rich>{SYLLABUS_STATS.source}</Rich> · <Rich>{SYLLABUS_STATS.totalSubjects}</Rich> subjects · <Rich>{SYLLABUS_STATS.totalTopics}</Rich> topics · <Rich>{SYLLABUS_STATS.totalSubtopics}</Rich> subtopics · <Rich>{SYLLABUS_STATS.totalObjectives}</Rich> learning objectives. All Companion lessons, mock exams, and study plans are aligned to this syllabus.
               </div>
             </div>
           </div>
@@ -327,7 +328,7 @@ function SyllabusContent() {
 
 export default function SyllabusPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F0F2F5" }}/>}>
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F4F5FA" }}/>}>
       <SyllabusContent />
     </Suspense>
   );

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Progress } from "../lib/progress";
 import { palette } from "../lib/design";
+import { Rich } from "../components/AppIcon";
 
 const SUBJECTS = [
   "English Language","Mathematics","Physics","Chemistry","Biology",
@@ -217,7 +218,7 @@ ${q}
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily:"var(--font)" }}>
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg,#1877F2,#0C5FD1)", padding: "20px 20px 28px" }}>
+      <div style={{ background: "linear-gradient(135deg,#4F46E5,#3730A3)", padding: "20px 20px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href="/" style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
             <ArrowLeft size={16} color="#fff" strokeWidth={2} />
@@ -243,7 +244,7 @@ ${q}
               </label>
               <select style={inp} value={subject} onChange={e => setSubject(e.target.value)}>
                 <option value="">Any</option>
-                {SUBJECTS.map(s => <option key={s}>{s}</option>)}
+                {SUBJECTS.map(s => <option key={s}><Rich>{s}</Rich></option>)}
               </select>
             </div>
             <div>
@@ -252,7 +253,7 @@ ${q}
               </label>
               <select style={inp} value={year} onChange={e => setYear(e.target.value)}>
                 <option value="">Any</option>
-                {YEARS.map(y => <option key={y}>{y}</option>)}
+                {YEARS.map(y => <option key={y}><Rich>{y}</Rich></option>)}
               </select>
             </div>
           </div>
@@ -281,11 +282,11 @@ ${q}
               disabled={loading || !q.trim()}
               style={{
                 flex: 1, padding: 13, borderRadius: 10, border: "none",
-                background: loading || !q.trim() ? T.s3 : "linear-gradient(135deg,#1877F2,#0C5FD1)",
+                background: loading || !q.trim() ? T.s3 : "linear-gradient(135deg,#4F46E5,#3730A3)",
                 color: loading || !q.trim() ? T.muted : "#fff",
                 fontWeight: 700, fontSize: 14,
                 cursor: loading || !q.trim() ? "not-allowed" : "pointer",
-                boxShadow: !loading && q.trim() ? "0 4px 12px rgba(24,119,242,0.3)" : "none",
+                boxShadow: !loading && q.trim() ? "0 4px 12px rgba(79,70,229,0.3)" : "none",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 transition: "all 0.2s",
               }}
@@ -300,25 +301,25 @@ ${q}
         {(loading || answer) && (
           <div style={{ background: T.surface, borderRadius: 16, padding: 18, border: `1px solid ${T.border}`, marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${T.border}` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#1877F2,#42A5F5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Lightbulb size={18} color="#fff" strokeWidth={1.8} />
               </div>
               <div>
                 <div style={{ fontWeight: 700, color: T.text, fontSize: 15 }}>AI Explanation</div>
-                {subject && <div style={{ fontSize: 11, color: T.sub }}>{subject}{year ? ` · ${year}` : ""}</div>}
+                {subject && <div style={{ fontSize: 11, color: T.sub }}><Rich>{subject}</Rich>{year ? ` · ${year}` : ""}</div>}
               </div>
             </div>
 
             {loading ? (
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 {[0,1,2].map(i => (
-                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#1877F2", animation: "dot 1.2s infinite", animationDelay: `${i * 0.15}s` }} />
+                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#4F46E5", animation: "dot 1.2s infinite", animationDelay: `${i * 0.15}s` }} />
                 ))}
                 <span style={{ fontSize: 13, color: T.sub, marginLeft: 4 }}>Thinking…</span>
               </div>
             ) : (
               <div style={{ fontSize: 14, color: T.text, lineHeight: 1.8 }}>
-                <ReactMarkdown>{answer}</ReactMarkdown>
+                <ReactMarkdown><Rich>{answer}</Rich></ReactMarkdown>
               </div>
             )}
           </div>
@@ -338,7 +339,7 @@ ${q}
               {/* Bulk actions */}
               {isSelecting ? (
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: T.sub }}>{selected.size} selected</span>
+                  <span style={{ fontSize: 12, color: T.sub }}><Rich>{selected.size}</Rich> selected</span>
                   <button
                     onClick={deleteSelected}
                     style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8, border: "none", background: "#FEE2E2", color: "#D0021B", fontWeight: 600, fontSize: 12, cursor: "pointer" }}
@@ -372,21 +373,21 @@ ${q}
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "12px 16px",
                     borderBottom: i < history.length - 1 ? `1px solid ${T.border}` : "none",
-                    background: isSel ? (dark ? "#1A2A4A" : "#EBF3FF") : "transparent",
+                    background: isSel ? (dark ? "#1F2050" : "#EBF3FF") : "transparent",
                     transition: "background 0.1s",
                   }}
                 >
                   {/* Select checkbox area */}
                   <div
                     onClick={() => toggleSelect(h.id)}
-                    style={{ width: 22, height: 22, borderRadius: 6, border: `1.5px solid ${isSel ? "#1877F2" : T.border}`, background: isSel ? "#1877F2" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
+                    style={{ width: 22, height: 22, borderRadius: 6, border: `1.5px solid ${isSel ? "#4F46E5" : T.border}`, background: isSel ? "#4F46E5" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
                   >
                     {isSel && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
                   </div>
 
                   {/* Icon */}
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: dark ? T.s2 : "#EBF3FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <BookOpen size={14} color="#1877F2" strokeWidth={1.8} />
+                    <BookOpen size={14} color="#4F46E5" strokeWidth={1.8} />
                   </div>
 
                   {/* Content — tap to load */}
@@ -394,11 +395,11 @@ ${q}
                     style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
                     onClick={() => { setQ(h.q); setAnswer(h.a); setSubject(h.subject); setYear(h.year); }}
                   >
-                    <div style={{ fontSize: 11, color: "#1877F2", fontWeight: 600, marginBottom: 2 }}>
-                      {h.subject}{h.year ? ` · ${h.year}` : ""} · {relativeTime(h.ts)}
+                    <div style={{ fontSize: 11, color: "#4F46E5", fontWeight: 600, marginBottom: 2 }}>
+                      <Rich>{h.subject}</Rich>{h.year ? ` · ${h.year}` : ""} · {relativeTime(h.ts)}
                     </div>
                     <div style={{ fontSize: 13, color: T.text, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {h.q}
+                      <Rich>{h.q}</Rich>
                     </div>
                   </div>
 
@@ -426,7 +427,7 @@ ${q}
         {history.length === 0 && !answer && !loading && (
           <div style={{ background: T.surface, borderRadius: 16, padding: "32px 24px", textAlign: "center", border: `1px solid ${T.border}` }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: "#EBF3FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-              <BookOpen size={24} color="#1877F2" strokeWidth={1.8} />
+              <BookOpen size={24} color="#4F46E5" strokeWidth={1.8} />
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 6 }}>No questions yet</div>
             <div style={{ fontSize: 13, color: T.sub, lineHeight: 1.5 }}>
@@ -440,16 +441,16 @@ ${q}
       {undo && (
         <div style={{
           position: "fixed", bottom: 80, left: 16, right: 16, zIndex: 500,
-          background: dark ? "#1c1c1e" : "#050505",
+          background: dark ? "#1c1c1e" : "#0F172A",
           borderRadius: 14, padding: "14px 16px",
           display: "flex", alignItems: "center", gap: 12,
           boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
           animation: "slideUp 0.2s ease",
         }}>
-          <span style={{ flex: 1, fontSize: 13, color: "#fff", fontWeight: 500 }}>{undo.label}</span>
+          <span style={{ flex: 1, fontSize: 13, color: "#fff", fontWeight: 500 }}><Rich>{undo.label}</Rich></span>
           <button
             onClick={doUndo}
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 9, border: "none", background: "#1877F2", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 9, border: "none", background: "#4F46E5", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
           >
             <RotateCcw size={13} strokeWidth={2} /> Undo
           </button>
@@ -473,7 +474,7 @@ ${q}
 export default function Solver() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight:"100vh",background:"#F0F2F5",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial",color:"#65676B" }}>
+      <div style={{ minHeight:"100vh",background:"#F4F5FA",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial",color:"#475569" }}>
         Loading…
       </div>
     }>

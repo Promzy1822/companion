@@ -16,33 +16,33 @@ export async function sendPasswordResetEmail(
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif">
+<body style="margin:0;padding:0;background:#F4F5FA;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px">
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
-        <tr><td style="background:#1877F2;padding:32px 24px;text-align:center">
+        <tr><td style="background:#4F46E5;padding:32px 24px;text-align:center">
           <h1 style="color:#fff;margin:0;font-size:22px;font-weight:800;letter-spacing:-0.5px">${APP}</h1>
           <p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:13px">AI JAMB Study Assistant</p>
         </td></tr>
         <tr><td style="padding:32px 24px">
-          <h2 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#050505">Reset your password</h2>
-          <p style="margin:0 0 24px;font-size:14px;color:#65676B;line-height:1.6">
+          <h2 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#0F172A">Reset your password</h2>
+          <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.6">
             Hi ${name}, tap the button below to reset your password. This link expires in <strong>1 hour</strong>.
           </p>
           <div style="text-align:center;margin-bottom:24px">
-            <a href="${resetUrl}" style="display:inline-block;padding:14px 32px;background:#1877F2;color:#fff;border-radius:50px;font-weight:700;font-size:15px;text-decoration:none;box-shadow:0 4px 14px rgba(24,119,242,0.35)">
+            <a href="${resetUrl}" style="display:inline-block;padding:14px 32px;background:#4F46E5;color:#fff;border-radius:50px;font-weight:700;font-size:15px;text-decoration:none;box-shadow:0 4px 14px rgba(79,70,229,0.35)">
               Reset Password →
             </a>
           </div>
-          <p style="margin:0 0 8px;font-size:12px;color:#8A8D91">Or copy this link:</p>
-          <p style="margin:0;font-size:11px;color:#1877F2;word-break:break-all">${resetUrl}</p>
-          <p style="margin:16px 0 0;font-size:12px;color:#8A8D91;line-height:1.6">
+          <p style="margin:0 0 8px;font-size:12px;color:#6B7385">Or copy this link:</p>
+          <p style="margin:0;font-size:11px;color:#4F46E5;word-break:break-all">${resetUrl}</p>
+          <p style="margin:16px 0 0;font-size:12px;color:#6B7385;line-height:1.6">
             If you didn't request a password reset, ignore this email. Your password won't change.
             <br>This link expires in 1 hour and can only be used once.
           </p>
         </td></tr>
-        <tr><td style="padding:16px 24px;border-top:1px solid #E4E6EB;text-align:center">
-          <p style="margin:0;font-size:11px;color:#8A8D91">© ${new Date().getFullYear()} Companion · AI JAMB Study Assistant</p>
+        <tr><td style="padding:16px 24px;border-top:1px solid #E3E6EF;text-align:center">
+          <p style="margin:0;font-size:11px;color:#6B7385">© ${new Date().getFullYear()} Companion · AI JAMB Study Assistant</p>
         </td></tr>
       </table>
     </td></tr>

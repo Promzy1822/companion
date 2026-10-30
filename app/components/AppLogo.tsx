@@ -19,7 +19,7 @@ export default function AppLogo({ size = 32, showText = true, darkMode = false, 
         <span style={{
           fontWeight: 800,
           fontSize: Math.round(size * 0.56) + "px",
-          color: darkMode ? "#E4E6EB" : "#050505",
+          color: darkMode ? "#E3E6EF" : "#0F172A",
           letterSpacing: "-0.4px",
           lineHeight: 1,
         }}>

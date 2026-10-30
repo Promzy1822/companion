@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { C, palette } from "../lib/design";
 import { CalendarDays } from "lucide-react";
+import { Rich } from "./AppIcon";
 
 export default function CountdownBanner({ darkMode = false }: { darkMode?: boolean }) {
   const T = palette(darkMode);
@@ -44,10 +45,10 @@ export default function CountdownBanner({ darkMode = false }: { darkMode?: boole
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 13, color: darkMode ? "#aaa" : color + "cc", fontWeight: 600, marginBottom: 2 }}>
-          {urgent ? "⚠️ Exam very close!" : "Your JAMB Countdown"}
+          <Rich>{urgent ? "⚠️ Exam very close!" : "Your JAMB Countdown"}</Rich>
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, color: darkMode ? "#fff" : color, lineHeight: 1 }}>
-          {days === 0 ? "Today! 🎯" : `${days} day${days === 1 ? "" : "s"} to go`}
+          <Rich>{days === 0 ? "Today! 🎯" : `${days} day${days === 1 ? "" : "s"} to go`}</Rich>
         </div>
         <div style={{ fontSize: 11, color: darkMode ? "#888" : "#888", marginTop: 2 }}>
           Exam date: {new Date(deadline).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}

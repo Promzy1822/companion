@@ -7,17 +7,22 @@ interface PageShellProps {
   dark?:    boolean;
 }
 
+// Becomes true once any page has hydrated in this tab. After that, client-side
+// navigations render instantly: there is no server HTML to match, so the
+// full-screen loader (and its flash) is only needed on a hard load.
+let booted = false;
+
 /**
- * Wraps every page to prevent blank white/gray screens.
- * Shows a full-screen loader until the component is mounted
- * and localStorage is readable (client-side hydration complete).
+ * Wraps every page. On a hard load it shows the loader until hydration is done
+ * (so localStorage reads never cause a mismatch). On later navigations it
+ * renders the page immediately.
  */
 export default function PageShell({ children, dark = false }: PageShellProps) {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(booted);
 
   useEffect(() => {
-    // Single RAF ensures DOM is painted before we show content
-    const id = requestAnimationFrame(() => setReady(true));
+    if (booted) return;
+    const id = requestAnimationFrame(() => { booted = true; setReady(true); });
     return () => cancelAnimationFrame(id);
   }, []);
 

@@ -12,6 +12,7 @@ import CountdownBanner from "./components/CountdownBanner";
 import { Session } from "./lib/session";
 import { C, D, palette } from "./lib/design";
 import { RefreshCw, Calculator, Newspaper, ChevronDown, ChevronUp } from "lucide-react";
+import { AppIcon } from "./components/AppIcon";
 
 interface NewsItem { title:string; url:string; source:string; time:string; image?:string; category?:string; }
 interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; }
@@ -126,14 +127,14 @@ export default function Home() {
         fontFamily:"var(--font)",
       }}>
         {/* Hero header */}
-        <div style={{
+        <div className="hero-banner" style={{
           background: darkMode
-            ? "linear-gradient(135deg,#1A2A4A,#1877F2)"
-            : "linear-gradient(135deg,#1877F2,#0C5FD1)",
+            ? "linear-gradient(135deg,#1F2050,#4F46E5)"
+            : "linear-gradient(135deg,#4F46E5,#3730A3)",
           padding: "24px 20px 32px",
         }}>
           <div style={{ color:"rgba(255,255,255,0.8)", fontSize:"13px", marginBottom:"4px" }}>
-            {greeting} 👋
+            {greeting} <AppIcon e="👋" />
           </div>
           <div style={{ color:"#fff", fontSize:"22px", fontWeight:800, letterSpacing:"-0.4px" }}>
             {user?.name.split(" ")[0]}
@@ -152,15 +153,15 @@ export default function Home() {
           {/* AI CTA */}
           <Link href="/ai" style={{ textDecoration:"none", display:"block", marginBottom:"14px" }}>
             <div style={{
-              background:"linear-gradient(135deg,#1877F2,#166FE5)",
+              background:"linear-gradient(135deg,#4F46E5,#4338CA)",
               borderRadius:"16px", padding:"18px 20px",
               display:"flex", alignItems:"center", gap:"14px",
-              boxShadow:"0 6px 20px rgba(24,119,242,0.35)",
+              boxShadow:"0 6px 20px rgba(79,70,229,0.35)",
               position:"relative", overflow:"hidden",
             }}>
               <div style={{ position:"absolute", top:"-20px", right:"-20px", width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }} />
-              <div style={{ width:48, height:48, borderRadius:"14px", background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"24px", flexShrink:0 }}>
-                🤖
+              <div style={{ width:48, height:48, borderRadius:"14px", background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"24px", color:"#fff", flexShrink:0 }}>
+                <AppIcon e="🤖" />
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ color:"#fff", fontWeight:800, fontSize:"16px", letterSpacing:"-0.2px" }}>Ask AI Anything</div>
@@ -238,7 +239,7 @@ export default function Home() {
                 {result && (
                   <div style={{
                     padding:"16px", borderRadius:"12px", marginTop:"12px",
-                    background: darkMode ? T.s2 : "#F0F7FF",
+                    background: darkMode ? T.s2 : "#F5F7FF",
                     border:"1.5px solid "+result.color+"33",
                   }}>
                     <div style={{ textAlign:"center", marginBottom:"12px" }}>

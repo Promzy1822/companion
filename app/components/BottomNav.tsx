@@ -74,7 +74,7 @@ export default function BottomNav({ darkMode }: { darkMode?: boolean }) {
               className="rail-link"
               aria-current={active ? "page" : undefined}
               style={{
-                background: active ? (dm ? "#1A2A4A" : C.primaryLight) : undefined,
+                background: active ? (dm ? "#1F2050" : C.primaryLight) : undefined,
                 color:      active ? C.primary : T.sub,
                 fontWeight: active ? 700 : 600,
               }}
@@ -123,18 +123,18 @@ export default function BottomNav({ darkMode }: { darkMode?: boolean }) {
               <div className="nav-pill" style={{
                 width: 44, height: 28, borderRadius: "14px",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                background: active ? (dm ? "#1A2A4A" : C.primaryLight) : "transparent",
+                background: active ? (dm ? "#1F2050" : C.primaryLight) : "transparent",
               }}>
                 <Icon
                   size={21}
                   strokeWidth={active ? 2.2 : 1.8}
-                  color={active ? C.primary : (dm ? "#8A8D91" : "#65676B")}
+                  color={active ? C.primary : T.sub}
                 />
               </div>
               <span style={{
                 fontSize: "10.5px",
                 fontWeight: active ? 700 : 500,
-                color: active ? C.primary : (dm ? "#8A8D91" : "#65676B"),
+                color: active ? C.primary : T.sub,
                 lineHeight: 1,
               }}>
                 {tab.label}

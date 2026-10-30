@@ -1,23 +1,23 @@
 // Centralised design tokens — import in any page/component
 
 export const C = {
-  primary:      "#1877F2",
-  primaryHover: "#166FE5",
-  primaryDark:  "#0C5FD1",
-  primaryLight: "#E7F0FF",
-  primarySoft:  "#F0F7FF",
+  primary:      "#4F46E5",
+  primaryHover: "#4338CA",
+  primaryDark:  "#3730A3",
+  primaryLight: "#EEF2FF",
+  primarySoft:  "#F5F7FF",
 
-  bg:           "#F0F2F5",
+  bg:           "#F4F5FA",
   surface:      "#FFFFFF",
-  surface2:     "#F7F8FA",
-  surface3:     "#EBEDF0",
+  surface2:     "#F8F9FC",
+  surface3:     "#EEF0F6",
 
-  border:       "#E4E6EB",
-  borderLight:  "#F0F2F5",
+  border:       "#E3E6EF",
+  borderLight:  "#F4F5FA",
 
-  text:         "#050505",
-  sub:          "#65676B",
-  muted:        "#8A8D91",
+  text:         "#0F172A",
+  sub:          "#475569",
+  muted:        "#6B7385",
 
   success:      "#31A24C",
   successLight: "#E6F4EA",
@@ -30,14 +30,14 @@ export const C = {
 };
 
 export const D = {
-  bg:       "#18191A",
-  surface:  "#242526",
-  surface2: "#3A3B3C",
-  surface3: "#4E4F50",
-  border:   "#3E4042",
-  text:     "#E4E6EB",
-  sub:      "#B0B3B8",
-  muted:    "#8A8D91",
+  bg:       "#0E1018",
+  surface:  "#161925",
+  surface2: "#1E2230",
+  surface3: "#2A2F42",
+  border:   "#2A2E3F",
+  text:     "#E3E6EF",
+  sub:      "#A7AEC2",
+  muted:    "#7C849A",
 };
 
 export function palette(dark: boolean) {

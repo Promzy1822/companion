@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import RouteProgress from "./components/RouteProgress";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor:   "#1877F2",
+  themeColor:   "#4F46E5",
   width:        "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -40,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title"            content="Companion" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable"                content="yes" />
-        <meta name="theme-color"                           content="#1877F2" />
+        <meta name="theme-color"                           content="#4F46E5" />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
 
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }} />
         </div>
 
+        <RouteProgress />
         <div className="app-shell">
           {children}
         </div>

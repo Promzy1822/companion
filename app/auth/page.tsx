@@ -7,6 +7,7 @@ import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../l
 import { validateEmail, validatePassword, normaliseEmail } from "../lib/auth";
 import { C } from "../lib/design";
 import { Session } from "../lib/session";
+import { AppIcon, Rich } from "../components/AppIcon";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
@@ -152,13 +153,13 @@ export default function Auth() {
 
   const inp: React.CSSProperties = {
     width:"100%", padding:"13px 16px", borderRadius:"10px",
-    border:"1.5px solid #E4E6EB", fontSize:"15px", outline:"none",
-    background:"#F7F8FA", color:"#050505", boxSizing:"border-box", fontFamily:"inherit",
+    border:"1.5px solid #E3E6EF", fontSize:"15px", outline:"none",
+    background:"#F8F9FC", color:"#0F172A", boxSizing:"border-box", fontFamily:"inherit",
   };
-  const lbl: React.CSSProperties = { fontSize:"13px", fontWeight:600, color:"#65676B", display:"block", marginBottom:"6px" };
+  const lbl: React.CSSProperties = { fontSize:"13px", fontWeight:600, color:"#475569", display:"block", marginBottom:"6px" };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#F0F2F5", fontFamily:"var(--font)", display:"flex", flexDirection:"column" }}>
+    <div style={{ minHeight:"100vh", background:"#F4F5FA", fontFamily:"var(--font)", display:"flex", flexDirection:"column" }}>
       {/* Header */}
       <div style={{ background:C.primary, padding:"16px 20px 24px", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
@@ -193,16 +194,16 @@ export default function Auth() {
           {mode === "forgot" && (
             <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
               <div>
-                <h2 style={{ fontSize:"20px", fontWeight:800, color:"#050505", margin:"0 0 4px" }}>Reset your password</h2>
-                <p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Enter your email and we'll send a reset link</p>
+                <h2 style={{ fontSize:"20px", fontWeight:800, color:"#0F172A", margin:"0 0 4px" }}>Reset your password</h2>
+                <p style={{ fontSize:"13px", color:"#475569", margin:0 }}>Enter your email and we'll send a reset link</p>
               </div>
               <div>
                 <label style={lbl}>Email Address</label>
                 <input style={inp} type="email" placeholder="your@email.com" value={form.email} onChange={e=>update("email",e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleForgot()} autoComplete="email" />
               </div>
-              {error && <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}>⚠️ {error}</div>}
-              {info  && <div style={{ padding:"10px 14px", background:"#E6F4EA", border:"1px solid #31A24C44", borderRadius:"10px", color:"#0D8050", fontSize:"13px" }}>✅ {info}</div>}
-              <button onClick={handleForgot} disabled={loading} style={{ width:"100%", padding:"14px", borderRadius:"10px", border:"none", background:loading?"#B0B3B8":C.primary, color:"#fff", fontWeight:700, fontSize:"15px", cursor:loading?"not-allowed":"pointer" }}>
+              {error && <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}><AppIcon e="⚠️" /> <Rich>{error}</Rich></div>}
+              {info  && <div style={{ padding:"10px 14px", background:"#E6F4EA", border:"1px solid #31A24C44", borderRadius:"10px", color:"#0D8050", fontSize:"13px" }}><AppIcon e="✅" /> <Rich>{info}</Rich></div>}
+              <button onClick={handleForgot} disabled={loading} style={{ width:"100%", padding:"14px", borderRadius:"10px", border:"none", background:loading?"#A7AEC2":C.primary, color:"#fff", fontWeight:700, fontSize:"15px", cursor:loading?"not-allowed":"pointer" }}>
                 {loading ? "Sending…" : "Send Reset Link →"}
               </button>
               <button onClick={()=>{setMode("login");setError("");setInfo("");}} style={{ background:"none", border:"none", color:C.primary, fontWeight:700, fontSize:"13px", cursor:"pointer", textAlign:"center" }}>
@@ -215,8 +216,8 @@ export default function Auth() {
           {mode === "login" && (
             <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
               <div>
-                <h2 style={{ fontSize:"20px", fontWeight:800, color:"#050505", margin:"0 0 4px" }}>Log in to Companion</h2>
-                <p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Continue your JAMB preparation</p>
+                <h2 style={{ fontSize:"20px", fontWeight:800, color:"#0F172A", margin:"0 0 4px" }}>Log in to Companion</h2>
+                <p style={{ fontSize:"13px", color:"#475569", margin:0 }}>Continue your JAMB preparation</p>
               </div>
               <div>
                 <label style={lbl}>Email Address</label>
@@ -226,7 +227,7 @@ export default function Auth() {
                 <label style={lbl}>Password</label>
                 <div style={{ position:"relative" }}>
                   <input style={{ ...inp, paddingRight:"44px" }} type={showPw?"text":"password"} placeholder="Your password" value={form.password} onChange={e=>update("password",e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()} autoComplete="current-password" />
-                  <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:"#65676B" }}>
+                  <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:"#475569" }}>
                     {showPw ? <EyeOff size={18}/> : <Eye size={18}/>}
                   </button>
                 </div>
@@ -234,11 +235,11 @@ export default function Auth() {
               <button onClick={()=>{setMode("forgot");setError("");setInfo("");}} style={{ background:"none", border:"none", color:C.primary, fontSize:"13px", fontWeight:600, cursor:"pointer", textAlign:"right", padding:0 }}>
                 Forgot password?
               </button>
-              {error && <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}>⚠️ {error}</div>}
-              <button onClick={handleLogin} disabled={loading} style={{ width:"100%", padding:"14px", borderRadius:"10px", border:"none", background:loading?"#B0B3B8":C.primary, color:"#fff", fontWeight:700, fontSize:"15px", cursor:loading?"not-allowed":"pointer", boxShadow:`0 2px 10px rgba(24,119,242,0.3)` }}>
+              {error && <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}><AppIcon e="⚠️" /> <Rich>{error}</Rich></div>}
+              <button onClick={handleLogin} disabled={loading} style={{ width:"100%", padding:"14px", borderRadius:"10px", border:"none", background:loading?"#A7AEC2":C.primary, color:"#fff", fontWeight:700, fontSize:"15px", cursor:loading?"not-allowed":"pointer", boxShadow:`0 2px 10px rgba(79,70,229,0.3)` }}>
                 {loading ? "Logging in…" : "Log In →"}
               </button>
-              <p style={{ textAlign:"center", fontSize:"13px", color:"#65676B", margin:0 }}>
+              <p style={{ textAlign:"center", fontSize:"13px", color:"#475569", margin:0 }}>
                 No account?{" "}
                 <button onClick={()=>{setMode("signup");setStep(1);setError("");}} style={{ background:"none", border:"none", color:C.primary, fontWeight:700, cursor:"pointer", fontSize:"13px" }}>Sign up free</button>
               </p>
@@ -250,47 +251,47 @@ export default function Auth() {
             <div>
               <div style={{ display:"flex", gap:"6px", marginBottom:"24px" }}>
                 {[1,2,3].map(s=>(
-                  <div key={s} style={{ flex:1, height:"4px", borderRadius:"2px", background:s<=step?C.primary:"#E4E6EB", transition:"background 0.3s" }}/>
+                  <div key={s} style={{ flex:1, height:"4px", borderRadius:"2px", background:s<=step?C.primary:"#E3E6EF", transition:"background 0.3s" }}/>
                 ))}
               </div>
 
               {step === 1 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
-                  <div><h2 style={{ fontSize:"20px", fontWeight:800, color:"#050505", margin:"0 0 4px" }}>Personal Info</h2><p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 1 of 3</p></div>
+                  <div><h2 style={{ fontSize:"20px", fontWeight:800, color:"#0F172A", margin:"0 0 4px" }}>Personal Info</h2><p style={{ fontSize:"13px", color:"#475569", margin:0 }}>Step 1 of 3</p></div>
                   <div><label style={lbl}>Full Name</label><input style={inp} placeholder="e.g. Kelechi Promise" value={form.name} onChange={e=>update("name",e.target.value)} autoComplete="name" /></div>
                   <div><label style={lbl}>Email Address</label><input style={inp} type="email" placeholder="your@email.com" value={form.email} onChange={e=>update("email",e.target.value)} autoComplete="email" /></div>
                   <div>
                     <label style={lbl}>Password</label>
                     <div style={{ position:"relative" }}>
                       <input style={{ ...inp, paddingRight:"44px" }} type={showPw?"text":"password"} placeholder="Min. 6 characters" value={form.password} onChange={e=>update("password",e.target.value)} autoComplete="new-password" />
-                      <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:"#65676B" }}>
+                      <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:"#475569" }}>
                         {showPw ? <EyeOff size={18}/> : <Eye size={18}/>}
                       </button>
                     </div>
                   </div>
-                  <div><label style={lbl}>Target Institution</label><select style={inp} value={form.institution} onChange={e=>update("institution",e.target.value)}><option value="">Select institution…</option>{INSTITUTIONS.map(i=><option key={i}>{i}</option>)}</select></div>
-                  <div><label style={lbl}>Desired Course</label><select style={inp} value={form.course} onChange={e=>update("course",e.target.value)}><option value="">Select course…</option>{COURSES.map(c=><option key={c}>{c}</option>)}</select></div>
+                  <div><label style={lbl}>Target Institution</label><select style={inp} value={form.institution} onChange={e=>update("institution",e.target.value)}><option value="">Select institution…</option>{INSTITUTIONS.map(i=><option key={i}><Rich>{i}</Rich></option>)}</select></div>
+                  <div><label style={lbl}>Desired Course</label><select style={inp} value={form.course} onChange={e=>update("course",e.target.value)}><option value="">Select course…</option>{COURSES.map(c=><option key={c}><Rich>{c}</Rich></option>)}</select></div>
                   {rec && (
                     <div style={{ borderRadius:"12px", overflow:"hidden", border:`1px solid ${COMP_COLOR[rec.competition]}33` }}>
                       <div style={{ padding:"10px 14px", background:`${COMP_COLOR[rec.competition]}12` }}>
-                        <div style={{ fontSize:"11px", fontWeight:700, color:COMP_COLOR[rec.competition], marginBottom:"4px", textTransform:"uppercase", letterSpacing:"0.5px" }}>{rec.competition} Competition</div>
-                        <div style={{ fontSize:"13px", color:"#3C4043", lineHeight:1.5 }}>{rec.text}</div>
+                        <div style={{ fontSize:"11px", fontWeight:700, color:COMP_COLOR[rec.competition], marginBottom:"4px", textTransform:"uppercase", letterSpacing:"0.5px" }}><Rich>{rec.competition}</Rich> Competition</div>
+                        <div style={{ fontSize:"13px", color:"#3C4043", lineHeight:1.5 }}><Rich>{rec.text}</Rich></div>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", padding:"10px 14px" }}>
                         {[{label:"Minimum",val:rec.minJamb,color:"#D0021B"},{label:"Recommended",val:rec.recJamb,color:"#31A24C"}].map((s,i)=>(
-                          <div key={i} style={{ padding:"10px", borderRadius:"9px", background:"#F7F8FA", textAlign:"center", border:`1px solid ${s.color}33` }}>
-                            <div style={{ fontSize:"11px", color:"#65676B", marginBottom:"3px" }}>{s.label}</div>
-                            <div style={{ fontSize:"22px", fontWeight:900, color:s.color }}>{s.val}</div>
+                          <div key={i} style={{ padding:"10px", borderRadius:"9px", background:"#F8F9FC", textAlign:"center", border:`1px solid ${s.color}33` }}>
+                            <div style={{ fontSize:"11px", color:"#475569", marginBottom:"3px" }}><Rich>{s.label}</Rich></div>
+                            <div style={{ fontSize:"22px", fontWeight:900, color:s.color }}><Rich>{s.val}</Rich></div>
                           </div>
                         ))}
                       </div>
                       {prob && (
-                        <div style={{ padding:"10px 14px", borderTop:"1px solid #E4E6EB" }}>
+                        <div style={{ padding:"10px 14px", borderTop:"1px solid #E3E6EF" }}>
                           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"6px" }}>
-                            <span style={{ fontSize:"12px", color:"#65676B", fontWeight:600 }}>Admission chance at {form.target}</span>
-                            <span style={{ fontSize:"12px", fontWeight:700, color:prob.color }}>{prob.label}</span>
+                            <span style={{ fontSize:"12px", color:"#475569", fontWeight:600 }}>Admission chance at <Rich>{form.target}</Rich></span>
+                            <span style={{ fontSize:"12px", fontWeight:700, color:prob.color }}><Rich>{prob.label}</Rich></span>
                           </div>
-                          <div style={{ height:"7px", borderRadius:"4px", background:"#E4E6EB", overflow:"hidden" }}>
+                          <div style={{ height:"7px", borderRadius:"4px", background:"#E3E6EF", overflow:"hidden" }}>
                             <div style={{ height:"100%", width:`${prob.percent}%`, background:prob.color, transition:"width 0.5s" }}/>
                           </div>
                         </div>
@@ -302,27 +303,27 @@ export default function Auth() {
 
               {step === 2 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
-                  <div><h2 style={{ fontSize:"20px", fontWeight:800, color:"#050505", margin:"0 0 4px" }}>JAMB Subjects</h2><p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 2 of 3 — English is compulsory. Select 3 more.</p></div>
+                  <div><h2 style={{ fontSize:"20px", fontWeight:800, color:"#0F172A", margin:"0 0 4px" }}>JAMB Subjects</h2><p style={{ fontSize:"13px", color:"#475569", margin:0 }}>Step 2 of 3 — English is compulsory. Select 3 more.</p></div>
                   <div style={{ display:"flex", alignItems:"center", gap:"8px", padding:"10px 14px", borderRadius:"10px", background:"#E6F4EA", border:"1px solid #31A24C44" }}>
                     <CheckCircle size={15} color="#31A24C" strokeWidth={2}/><span style={{ fontSize:"13px", color:"#0D8050", fontWeight:600 }}>English Language (auto-included)</span>
                   </div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
                     {ALL_SUBJECTS.map(s=>{
                       const sel=form.subjects.includes(s), max=!sel&&form.subjects.length>=3;
-                      return <button key={s} onClick={()=>toggleSubject(s)} style={{ padding:"9px 14px", borderRadius:"50px", fontSize:"13px", cursor:max?"not-allowed":"pointer", border:`1.5px solid ${sel?C.primary:"#E4E6EB"}`, background:sel?C.primaryLight:"#fff", color:sel?C.primary:max?"#B0B3B8":"#3C4043", fontWeight:sel?700:400, opacity:max?0.5:1, transition:"all 0.15s" }}>{s}</button>;
+                      return <button key={s} onClick={()=>toggleSubject(s)} style={{ padding:"9px 14px", borderRadius:"50px", fontSize:"13px", cursor:max?"not-allowed":"pointer", border:`1.5px solid ${sel?C.primary:"#E3E6EF"}`, background:sel?C.primaryLight:"#fff", color:sel?C.primary:max?"#A7AEC2":"#3C4043", fontWeight:sel?700:400, opacity:max?0.5:1, transition:"all 0.15s" }}><Rich>{s}</Rich></button>;
                     })}
                   </div>
-                  <div style={{ padding:"10px 14px", borderRadius:"10px", background:form.subjects.length===3?"#E6F4EA":"#F0F7FF", border:`1px solid ${form.subjects.length===3?"#31A24C44":`${C.primary}44`}` }}>
-                    <span style={{ fontSize:"13px", color:form.subjects.length===3?"#0D8050":C.primary, fontWeight:700 }}>{form.subjects.length}/3 {form.subjects.length===3?"✓ Complete!":`— need ${3-form.subjects.length} more`}</span>
+                  <div style={{ padding:"10px 14px", borderRadius:"10px", background:form.subjects.length===3?"#E6F4EA":"#F5F7FF", border:`1px solid ${form.subjects.length===3?"#31A24C44":`${C.primary}44`}` }}>
+                    <span style={{ fontSize:"13px", color:form.subjects.length===3?"#0D8050":C.primary, fontWeight:700 }}><Rich>{form.subjects.length}</Rich>/3 {form.subjects.length===3?"✓ Complete!":`— need ${3-form.subjects.length} more`}</span>
                   </div>
                 </div>
               )}
 
               {step === 3 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"18px" }}>
-                  <div><h2 style={{ fontSize:"20px", fontWeight:800, color:"#050505", margin:"0 0 4px" }}>Set Your Goal</h2><p style={{ fontSize:"13px", color:"#65676B", margin:0 }}>Step 3 of 3</p></div>
+                  <div><h2 style={{ fontSize:"20px", fontWeight:800, color:"#0F172A", margin:"0 0 4px" }}>Set Your Goal</h2><p style={{ fontSize:"13px", color:"#475569", margin:0 }}>Step 3 of 3</p></div>
                   <div>
-                    <label style={{ ...lbl, display:"flex", justifyContent:"space-between", alignItems:"center" }}><span>Target Score</span><span style={{ fontSize:"22px", fontWeight:900, color:C.primary }}>{form.target}</span></label>
+                    <label style={{ ...lbl, display:"flex", justifyContent:"space-between", alignItems:"center" }}><span>Target Score</span><span style={{ fontSize:"22px", fontWeight:900, color:C.primary }}><Rich>{form.target}</Rich></span></label>
                     <input type="range" min="180" max="400" step="5" value={form.target} onChange={e=>update("target",e.target.value)} style={{ width:"100%", accentColor:C.primary }}/>
                   </div>
                   <div><label style={lbl}>JAMB Exam Date</label><input type="date" style={inp} value={form.deadline} onChange={e=>update("deadline",e.target.value)}/></div>
@@ -330,22 +331,22 @@ export default function Auth() {
                     <label style={{ ...lbl, marginBottom:"10px" }}>Preparation Level</label>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px" }}>
                       {[["1","😰 Not ready"],["2","😐 Just started"],["3","😊 Good progress"],["4","🔥 Almost ready"]].map(([v,l])=>(
-                        <button key={v} onClick={()=>update("selfRating",v)} style={{ padding:"12px 8px", borderRadius:"10px", fontSize:"12px", cursor:"pointer", border:`1.5px solid ${form.selfRating===v?C.primary:"#E4E6EB"}`, background:form.selfRating===v?C.primaryLight:"#fff", color:form.selfRating===v?C.primary:"#65676B", fontWeight:form.selfRating===v?700:400, transition:"all 0.15s" }}>{l}</button>
+                        <button key={v} onClick={()=>update("selfRating",v)} style={{ padding:"12px 8px", borderRadius:"10px", fontSize:"12px", cursor:"pointer", border:`1.5px solid ${form.selfRating===v?C.primary:"#E3E6EF"}`, background:form.selfRating===v?C.primaryLight:"#fff", color:form.selfRating===v?C.primary:"#475569", fontWeight:form.selfRating===v?700:400, transition:"all 0.15s" }}><Rich>{l}</Rich></button>
                       ))}
                     </div>
                   </div>
                 </div>
               )}
 
-              {error && <div style={{ marginTop:"12px", padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}>⚠️ {error}</div>}
+              {error && <div style={{ marginTop:"12px", padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}><AppIcon e="⚠️" /> <Rich>{error}</Rich></div>}
 
               <div style={{ marginTop:"20px", display:"flex", gap:"10px" }}>
                 {step > 1 && <button onClick={()=>{setStep(s=>s-1);setError("");}} style={{ flex:1, padding:"14px", borderRadius:"10px", border:`1.5px solid ${C.primary}`, background:"#fff", color:C.primary, fontWeight:700, fontSize:"14px", cursor:"pointer" }}>← Back</button>}
-                <button onClick={step<3?nextStep:signup} disabled={loading} style={{ flex:2, padding:"14px", borderRadius:"10px", border:"none", background:loading?"#B0B3B8":C.primary, color:"#fff", fontWeight:700, fontSize:"15px", cursor:loading?"not-allowed":"pointer", boxShadow:`0 2px 10px rgba(24,119,242,0.3)` }}>
-                  {loading ? "Please wait…" : step<3 ? "Continue →" : "🚀 Create Account"}
+                <button onClick={step<3?nextStep:signup} disabled={loading} style={{ flex:2, padding:"14px", borderRadius:"10px", border:"none", background:loading?"#A7AEC2":C.primary, color:"#fff", fontWeight:700, fontSize:"15px", cursor:loading?"not-allowed":"pointer", boxShadow:`0 2px 10px rgba(79,70,229,0.3)` }}>
+                  <Rich>{loading ? "Please wait…" : step<3 ? "Continue →" : "🚀 Create Account"}</Rich>
                 </button>
               </div>
-              <p style={{ textAlign:"center", marginTop:"14px", fontSize:"13px", color:"#65676B", margin:"14px 0 0" }}>
+              <p style={{ textAlign:"center", marginTop:"14px", fontSize:"13px", color:"#475569", margin:"14px 0 0" }}>
                 Already have an account?{" "}
                 <button onClick={()=>{setMode("login");setStep(1);setError("");}} style={{ background:"none", border:"none", color:C.primary, fontWeight:700, cursor:"pointer", fontSize:"13px" }}>Log in</button>
               </p>

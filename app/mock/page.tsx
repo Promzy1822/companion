@@ -8,6 +8,7 @@ import { ArrowLeft, ClipboardList, Trophy, BarChart3, AlertTriangle } from "luci
 import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
+import { AppIcon, Rich } from "../components/AppIcon";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; }
 interface Result   { score:number; total:number; bySubject:Record<string,{correct:number;total:number}>; timeTaken:number; }
@@ -94,7 +95,7 @@ export default function MockExam() {
     <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
       <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
 
-      <div style={{background:dark?"linear-gradient(135deg,#1A2A4A,#1877F2)":"linear-gradient(135deg,#1877F2,#0C5FD1)",padding:"20px 20px 32px"}}>
+      <div style={{background:dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"20px 20px 32px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
           <Link href="/" style={{width:34,height:34,borderRadius:"10px",backgroundColor:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none"}}>
             <ArrowLeft size={16} color="#fff" strokeWidth={2} />
@@ -124,10 +125,10 @@ export default function MockExam() {
                 </button>
               ))}
             </div>
-            <p style={{fontSize:"11px",color:T.sub,marginTop:"8px",textAlign:"center"}}>⏱ {Math.round(numQ*1.5)} minutes · {numQ} questions</p>
+            <p style={{fontSize:"11px",color:T.sub,marginTop:"8px",textAlign:"center"}}><AppIcon e="⏱" /> {Math.round(numQ*1.5)} minutes · {numQ} questions</p>
           </div>
-          <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?"#ccc":C.primary,color:"#fff",fontWeight:700,fontSize:"15px",cursor:generating?"not-allowed":"pointer",boxShadow:generating?"none":`0 4px 14px rgba(24,119,242,0.35)`}}>
-            {generating?"🤖 Generating questions…":"Start Mock Exam →"}
+          <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?"#ccc":C.primary,color:"#fff",fontWeight:700,fontSize:"15px",cursor:generating?"not-allowed":"pointer",boxShadow:generating?"none":`0 4px 14px rgba(79,70,229,0.35)`}}>
+            <Rich>{generating?"🤖 Generating questions…":"Start Mock Exam →"}</Rich>
           </button>
         </div>
 
@@ -160,7 +161,7 @@ export default function MockExam() {
   if (phase==="exam") return (
     <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)",display:"flex",flexDirection:"column"}}>
       {/* Sticky timer bar */}
-      <div style={{background:dark?"linear-gradient(135deg,#111,#1A2A4A)":"linear-gradient(135deg,#1877F2,#0C5FD1)",padding:"14px 20px",position:"sticky",top:0,zIndex:50}}>
+      <div style={{background:dark?"linear-gradient(135deg,#111,#1F2050)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"14px 20px",position:"sticky",top:0,zIndex:50}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px"}}>{current+1} / {questions.length}</div>
           <div style={{color:"#fff",fontSize:"22px",fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:"-0.5px"}}>{fmt(timeLeft)}</div>
@@ -208,7 +209,7 @@ export default function MockExam() {
             <div style={{display:"flex",gap:"10px",marginTop:"14px"}}>
               <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} style={{flex:1,padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:current===0?T.muted:T.text,fontWeight:700,cursor:current===0?"not-allowed":"pointer"}}>← Prev</button>
               {current<questions.length-1?(
-                <button onClick={()=>setCurrent(c=>c+1)} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:C.primary,color:"#fff",fontWeight:700,cursor:"pointer",boxShadow:`0 2px 8px rgba(24,119,242,0.3)`}}>Next →</button>
+                <button onClick={()=>setCurrent(c=>c+1)} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:C.primary,color:"#fff",fontWeight:700,cursor:"pointer",boxShadow:`0 2px 8px rgba(79,70,229,0.3)`}}>Next →</button>
               ):(
                 <button onClick={submitExam} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:"#31A24C",color:"#fff",fontWeight:700,cursor:"pointer"}}>Submit ✓</button>
               )}
@@ -228,7 +229,7 @@ export default function MockExam() {
 
     return (
       <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
-        <div style={{background:dark?"linear-gradient(135deg,#1A2A4A,#1877F2)":"linear-gradient(135deg,#1877F2,#0C5FD1)",padding:"28px 20px 44px",textAlign:"center"}}>
+        <div style={{background:dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"28px 20px 44px",textAlign:"center"}}>
           <div style={{width:64,height:64,borderRadius:"18px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
             <Trophy size={30} color="#FFF8DB" strokeWidth={1.8} />
           </div>
@@ -236,7 +237,7 @@ export default function MockExam() {
           <div style={{color:"#fff",fontSize:"52px",fontWeight:900,letterSpacing:"-2px"}}>{result.score}/{result.total}</div>
           <div style={{color:"#FFF8DB",fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{pct}% · JAMB equivalent: {jambEq}</div>
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
-            {gap>=0 ? `✅ ${gap} pts above your target!` : `⚠️ ${Math.abs(gap)} pts below your target`}
+            <Rich>{gap>=0 ? `✅ ${gap} pts above your target!` : `⚠️ ${Math.abs(gap)} pts below your target`}</Rich>
           </div>
         </div>
 
@@ -273,18 +274,18 @@ export default function MockExam() {
               <div key={i} style={{padding:"12px",borderRadius:"12px",background:dark?"#2A1010":"#FEE2E2",border:"1px solid #FA3E3E33",marginBottom:"10px"}}>
                 <div style={{fontSize:"11px",color:"#FA3E3E",fontWeight:700,marginBottom:"4px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{q.subject}</div>
                 <div style={{fontSize:"13px",color:T.text,fontWeight:600,marginBottom:"6px"}}>{q.question}</div>
-                <div style={{fontSize:"12px",color:"#31A24C",fontWeight:600}}>✅ {q.options[q.correct]}</div>
+                <div style={{fontSize:"12px",color:"#31A24C",fontWeight:600}}><AppIcon e="✅" /> {q.options[q.correct]}</div>
                 <div style={{fontSize:"12px",color:T.sub,marginTop:"4px"}}>{q.explanation}</div>
               </div>
             ))}
-            {result.score===result.total && <div style={{textAlign:"center",padding:"20px",color:"#31A24C",fontWeight:700,fontSize:"15px"}}>🎉 Perfect score! No mistakes!</div>}
+            {result.score===result.total && <div style={{textAlign:"center",padding:"20px",color:"#31A24C",fontWeight:700,fontSize:"15px"}}><AppIcon e="🎉" /> Perfect score! No mistakes!</div>}
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
             <button onClick={()=>{setPhase("setup");setResult(null);setQuestions([]);setAnswers({});}} style={{padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
               Try Again
             </button>
-            <Link href="/studyplan" style={{padding:"13px",borderRadius:"12px",border:"none",background:C.primary,color:"#fff",fontWeight:700,textDecoration:"none",textAlign:"center",display:"block",boxShadow:`0 2px 8px rgba(24,119,242,0.3)`}}>
+            <Link href="/studyplan" style={{padding:"13px",borderRadius:"12px",border:"none",background:C.primary,color:"#fff",fontWeight:700,textDecoration:"none",textAlign:"center",display:"block",boxShadow:`0 2px 8px rgba(79,70,229,0.3)`}}>
               Study Plan →
             </Link>
           </div>

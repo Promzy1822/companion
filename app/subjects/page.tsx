@@ -7,9 +7,10 @@ import { ArrowLeft, Star } from "lucide-react";
 import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
+import { Rich } from "../components/AppIcon";
 
 const SUBJECTS = [
-  { id:"english",     name:"English Language", icon:"📝", color:"#1877F2" },
+  { id:"english",     name:"English Language", icon:"📝", color:"#4F46E5" },
   { id:"mathematics", name:"Mathematics",       icon:"📐", color:"#7B3FBE" },
   { id:"physics",     name:"Physics",           icon:"⚡", color:"#B07D00" },
   { id:"chemistry",   name:"Chemistry",         icon:"🧪", color:"#0D8050" },
@@ -60,9 +61,9 @@ function SubjectsContent() {
           </div>
         )}
         <div style={{ width:44, height:44, borderRadius:"12px", background:`${s.color}15`, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"10px", fontSize:"22px" }}>
-          {s.icon}
+          <Rich>{s.icon}</Rich>
         </div>
-        <div style={{ fontWeight:700, color:T.text, fontSize:"13px", marginBottom:"3px" }}>{s.name}</div>
+        <div style={{ fontWeight:700, color:T.text, fontSize:"13px", marginBottom:"3px" }}><Rich>{s.name}</Rich></div>
         <div style={{ fontSize:"11px", color:s.color, fontWeight:600 }}>
           {mode==="learn" ? "Watch lessons →" : "Practice now →"}
         </div>
@@ -74,7 +75,7 @@ function SubjectsContent() {
     <div style={{ minHeight:"100vh", paddingTop:"56px", background:T.bg, fontFamily:"var(--font)" }}>
       <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
 
-      <div style={{ background: dark?"linear-gradient(135deg,#1A2A4A,#1877F2)":"linear-gradient(135deg,#1877F2,#0C5FD1)", padding:"20px 20px 32px" }}>
+      <div style={{ background: dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)", padding:"20px 20px 32px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
           <Link href="/" style={{ width:34, height:34, borderRadius:"10px", backgroundColor:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", textDecoration:"none", flexShrink:0 }}>
             <ArrowLeft size={16} color="#fff" strokeWidth={2} />
@@ -124,7 +125,7 @@ function SubjectsContent() {
 
 export default function Subjects() {
   return (
-    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F0F2F5", display:"flex", alignItems:"center", justifyContent:"center", color:"#65676B" }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F4F5FA", display:"flex", alignItems:"center", justifyContent:"center", color:"#475569" }}>Loading…</div>}>
       <SubjectsContent />
     </Suspense>
   );

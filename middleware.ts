@@ -23,11 +23,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  // getSession() only contacts Supabase when the token is about to expire.
+  // (getUser() made a network call to Supabase on EVERY page change, which was the main reason
+  // switching pages felt slow.) Nothing here makes access decisions, it only refreshes cookies.
+  await supabase.auth.getSession();
 
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|txt|woff|woff2)$).*)",
+  ],
 };

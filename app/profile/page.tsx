@@ -11,6 +11,7 @@ import Navbar,    { NAVBAR_HEIGHT }     from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 import { Session } from "../lib/session";
+import { AppIcon } from "../components/AppIcon";
 
 interface UserData {
   name: string; email: string; institution: string; course: string;
@@ -133,8 +134,8 @@ export default function Profile() {
         {/* Hero */}
         <div style={{
           background: dark
-            ? "linear-gradient(160deg,#111827 0%,#1E3A5F 60%,#1877F2 100%)"
-            : "linear-gradient(160deg,#1877F2 0%,#1565C0 100%)",
+            ? "linear-gradient(160deg,#111827 0%,#1E3A5F 60%,#4F46E5 100%)"
+            : "linear-gradient(160deg,#4F46E5 0%,#1565C0 100%)",
           padding: "28px 20px 40px", position: "relative", overflow: "hidden",
         }}>
           <div style={{ position:"absolute", top:-40, right:-40, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }} />
@@ -201,7 +202,7 @@ export default function Profile() {
                     </label>
                     <input type="range" min="180" max="400" step="5" value={form.target||"260"} onChange={e=>setForm(p=>({...p,target:e.target.value}))} style={{ width:"100%", accentColor:C.primary }} />
                   </div>
-                  <button onClick={saveProfile} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer", boxShadow:`0 2px 10px rgba(24,119,242,0.3)` }}>
+                  <button onClick={saveProfile} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer", boxShadow:`0 2px 10px rgba(79,70,229,0.3)` }}>
                     Save Changes
                   </button>
                 </div>
@@ -295,7 +296,7 @@ export default function Profile() {
                     <input style={{ ...inp, borderColor: confirmPw && confirmPw!==newPw ? "#FA3E3E" : T.border }} type="password" placeholder="Repeat new password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} />
                   </div>
                   {pwError && (
-                    <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}>⚠️ {pwError}</div>
+                    <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}><AppIcon e="⚠️" /> {pwError}</div>
                   )}
                   <button onClick={changePassword} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer" }}>
                     Update Password

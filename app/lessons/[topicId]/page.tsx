@@ -61,7 +61,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   }, [topicId]);
 
   if (loading) {
-    return <div style={{ minHeight: "100vh", background: "#F0F2F5" }} />;
+    return <div style={{ minHeight: "100vh", background: "#F4F5FA" }} />;
   }
 
   const T = palette(dark);

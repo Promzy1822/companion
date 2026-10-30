@@ -123,7 +123,7 @@ export default function Home() {
       <div style={{
         minHeight:"100vh", background:T.bg,
         paddingTop:NAVBAR_HEIGHT+"px",
-        fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",
+        fontFamily:"var(--font)",
       }}>
         {/* Hero header */}
         <div style={{

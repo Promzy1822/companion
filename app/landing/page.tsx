@@ -40,7 +40,7 @@ export default function Landing() {
   ];
 
   return (
-    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif", background: "#fff", overflowX: "hidden" }}>
+    <div style={{ fontFamily:"var(--font)", background: "#fff", overflowX: "hidden" }}>
 
       {/* ── NAV ── */}
       <nav style={{

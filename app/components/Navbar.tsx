@@ -74,7 +74,7 @@ export default function Navbar({
         Fixed always works relative to the viewport.
         The page content must have paddingTop: NAVBAR_HEIGHT to compensate.
       */}
-      <header style={{
+      <header className="top-bar" style={{
         position:   "fixed",
         top:        0,
         left:       0,
@@ -92,7 +92,7 @@ export default function Navbar({
         willChange: "auto",
         transform:  "translateZ(0)", /* creates its own stacking context, prevents paint issues */
       }}>
-        <AppLogo size={28} showText darkMode={darkMode} />
+        <span className="top-logo"><AppLogo size={28} showText darkMode={darkMode} /></span>
 
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
           {onToggleDark && (
@@ -146,7 +146,7 @@ export default function Navbar({
               </button>
 
               {open && (
-                <div style={{
+                <div className="nav-dropdown" style={{
                   /*
                     position fixed relative to viewport, not relative to the navbar.
                     top: NAVBAR_HEIGHT ensures it appears directly below the header.

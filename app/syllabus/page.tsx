@@ -68,7 +68,7 @@ function SyllabusContent() {
   const overallPct   = Math.round((totalDone / allTopicIds.length) * 100);
 
   return (
-    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif", paddingBottom:BOTTOM_NAV_HEIGHT+16 }}>
+    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"var(--font)", paddingBottom:BOTTOM_NAV_HEIGHT+16 }}>
 
       {/* Header */}
       <div style={{ background:C.primary, padding:"16px 20px 0" }}>

@@ -21,9 +21,9 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
   const topics = getTopics(subject);
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily:"var(--font)" }}>
       <Navbar darkMode={dark} />
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px" }}>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "16px" }}>
         <Link href="/subjects?mode=learn" style={{ display: "flex", alignItems: "center", gap: 6, color: T.sub, fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 12 }}>
           <ArrowLeft size={16} /> All subjects
         </Link>

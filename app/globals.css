@@ -55,7 +55,7 @@
   --shadow-xl:      0 8px 32px rgba(0,0,0,0.12);
 
   /* Typography */
-  --font:           -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font: var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Dark mode */
@@ -249,48 +249,100 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
 
 /* ── Responsive app shell ──────────────────────────────────────────────────── */
 /*
- * Mobile  (<640px): full width, no decoration — standard mobile PWA
- * Desktop (≥640px): 480px column centered, sides match the app's own
- *   background colour so nothing looks "out of place"
+ * Phone  (<768px):   full width, bottom tabs
+ * Tablet (768-1023): centered 720px column, bottom tabs aligned to it
+ * Laptop (>=1024):   left side rail + centered content column
  */
+:root { --rail-w: 248px; --content-max: 1040px; }
 
-/* Desktop sidebar background — uses the same grey as the app bg */
-body {
-  background: #E4E6EB; /* light mode desktop sides */
+/* Snappy, consistent interaction */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
-[data-dark="true"] body,
-body[data-dark="true"] {
-  background: #111213; /* dark mode desktop sides */
-}
+button:disabled { cursor: not-allowed; }
+a, button, [role="button"], input, select, textarea, label { touch-action: manipulation; }
 
-/* The app column itself */
 .app-shell {
   min-height: 100vh;
   background: var(--bg);
   position: relative;
 }
 
-@media (min-width: 640px) {
-  .app-shell {
-    max-width: 480px;
-    margin: 0 auto;
-    box-shadow:
-      -1px 0 0 rgba(0,0,0,0.08),
-       1px 0 0 rgba(0,0,0,0.08),
-       0 0 40px rgba(0,0,0,0.08);
-  }
+.side-rail { display: none; }
+.rail-link {
+  display: flex; align-items: center; gap: 12px;
+  height: 46px; padding: 0 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.rail-link:hover  { background: var(--surface-2); }
+.rail-link:active { transform: scale(0.98); }
 
-  /*
-   * Navbar and BottomNav use position:fixed relative to the VIEWPORT.
-   * On desktop we need them to stay inside the 480px column.
-   * Strategy: set left:50%, then use translateX(-50%) and
-   * max-width:480px so they align perfectly with the app-shell.
-   */
-  .navbar-fixed {
+.nav-pill { transition: transform 0.12s ease, background-color 0.15s ease; }
+.nav-tab:active .nav-pill { transform: scale(0.9); }
+
+/* Phones: 16px inputs stop iOS Safari zooming in on focus */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Tablet and up: centered column */
+@media (min-width: 768px) {
+  body { background: #E4E6EB; }
+  [data-dark="true"] body { background: #111213; }
+
+  .app-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    box-shadow: -1px 0 0 rgba(0,0,0,0.08), 1px 0 0 rgba(0,0,0,0.08), 0 0 40px rgba(0,0,0,0.08);
+  }
+  .navbar-fixed, .top-bar {
     left: 50% !important;
     right: auto !important;
     width: 100% !important;
-    max-width: 480px !important;
+    max-width: 720px !important;
     transform: translateX(-50%) !important;
   }
+  .nav-dropdown { right: calc((100vw - 720px) / 2 + 12px) !important; }
+}
+
+/* Laptop: side rail + content centered in the space to its right */
+@media (min-width: 1024px) {
+  body { background: var(--bg); }
+  [data-dark="true"] body { background: var(--bg); }
+
+  .app-shell {
+    max-width: var(--content-max);
+    margin: 0 0 0 calc(var(--rail-w) + max(0px, (100vw - var(--rail-w) - var(--content-max)) / 2));
+    box-shadow: none;
+  }
+  .side-rail {
+    display: flex;
+    position: fixed; top: 0; bottom: 0; left: 0;
+    width: var(--rail-w);
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 12px;
+    z-index: 210;
+    overflow-y: auto;
+  }
+  .bottom-nav { display: none !important; }
+  .top-bar {
+    left: var(--rail-w) !important;
+    right: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    justify-content: flex-end !important;
+  }
+  .top-logo { display: none; }
+  .nav-dropdown { right: 12px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .page-transition { animation: none; }
 }

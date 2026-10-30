@@ -214,7 +214,7 @@ ${q}
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, fontFamily:"var(--font)" }}>
 
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,#1877F2,#0C5FD1)", padding: "20px 20px 28px" }}>

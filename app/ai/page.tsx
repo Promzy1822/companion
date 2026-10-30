@@ -139,7 +139,7 @@ export default function AIChat() {
   const inputBord  = focused ? "#1877F2" : (dark ? "#2A2A35" : "#E0E3E8");
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: bg, fontFamily:"var(--font)", overflow: "hidden" }}>
 
       {/* Header */}
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: headerBg, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12 }}>

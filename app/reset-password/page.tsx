@@ -77,7 +77,7 @@ function ResetContent() {
   };
 
   if (sessionOk === false) return (
-    <div style={{ minHeight:"100vh", background:"#F0F2F5", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"-apple-system,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:"#F0F2F5", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"var(--font)" }}>
       <div style={{ background:"#fff", borderRadius:"16px", padding:"32px 24px", textAlign:"center", maxWidth:360 }}>
         <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
         <h2 style={{ fontWeight:800, color:"#050505", marginBottom:8 }}>Invalid Link</h2>
@@ -90,7 +90,7 @@ function ResetContent() {
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:"#F0F2F5", fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif", display:"flex", flexDirection:"column" }}>
+    <div style={{ minHeight:"100vh", background:"#F0F2F5", fontFamily:"var(--font)", display:"flex", flexDirection:"column" }}>
       <div style={{ background:C.primary, padding:"16px 20px 24px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
           <Link href="/auth" style={{ width:34, height:34, borderRadius:"10px", background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>

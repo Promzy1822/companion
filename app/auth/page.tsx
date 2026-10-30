@@ -158,7 +158,7 @@ export default function Auth() {
   const lbl: React.CSSProperties = { fontSize:"13px", fontWeight:600, color:"#65676B", display:"block", marginBottom:"6px" };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#F0F2F5", fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif", display:"flex", flexDirection:"column" }}>
+    <div style={{ minHeight:"100vh", background:"#F0F2F5", fontFamily:"var(--font)", display:"flex", flexDirection:"column" }}>
       {/* Header */}
       <div style={{ background:C.primary, padding:"16px 20px 24px", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>

@@ -146,7 +146,7 @@ function QuestionsContent() {
   return (
     <div style={{
       minHeight:"100vh", background:T.bg,
-      fontFamily:"-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",
+      fontFamily:"var(--font)",
       paddingBottom: BOTTOM_NAV_HEIGHT + 16,
     }}>
 

@@ -31,7 +31,7 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       background: "#F0F2F5",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      fontFamily:"var(--font)",
       padding: "24px", textAlign: "center",
     }}>
       <img src="/icon-192.png" alt="Companion" width={56} height={56}

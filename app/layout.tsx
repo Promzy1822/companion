@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-jakarta",
+});
 
 export const metadata: Metadata = {
   title: "Companion - AI JAMB Study Assistant",
@@ -18,11 +26,12 @@ export const viewport: Viewport = {
   width:        "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit:  "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
       <head>
         <link rel="manifest"         href="/manifest.json" />
         <link rel="icon"             href="/icon-192.png" type="image/png" sizes="192x192" />
@@ -35,21 +44,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ margin: 0, padding: 0 }}>
 
-        {/*
-          Detect theme BEFORE the splash paints, synchronously, so it never
-          flashes the wrong theme. This is a plain (non-async) script, so the
-          browser blocks rendering until it runs.
-        */}
+        {/* Set theme BEFORE first paint so it never flashes the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html:
           "document.documentElement.setAttribute('data-dark', localStorage.getItem('darkMode') === 'true' ? 'true' : 'false');"
         }} />
 
-        {/*
-          Cold-start splash screen.
-          Rendered in raw HTML so it shows BEFORE React hydrates.
-          The script below removes it from the DOM entirely after first load.
-          It is permanently destroyed — cannot reappear on page navigation.
-        */}
+        {/* Cold-start splash. Removed from the DOM after first load. */}
         <div id="companion-splash">
           <div style={{
             width: 88, height: 88, borderRadius: 24,
@@ -64,14 +64,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div style={{
             fontWeight: 800, fontSize: 22, color: "var(--text)",
             marginBottom: 4, letterSpacing: "-0.5px",
-            fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+            fontFamily: "var(--font)",
           }}>
             companion
           </div>
           <div style={{
             fontSize: 11, color: "var(--text-muted)", marginBottom: 40,
             letterSpacing: "0.5px",
-            fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+            fontFamily: "var(--font)",
           }}>
             AI JAMB STUDY ASSISTANT
           </div>
@@ -89,10 +89,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            // ── Splash screen — cold start only ──────────────────────────
-            // We track whether splash has already been dismissed.
-            // Once dismissed it is REMOVED from the DOM entirely so it
-            // can never reappear on client-side page navigation.
             var splashDone = false;
 
             function dismissSplash() {
@@ -102,13 +98,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               var el = document.getElementById('companion-splash');
               if (!el) return;
 
-              // Fade out
               el.style.transition = 'opacity 0.3s ease';
               el.style.opacity = '0';
               el.style.pointerEvents = 'none';
 
-              // Remove from DOM completely after fade
-              // This ensures it CANNOT reappear on navigation
               setTimeout(function() {
                 if (el && el.parentNode) {
                   el.parentNode.removeChild(el);
@@ -116,7 +109,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }, 350);
             }
 
-            // Show splash for at least 600ms then remove
             var shownAt = Date.now();
             var MIN_MS  = 600;
 
@@ -138,12 +130,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               });
             }
 
-            // ── Service worker ────────────────────────────────────────────
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.register('/sw.js').catch(function(){});
             }
 
-            // ── PWA install prompt ────────────────────────────────────────
             window.deferredPrompt = null;
             window.addEventListener('beforeinstallprompt', function(e) {
               e.preventDefault();
@@ -152,7 +142,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           })();
         `}} />
 
-        {/* Splash styles — scoped here, not in globals.css */}
         <style dangerouslySetInnerHTML={{ __html: `
           @keyframes companionSpin {
             from { transform: rotate(0deg); }
@@ -167,7 +156,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: var(--font);
           }
         `}} />
       </body>

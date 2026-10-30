@@ -68,9 +68,9 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
 
   if (error || !data) {
     return (
-      <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily:"var(--font)" }}>
         <Navbar darkMode={dark} />
-        <div style={{ maxWidth: 480, margin: "0 auto", padding: "24px 16px", textAlign: "center" }}>
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "24px 16px", textAlign: "center" }}>
           <p style={{ color: T.sub, fontSize: 14, marginBottom: 16 }}>
             {error || "Something went wrong loading this lesson."}
           </p>
@@ -110,9 +110,9 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily:"var(--font)" }}>
       <Navbar darkMode={dark} />
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px" }}>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "16px" }}>
 
         <button onClick={() => router.back()} style={{
           display: "flex", alignItems: "center", gap: 6, background: "none", border: "none",

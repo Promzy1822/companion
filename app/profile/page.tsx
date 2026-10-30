@@ -122,7 +122,7 @@ export default function Profile() {
   const lbl: React.CSSProperties = { fontSize: "12px", color: T.sub, display: "block", marginBottom: "5px", fontWeight: 600 };
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, fontFamily:"var(--font)" }}>
       <Navbar darkMode={dark} onToggleDark={toggleDark} />
 
       <main style={{

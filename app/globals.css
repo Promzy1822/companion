@@ -351,8 +351,8 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
 html { scroll-behavior: auto; }
 
 /* Soft fade when a page appears (opacity only, and no fill-mode, so it never traps fixed children) */
-.app-shell > div { animation: routeFade 0.18s ease-out backwards; }
-@keyframes routeFade { from { opacity: 0; } to { opacity: 1; } }
+.app-shell > div { animation: routeFade 0.14s ease-out backwards; }
+@keyframes routeFade { from { opacity: 0.35; } to { opacity: 1; } }
 
 /* Mouse devices (laptops/desktops) get a slim visible scrollbar. Touch devices stay clean. */
 @media (hover: hover) and (pointer: fine) {
@@ -414,3 +414,9 @@ html { scroll-behavior: auto; }
   .q-practice:has(> .q-side) > :first-child { grid-column: 1 / -1; }
   .q-side { display: block; grid-column: 2; position: sticky; top: 72px; }
 }
+
+/* ── Theme + transitions ───────────────────────────────────────────────────── */
+html { color-scheme: light; }
+html[data-dark="true"] { color-scheme: dark; }
+/* server HTML is never visible un-themed; the splash covers this until the app has hydrated */
+html[data-booting="true"] .app-shell { visibility: hidden; }

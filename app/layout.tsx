@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import RouteProgress from "./components/RouteProgress";
+import ThemeSync from "./components/ThemeSync";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -30,10 +31,53 @@ export const viewport: Viewport = {
   viewportFit:  "cover",
 };
 
+/*
+ * Runs in <head>, before anything is painted:
+ *  - works out the theme (System / Light / Dark) and sets data-dark + color-scheme
+ *  - keeps the old "darkMode" key in sync, so every existing page keeps working
+ *  - any old code that writes "darkMode" directly is treated as an explicit Light/Dark choice
+ *  - marks the app as "booting" so un-themed server HTML is never visible
+ */
+const THEME_BOOT = `
+(function () {
+  var d = document.documentElement;
+  try {
+    var ls = window.localStorage;
+    var mode = ls.getItem('themeMode');
+    if (mode !== 'light' && mode !== 'dark' && mode !== 'system') {
+      var old = ls.getItem('darkMode');
+      mode = old === 'true' ? 'dark' : old === 'false' ? 'light' : 'system';
+      ls.setItem('themeMode', mode);
+    }
+    var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    var orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      orig.call(this, k, v);
+      if (this === window.localStorage && k === 'darkMode' && !window.__themeApplying) {
+        orig.call(this, 'themeMode', v === 'true' ? 'dark' : 'light');
+      }
+    };
+
+    window.__themeApplying = true;
+    ls.setItem('darkMode', String(dark));
+    window.__themeApplying = false;
+
+    d.setAttribute('data-dark', dark ? 'true' : 'false');
+    d.style.colorScheme = dark ? 'dark' : 'light';
+  } catch (e) {
+    d.setAttribute('data-dark', 'false');
+  }
+  d.setAttribute('data-booting', 'true');
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        <meta name="color-scheme" content="light dark" />
         <link rel="manifest"         href="/manifest.json" />
         <link rel="icon"             href="/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -45,12 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ margin: 0, padding: 0 }}>
 
-        {/* Set theme BEFORE first paint so it never flashes the wrong theme. */}
-        <script dangerouslySetInnerHTML={{ __html:
-          "document.documentElement.setAttribute('data-dark', localStorage.getItem('darkMode') === 'true' ? 'true' : 'false');"
-        }} />
-
-        {/* Cold-start splash. Removed from the DOM after first load. */}
+        {/* Cold-start splash. Stays until the app has hydrated, then is removed from the DOM for good. */}
         <div id="companion-splash">
           <div style={{
             width: 88, height: 88, borderRadius: 24,
@@ -85,6 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <RouteProgress />
+        <ThemeSync />
         <div className="app-shell">
           {children}
         </div>
@@ -96,6 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             function dismissSplash() {
               if (splashDone) return;
               splashDone = true;
+              document.documentElement.removeAttribute('data-booting');
 
               var el = document.getElementById('companion-splash');
               if (!el) return;
@@ -111,24 +152,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }, 350);
             }
 
+            // Wait until the app has hydrated (ThemeSync removes data-booting), minimum 600ms, give up after 5s.
             var shownAt = Date.now();
             var MIN_MS  = 600;
+            var MAX_MS  = 5000;
 
-            function scheduleDismiss() {
+            function check() {
               var elapsed = Date.now() - shownAt;
-              var wait    = Math.max(0, MIN_MS - elapsed);
-              setTimeout(dismissSplash, wait);
+              var ready   = !document.documentElement.hasAttribute('data-booting');
+              if ((ready && elapsed >= MIN_MS) || elapsed >= MAX_MS) {
+                dismissSplash();
+              } else {
+                setTimeout(check, 40);
+              }
             }
 
             if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', function() {
                 requestAnimationFrame(function() {
-                  requestAnimationFrame(scheduleDismiss);
+                  requestAnimationFrame(check);
                 });
               });
             } else {
               requestAnimationFrame(function() {
-                requestAnimationFrame(scheduleDismiss);
+                requestAnimationFrame(check);
               });
             }
 

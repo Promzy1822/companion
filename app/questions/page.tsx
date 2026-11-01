@@ -10,6 +10,7 @@ import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 import { AppIcon, Rich } from "../components/AppIcon";
 
+import { useIsoLayoutEffect } from "../lib/theme";
 interface Question {
   id:          string;
   subject:     string;
@@ -64,7 +65,7 @@ function QuestionsContent() {
   const [score,     setScore]     = useState({ correct: 0, total: 0 });
   const [answered,  setAnswered]  = useState<Record<number, string>>({});
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     setDark(localStorage.getItem("darkMode") === "true");
   }, []);
 
@@ -543,7 +544,7 @@ function QuestionsContent() {
 
 export default function Questions() {
   return (
-    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F4F5FA" }}/>}>
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"var(--bg)" }}/>}>
       <QuestionsContent />
     </Suspense>
   );

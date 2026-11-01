@@ -125,7 +125,7 @@ function SubjectsContent() {
 
 export default function Subjects() {
   return (
-    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F4F5FA", display:"flex", alignItems:"center", justifyContent:"center", color:"#475569" }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text-sub)" }}>Loading…</div>}>
       <SubjectsContent />
     </Suspense>
   );

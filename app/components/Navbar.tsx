@@ -8,6 +8,7 @@ import {
   Sun, Moon, Sparkles,
 } from "lucide-react";
 import AppLogo from "./AppLogo";
+import ThemeMenu from "./ThemeMenu";
 import { Session } from "../lib/session";
 import { C, D, palette } from "../lib/design";
 
@@ -95,22 +96,7 @@ export default function Navbar({
         <span className="top-logo"><AppLogo size={28} showText darkMode={darkMode} /></span>
 
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          {onToggleDark && (
-            <button
-              onClick={onToggleDark}
-              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-              style={{
-                width: 36, height: 36, borderRadius: "50%",
-                border: "none", background: T.s2,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", flexShrink: 0,
-              }}
-            >
-              {darkMode
-                ? <Sun  {...ic} color={T.sub} />
-                : <Moon {...ic} color={T.sub} />}
-            </button>
-          )}
+          {onToggleDark && <ThemeMenu darkMode={darkMode} onToggleDark={onToggleDark} />}
 
           {user ? (
             <div ref={dropRef} style={{ position: "relative" }}>

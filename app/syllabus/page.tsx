@@ -11,6 +11,7 @@ import { palette, C } from "../lib/design";
 import { JAMB_SYLLABUS, SYLLABUS_STATS, searchSyllabus } from "../lib/syllabus";
 import { AppIcon, Rich } from "../components/AppIcon";
 
+import { useIsoLayoutEffect } from "../lib/theme";
 const ICONS: Record<string, string> = {
   english:"📝", physics:"⚛️", mathematics:"📐",
   chemistry:"🧪", biology:"🌿", government:"🏛️",
@@ -30,7 +31,7 @@ function SyllabusContent() {
   const [searchQuery,   setSearchQuery]   = useState("");
   const [searchResults, setSearchResults] = useState<ReturnType<typeof searchSyllabus>>([]);
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     setDark(localStorage.getItem("darkMode") === "true");
     try {
       const saved = JSON.parse(localStorage.getItem("companion_syllabus_progress") || "[]");
@@ -328,7 +329,7 @@ function SyllabusContent() {
 
 export default function SyllabusPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F4F5FA" }}/>}>
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"var(--bg)" }}/>}>
       <SyllabusContent />
     </Suspense>
   );

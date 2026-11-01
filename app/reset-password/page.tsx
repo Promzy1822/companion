@@ -151,7 +151,7 @@ function ResetContent() {
 
 export default function ResetPassword() {
   return (
-    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#F4F5FA" }} />}>
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"var(--bg)" }} />}>
       <ResetContent />
     </Suspense>
   );

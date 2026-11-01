@@ -49,7 +49,7 @@ function SubjectsContent() {
 
   const SubjectCard = (s: typeof SUBJECTS[0], mine: boolean) => (
     <Link key={s.id} href={mode === "learn" ? `/learn/${s.id}` : `/questions?subject=${s.id}&mode=${mode}`} style={{ textDecoration:"none" }}>
-      <div style={{
+      <div className="lift" style={{
         background: T.surface, borderRadius:"16px", padding:"18px 14px",
         border: mine ? `2px solid ${s.color}55` : `1px solid ${T.border}`,
         boxShadow: mine ? `0 2px 12px ${s.color}20` : "0 1px 4px rgba(0,0,0,0.06)",
@@ -75,7 +75,7 @@ function SubjectsContent() {
     <div style={{ minHeight:"100vh", paddingTop:"56px", background:T.bg, fontFamily:"var(--font)" }}>
       <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
 
-      <div style={{ background: dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)", padding:"20px 20px 32px" }}>
+      <div className="hero-banner" style={{ background: dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)", padding:"20px 20px 32px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
           <Link href="/" style={{ width:34, height:34, borderRadius:"10px", backgroundColor:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", textDecoration:"none", flexShrink:0 }}>
             <ArrowLeft size={16} color="#fff" strokeWidth={2} />
@@ -94,7 +94,7 @@ function SubjectsContent() {
               <Star size={11} color={C.primary} fill={C.primary} strokeWidth={0} />
               Your JAMB Subjects
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"22px" }}>
+            <div className="subject-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"22px" }}>
               {mine.map(s => SubjectCard(s, true))}
             </div>
           </>
@@ -105,14 +105,14 @@ function SubjectsContent() {
             <div style={{ fontSize:"11px", color:T.sub, fontWeight:700, marginBottom:"12px", textTransform:"uppercase", letterSpacing:"1px" }}>
               Other Subjects
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
+            <div className="subject-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
               {other.map(s => SubjectCard(s, false))}
             </div>
           </>
         )}
 
         {mine.length === 0 && (
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
+          <div className="subject-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
             {SUBJECTS.map(s => SubjectCard(s, false))}
           </div>
         )}

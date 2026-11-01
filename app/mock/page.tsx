@@ -84,18 +84,45 @@ export default function MockExam() {
     localStorage.setItem("mock_history",JSON.stringify(newH)); setHistory(newH);
   };
 
+  submitRef.current = submitExam; // BUG FIX: timer now auto-submits when time runs out
   const fmt = (s:number) => `${Math.floor(s/60).toString().padStart(2,"0")}:${(s%60).toString().padStart(2,"0")}`;
   const timePct = questions.length?(timeLeft/(questions.length*90))*100:100;
   const timerCol = timePct>50?"#31A24C":timePct>25?"#F7B928":"#FA3E3E";
 
   const T = palette(dark);
 
+  // Keyboard shortcuts during the exam: A-D answer, left/right (or P/N) move between questions
+  useEffect(() => {
+    if (phase !== "exam") return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "a" || k === "b" || k === "c" || k === "d") {
+        const i = k.charCodeAt(0) - 97;
+        if (questions[current] && i < questions[current].options.length) {
+          setAnswers(p => ({ ...p, [current]: i }));
+          e.preventDefault();
+        }
+      } else if (k === "arrowright" || k === "n") {
+        setCurrent(c => Math.min(questions.length - 1, c + 1));
+        e.preventDefault();
+      } else if (k === "arrowleft" || k === "p") {
+        setCurrent(c => Math.max(0, c - 1));
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, current, questions]);
+
   // ── SETUP ──────────────────────────────────────────────────────
   if (phase==="setup") return (
     <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
       <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
 
-      <div style={{background:dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"20px 20px 32px"}}>
+      <div className="hero-banner" style={{background:dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"20px 20px 32px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
           <Link href="/" style={{width:34,height:34,borderRadius:"10px",backgroundColor:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none"}}>
             <ArrowLeft size={16} color="#fff" strokeWidth={2} />
@@ -107,7 +134,7 @@ export default function MockExam() {
         </div>
       </div>
 
-      <div style={{padding:"16px 14px 100px"}}>
+      <div className="page-narrow" style={{padding:"16px 14px 100px"}}>
         <div style={{background:T.surface,borderRadius:"16px",padding:"24px",border:`1px solid ${T.border}`,marginBottom:"14px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
           <div style={{textAlign:"center",marginBottom:"24px"}}>
             <div style={{width:64,height:64,borderRadius:"18px",background:C.primaryLight,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
@@ -159,7 +186,7 @@ export default function MockExam() {
 
   // ── EXAM (no bottom nav — focus mode) ─────────────────────────
   if (phase==="exam") return (
-    <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)",display:"flex",flexDirection:"column"}}>
+    <div className="focus-page" style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)",display:"flex",flexDirection:"column"}}>
       {/* Sticky timer bar */}
       <div style={{background:dark?"linear-gradient(135deg,#111,#1F2050)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"14px 20px",position:"sticky",top:0,zIndex:50}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
@@ -172,7 +199,7 @@ export default function MockExam() {
         <div style={{height:"4px",borderRadius:"2px",background:"rgba(255,255,255,0.2)",overflow:"hidden"}}>
           <div style={{height:"100%",width:`${timePct}%`,background:timerCol,transition:"width 1s linear"}} />
         </div>
-        <div style={{display:"flex",gap:"4px",marginTop:"10px",overflowX:"auto",scrollbarWidth:"none"}}>
+        <div className="q-chips" style={{display:"flex",gap:"4px",marginTop:"10px",overflowX:"auto",scrollbarWidth:"none"}}>
           {questions.map((_,i)=>(
             <div key={i} onClick={()=>setCurrent(i)} style={{width:24,height:24,borderRadius:"6px",background:i===current?"#fff":answers[i]!==undefined?"rgba(255,255,255,0.55)":"rgba(255,255,255,0.15)",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",fontWeight:700,color:i===current?C.primary:"rgba(255,255,255,0.8)"}}>
               {i+1}
@@ -181,7 +208,7 @@ export default function MockExam() {
         </div>
       </div>
 
-      <div style={{flex:1,padding:"16px",overflowY:"auto"}}>
+      <div className="page-narrow exam-body" style={{flex:1,padding:"16px",overflowY:"auto"}}>
         {questions[current] && (
           <div>
             <div style={{background:T.surface,borderRadius:"14px",padding:"18px",marginBottom:"14px",border:`1px solid ${T.border}`,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>

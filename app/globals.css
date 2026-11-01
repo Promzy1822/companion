@@ -384,3 +384,33 @@ html { scroll-behavior: auto; }
   }
   .home-main, .home-side { min-width: 0; }
 }
+
+/* ── Laptop layouts: Subjects, Mock exam, Past questions ───────────────────── */
+.q-side { display: none; }
+
+@media (hover: hover) { .lift:hover { transform: translateY(-2px); } }
+.lift { transition: transform 0.15s ease, box-shadow 0.15s ease !important; }
+
+@media (min-width: 640px)  { .subject-grid { grid-template-columns: repeat(3, 1fr) !important; } }
+@media (min-width: 1024px) {
+  .subject-grid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  .page-narrow { max-width: 760px; margin-left: auto; margin-right: auto; }
+
+  /* exam has no side rail, so centre it */
+  .app-shell:has(.focus-page) { margin-left: auto; margin-right: auto; }
+  .q-chips { flex-wrap: wrap !important; overflow: visible !important; }
+  .q-chips > div { width: 30px !important; height: 30px !important; font-size: 12px !important; }
+  .exam-body::after {
+    content: "Keyboard:  A-D to answer   |   Left / Right arrows to move";
+    display: block; text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 18px;
+  }
+
+  /* past questions: question on the left, navigator on the right */
+  .q-practice:has(> .q-side) {
+    display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0 20px;
+    grid-auto-flow: row dense; align-items: start;
+  }
+  .q-practice:has(> .q-side) > :first-child { grid-column: 1 / -1; }
+  .q-side { display: block; grid-column: 2; position: sticky; top: 72px; }
+}

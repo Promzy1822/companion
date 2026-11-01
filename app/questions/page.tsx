@@ -123,6 +123,29 @@ function QuestionsContent() {
 
   const T = palette(dark);
 
+  // Keyboard shortcuts (laptops): A-D answer, left/right move, Enter = next once answered
+  useEffect(() => {
+    if (mode !== "practice") return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || !q) return;
+      const k = e.key.toLowerCase();
+      if (k === "a" || k === "b" || k === "c" || k === "d") {
+        handleSelect(k.toUpperCase());
+        e.preventDefault();
+      } else if (k === "arrowright" || (k === "enter" && revealed)) {
+        if (current < questions.length - 1) goTo(current + 1);
+        e.preventDefault();
+      } else if (k === "arrowleft") {
+        if (current > 0) goTo(current - 1);
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   const optStyle = (opt: string): React.CSSProperties => {
     if (!revealed) return {
       background: selected === opt ? C.primaryLight : T.surface,
@@ -250,7 +273,7 @@ function QuestionsContent() {
 
         {/* ── PRACTICE MODE ── */}
         {mode==="practice" && (
-          <div>
+          <div className="q-practice">
             {/* Year filter */}
             <div style={{ display:"flex", gap:6, overflowX:"auto", scrollbarWidth:"none", marginBottom:14 }}>
               {YEARS.map(y=>(
@@ -265,6 +288,30 @@ function QuestionsContent() {
                 </button>
               ))}
             </div>
+
+            {!loading && !error && q && (
+              <aside className="q-side" style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:16 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:10 }}>Questions</div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:6 }}>
+                  {questions.map((qq, i) => {
+                    const a = answered[i];
+                    const state = a === undefined ? "todo" : a === qq.answer ? "ok" : "bad";
+                    return (
+                      <button key={qq.id} onClick={() => goTo(i)} style={{
+                        height:34, borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"inherit",
+                        border: i === current ? `2px solid ${C.primary}` : `1px solid ${T.border}`,
+                        background: state === "ok" ? "#E6F4EA" : state === "bad" ? "#FEE2E2" : T.s2,
+                        color: state === "ok" ? "#0D8050" : state === "bad" ? "#D0021B" : T.sub,
+                      }}>{i + 1}</button>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop:14, fontSize:12, color:T.sub, lineHeight:1.8 }}>
+                  <div><strong style={{ color:T.text }}>Score</strong> {score.correct}/{score.total} ({scorePct}%)</div>
+                  <div>Keys: A-D answer, arrows move, Enter next</div>
+                </div>
+              </aside>
+            )}
 
             {/* Loading */}
             {loading && (

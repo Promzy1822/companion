@@ -145,9 +145,10 @@ export default function Home() {
           </div>
         </div>
 
-        <div style={{ padding:"0 14px", marginTop:"-16px", paddingBottom:"calc("+BOTTOM_NAV_HEIGHT+"px + 16px)" }}>
+        <div className="home-cols" style={{ padding:"0 14px", marginTop:"-16px", paddingBottom:"calc("+BOTTOM_NAV_HEIGHT+"px + 16px)" }}>
 
           {/* Countdown banner — shows only if user set an exam date */}
+          <div className="home-main">
           <CountdownBanner darkMode={darkMode} />
 
           {/* AI CTA */}
@@ -181,6 +182,8 @@ export default function Home() {
             <QuickLinks darkMode={darkMode} />
           </div>
 
+          </div>
+          <div className="home-side">
           {/* Calculator */}
           <div style={{
             background:T.surface, borderRadius:"16px",
@@ -374,7 +377,7 @@ export default function Home() {
               </div>
             )}
           </div>
-        </div>
+        </div></div>
 
         <BottomNav darkMode={darkMode} />
 

@@ -370,3 +370,17 @@ html { scroll-behavior: auto; }
 @media (min-width: 1024px) { .hero-banner { padding: 30px 32px 46px !important; } }
 
 @media (prefers-reduced-motion: reduce) { .app-shell > div { animation: none; } }
+
+/* ── Laptop: Home dashboard as two columns ─────────────────────────────────── */
+@media (min-width: 1024px) {
+  .hero-banner { margin: 18px 24px 0; }
+  .home-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 0 20px;
+    align-items: start;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  .home-main, .home-side { min-width: 0; }
+}

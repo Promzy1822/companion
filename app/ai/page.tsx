@@ -7,7 +7,7 @@ import {
   Sparkles, X, RotateCcw, Image, FileText,
 } from "lucide-react";
 import { palette } from "../lib/design";
-import { Rich } from "../components/AppIcon";
+import { Rich, stripEmoji } from "../components/AppIcon";
 
 interface Message {
   role:    "user" | "assistant";
@@ -190,7 +190,7 @@ export default function AIChat() {
                 }}>
                   {isUser
                     ? <span><Rich>{m.content}</Rich></span>
-                    : <ReactMarkdown><Rich>{m.content}</Rich></ReactMarkdown>}
+                    : <ReactMarkdown>{stripEmoji(m.content)}</ReactMarkdown>}
                 </div>
               </div>
             </div>

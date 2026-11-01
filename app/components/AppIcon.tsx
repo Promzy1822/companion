@@ -54,4 +54,10 @@ export function Rich({ children }: { children?: ReactNode }) {
   return <>{children}</>;
 }
 
+/** Removes emoji from plain text. Used for AI replies shown through Markdown, where icons cannot be injected. */
+export function stripEmoji(s: string): string {
+  if (!s || !HAS.test(s)) return s;
+  return s.replace(new RegExp("(?:" + PICTO + ")[ \\t]?", "gu"), "");
+}
+
 export default AppIcon;

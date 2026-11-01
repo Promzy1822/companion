@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Progress } from "../lib/progress";
 import { palette } from "../lib/design";
-import { Rich } from "../components/AppIcon";
+import { Rich, stripEmoji } from "../components/AppIcon";
 
 const SUBJECTS = [
   "English Language","Mathematics","Physics","Chemistry","Biology",
@@ -319,7 +319,7 @@ ${q}
               </div>
             ) : (
               <div style={{ fontSize: 14, color: T.text, lineHeight: 1.8 }}>
-                <ReactMarkdown><Rich>{answer}</Rich></ReactMarkdown>
+                <ReactMarkdown>{stripEmoji(answer)}</ReactMarkdown>
               </div>
             )}
           </div>

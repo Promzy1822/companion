@@ -12,6 +12,7 @@ import { Progress } from "../lib/progress";
 import { palette } from "../lib/design";
 import { Rich, stripEmoji } from "../components/AppIcon";
 
+import { useIsoLayoutEffect } from "../lib/theme";
 const SUBJECTS = [
   "English Language","Mathematics","Physics","Chemistry","Biology",
   "Government","Economics","Literature in English","Geography","CRS","Commerce",
@@ -82,7 +83,7 @@ function SolverContent() {
   const [undo,     setUndo]     = useState<{ items: HistoryItem[]; label: string } | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     setMounted(true);
     setDark(localStorage.getItem("darkMode") === "true");
     setHistory(loadHistory());

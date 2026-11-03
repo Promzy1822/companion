@@ -5,11 +5,12 @@ import Link from "next/link";
 import { C } from "../lib/design";
 import { BookOpen, Bot, BarChart3, Newspaper, Calculator, ClipboardList, CheckCircle, ArrowRight, Star } from "lucide-react";
 
+import { useIsoLayoutEffect } from "../lib/theme";
 export default function Landing() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     const user = localStorage.getItem("companion_user");
     if (user) { router.replace("/"); return; }
     setReady(true);

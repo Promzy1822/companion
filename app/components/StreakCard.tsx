@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Progress, todayWAT } from "../lib/progress";
 import { AppIcon } from "./AppIcon";
 
+import { useIsoLayoutEffect } from "../lib/theme";
 interface Props { darkMode: boolean; }
 
 export default function StreakCard({ darkMode }: Props) {
@@ -11,7 +12,7 @@ export default function StreakCard({ darkMode }: Props) {
   const [viewDate, setViewDate] = useState(() => new Date(Date.now() + 60 * 60 * 1000));
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     setMounted(true);
     setStreak(Progress.getStreak());
   }, []);

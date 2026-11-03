@@ -4,12 +4,13 @@ import { C, palette } from "../lib/design";
 import { CalendarDays } from "lucide-react";
 import { Rich } from "./AppIcon";
 
+import { useIsoLayoutEffect } from "../lib/theme";
 export default function CountdownBanner({ darkMode = false }: { darkMode?: boolean }) {
   const T = palette(darkMode);
   const [days, setDays] = useState<number | null>(null);
   const [deadline, setDeadline] = useState("");
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     try {
       const user = JSON.parse(localStorage.getItem("companion_user") || "{}");
       if (!user.deadline) return;

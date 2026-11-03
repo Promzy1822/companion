@@ -12,6 +12,7 @@ import ThemeMenu from "./ThemeMenu";
 import { Session } from "../lib/session";
 import { C, D, palette } from "../lib/design";
 
+import { useIsoLayoutEffect } from "../lib/theme";
 interface UserData { name: string; email: string; target: string; institution?: string; }
 
 const NAV = [
@@ -40,7 +41,7 @@ export default function Navbar({
   const pathname = usePathname();
   const T        = palette(darkMode);
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     try {
       const u = localStorage.getItem("companion_user");
       if (u) setUser(JSON.parse(u));

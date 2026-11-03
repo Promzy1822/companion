@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import AppLoader from "./AppLoader";
 
 interface PageShellProps {
   children: React.ReactNode;
@@ -8,16 +7,16 @@ interface PageShellProps {
 }
 
 // Becomes true once any page has hydrated in this tab. After that, client-side
-// navigations render instantly: there is no server HTML to match, so the
-// full-screen loader (and its flash) is only needed on a hard load.
+// navigations render instantly (there is no server HTML to match), so the
+// placeholder below is only ever used on a hard load.
 let booted = false;
 
 /**
- * Wraps every page. On a hard load it shows the loader until hydration is done
- * (so localStorage reads never cause a mismatch). On later navigations it
- * renders the page immediately.
+ * Wraps every page. On a hard load it shows a blank, theme-coloured screen until the page has
+ * hydrated (the splash screen is already covering it). It uses CSS variables, so it always
+ * matches Light, Dark or System, whichever is active. On later navigations it renders instantly.
  */
-export default function PageShell({ children, dark = false }: PageShellProps) {
+export default function PageShell({ children }: PageShellProps) {
   const [ready, setReady] = useState(booted);
 
   useEffect(() => {
@@ -26,6 +25,6 @@ export default function PageShell({ children, dark = false }: PageShellProps) {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  if (!ready) return <AppLoader fullScreen dark={dark} />;
+  if (!ready) return <div aria-busy="true" style={{ minHeight: "100vh", background: "var(--bg)" }} />;
   return <>{children}</>;
 }

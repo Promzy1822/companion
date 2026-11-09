@@ -14,7 +14,7 @@ export interface NavItem {
 /** The one navigation definition for the whole app: bottom tabs, laptop rail and the avatar menu all read this. */
 export const NAV_ITEMS: NavItem[] = [
   { icon: Home,        label: "Home",     href: "/",                    match: ["/"] },
-  { icon: BookOpen,    label: "Learn",    href: "/subjects?mode=learn", match: ["/subjects", "/learn", "/lessons"] },
+  { icon: BookOpen,    label: "Learn",    href: "/subjects", match: ["/subjects", "/learn", "/lessons"] },
   { icon: Bot,         label: "AI",       href: "/ai",                  match: ["/ai"], center: true },
   { icon: Target,      label: "Practice", href: "/practice", match: ["/practice", "/questions", "/mock"] },
   { icon: CalendarDays,label: "Plan",     href: "/studyplan",           match: ["/studyplan", "/syllabus"] },

@@ -70,7 +70,8 @@ export default function Landing() {
       }}>
         <div style={{ position:"absolute", top:"-40px", right:"-40px", width:220, height:220, borderRadius:"50%", background:"rgba(249,115,22,0.13)" }} />
         <div style={{ position:"absolute", bottom:"0", left:"-60px", width:180, height:180, borderRadius:"50%", background:"rgba(255,255,255,0.05)" }} />
-        <div style={{ position: "relative", maxWidth: "1040px", margin: "0 auto" }}>
+        <div className="fd-hero-inner" style={{ position: "relative", maxWidth: "1040px", margin: "0 auto" }}>
+          <div className="fd-hero-text">
           <h1 style={{ fontSize: "44px", fontWeight: 900, lineHeight: 1.12, color: "#fff", margin: "0 auto 16px", letterSpacing: "-1px", maxWidth: "640px" }}>
             Real questions. A real plan.<br />
             <span style={{ color: "#F97316" }}>A tutor in your pocket.</span>
@@ -88,9 +89,10 @@ export default function Landing() {
             Get Started Free <ArrowRight size={18} strokeWidth={2.2} />
           </Link>
           <p style={{ marginTop: "12px", fontSize: "12px", color: "rgba(255,255,255,0.55)" }}>No credit card &nbsp;·&nbsp; Set up in 2 minutes</p>
+          </div>
 
           {/* Phone — the hero centrepiece */}
-          <div style={{ position: "relative", width: "300px", maxWidth: "88vw", margin: "40px auto 0" }}>
+          <div className="fd-hero-phone" style={{ position: "relative", width: "300px", maxWidth: "88vw", margin: "40px auto 0" }}>
             <div style={{ background: "#0E1018", border: "1px solid rgba(255,255,255,0.14)", borderBottom: "none", borderRadius: "36px 36px 0 0", padding: "14px 14px 0", boxShadow: "0 24px 60px rgba(0,0,0,0.45)", textAlign: "left" }}>
               <div style={{ width: "84px", height: "5px", borderRadius: "3px", background: "rgba(255,255,255,0.18)", margin: "2px auto 14px" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>

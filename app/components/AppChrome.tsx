@@ -9,7 +9,7 @@ export default function AppChrome() {
   return (
     <>
       {nav  && <NavbarView    darkMode={nav.reg.darkMode} onToggleDark={nav.reg.hasToggle ? nav.reg.toggle : undefined} />}
-      {tabs && <BottomNavView darkMode={tabs.reg.darkMode} />}
+      {tabs && <BottomNavView darkMode={tabs.reg.darkMode} railOnly={tabs.reg.railOnly} />}
     </>
   );
 }

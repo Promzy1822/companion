@@ -3,11 +3,14 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import {
-  ArrowLeft, Send, Paperclip, Sun, Moon,
-  Sparkles, X, RotateCcw, Image, FileText,
+  ArrowLeft, Send, Paperclip,
+  Sparkles, X, RotateCcw, Image as ImageIcon, FileText,
 } from "lucide-react";
-import { palette } from "../lib/design";
+import { C, palette } from "../lib/design";
 import { Rich, stripEmoji } from "../components/AppIcon";
+import ThemeMenu from "../components/ThemeMenu";
+import BottomNav from "../components/BottomNav";
+import { useDark, useIsoLayoutEffect } from "../lib/theme";
 
 interface Message {
   role:    "user" | "assistant";
@@ -25,36 +28,83 @@ const QUICK_ACTIONS = [
 
 const WELCOME: Message = {
   role: "assistant", id: 0,
-  content: "Hello! I'm **Companion AI** 🎓\n\nI can help you:\n- Solve past questions with step-by-step explanations\n- Explain difficult JAMB topics clearly\n- Analyse photos of questions or textbook pages\n- Build study plans and give exam tips\n\nYou can type a question or attach a photo of a question. What would you like to work on?",
+  content: "Hello! I'm **Companion AI**.\n\nI can help you:\n- Solve past questions with step-by-step explanations\n- Explain difficult JAMB topics clearly\n- Analyse photos of questions or textbook pages\n- Build study plans and give exam tips\n\nYou can type a question or attach a photo of a question. What would you like to work on?",
 };
 
+const noop = () => {};
+
+/** One chat bubble. Memoised, so typing in the box never re-renders (or re-parses) the conversation. */
+const MessageBubble = React.memo(function MessageBubble({ m, dark }: { m: Message; dark: boolean }) {
+  const T      = palette(dark);
+  const isUser = m.role === "user";
+  return (
+    <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 8, marginBottom: 2, animation: "fadeUp 0.2s ease backwards" }}>
+      {!isUser && (
+        <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
+          <Sparkles size={13} color="#fff" strokeWidth={1.8} />
+        </div>
+      )}
+      <div style={{ maxWidth: "min(82%, 720px)", minWidth: 0 }}>
+        {m.image && (
+          <img src={m.image} alt="Attached" style={{ maxWidth: "100%", maxHeight: 240, borderRadius: "12px 12px 0 0", display: "block", objectFit: "contain", background: T.s3 }} />
+        )}
+        <div
+          className={isUser ? undefined : "md-body"}
+          style={{
+            padding: isUser ? "11px 15px" : "13px 16px",
+            borderRadius: isUser
+              ? m.image ? "0 0 4px 18px" : "18px 18px 4px 18px"
+              : "4px 18px 18px 18px",
+            background: isUser ? C.primary : T.surface,
+            border: isUser ? "none" : `1px solid ${T.border}`,
+            color: isUser ? "#fff" : T.text,
+            fontSize: 14, lineHeight: 1.65,
+            boxShadow: isUser ? "0 2px 12px rgba(79,70,229,0.3)" : "0 1px 6px rgba(0,0,0,0.06)",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {isUser
+            ? <span style={{ whiteSpace: "pre-wrap" }}><Rich>{m.content}</Rich></span>
+            : <ReactMarkdown>{stripEmoji(m.content)}</ReactMarkdown>}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export default function AIChat() {
+  const dark = useDark();
+  const T    = palette(dark);
+
   const [input,      setInput]      = useState("");
-  const [dark,       setDark]       = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
   const [messages,   setMessages]   = useState<Message[]>([WELCOME]);
   const [loading,    setLoading]    = useState(false);
   const [attachment, setAttachment] = useState<{ file: File; preview: string; base64: string; type: "image" | "text" } | null>(null);
-  const [focused,    setFocused]    = useState(false);
   const [fileError,  setFileError]  = useState("");
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef       = useRef<HTMLInputElement>(null);
-  const fileInputRef   = useRef<HTMLInputElement>(null);
-  const msgId          = useRef(1);
+  const listRef  = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const msgId    = useRef(1);
+  const autoSent = useRef(false);
 
+  // Keep the newest message in view. Scrolls the list itself, never the whole page.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = listRef.current;
+    if (!el || (messages.length <= 1 && !loading)) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  const toggleDark = () => {
-    const n = !dark;
-    setDark(n);
-    localStorage.setItem("darkMode", String(n));
-  };
+  // The box grows with what you type (up to ~6 lines).
+  useIsoLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }, [input]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    
+
     e.target.value = "";
     if (!file) return;
     setFileError("");
@@ -94,7 +144,7 @@ export default function AIChat() {
     const userMsg: Message = {
       role:    "user",
       id:      msgId.current++,
-      content: t || (attachment?.type === "image" ? "📷 Image attached" : attachment?.file.name || ""),
+      content: t || (attachment?.type === "image" ? "Image attached" : attachment?.file.name || ""),
       image:   attachment?.type === "image" ? attachment.base64 : undefined,
     };
     const newMsgs = [...messages, userMsg];
@@ -105,7 +155,7 @@ export default function AIChat() {
       role:    m.role,
       content: typeof m.content === "string" ? m.content : String(m.content),
     }));
-    const payload: any = { message: t, history };
+    const payload: Record<string, unknown> = { message: t, history };
     if (attachment?.type === "image") {
       payload.imageBase64 = attachment.base64;
       payload.imageType   = attachment.file.type;
@@ -131,179 +181,182 @@ export default function AIChat() {
     }
   };
 
-  const T          = palette(dark);
-  const bg         = dark ? "#0D0D0F" : "#F8F9FB";
-  const headerBg   = dark ? "rgba(18,18,22,0.92)" : "rgba(255,255,255,0.92)";
-  const aiBubBg    = dark ? "#1E1E24" : "#FFFFFF";
-  const aiBubBord  = dark ? "#2A2A35" : "#E8EAED";
-  const inputBg    = dark ? "#1E1E24" : "#F1F3F5";
-  const inputBord  = focused ? "#4F46E5" : (dark ? "#2A2A35" : "#E0E3E8");
+  // "Ask AI to explain this answer" (from Past Questions) opens /ai?q=...  Send it once, then tidy the URL.
+  useEffect(() => {
+    if (autoSent.current) return;
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (!q) return;
+    autoSent.current = true;
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+    sendMessage(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      sendMessage(input);
+    }
+  };
+
+  const canSend = !loading && (input.trim().length > 0 || !!attachment);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: bg, fontFamily:"var(--font)", overflow: "hidden" }}>
+    <div className="chat-root" style={{ display: "flex", flexDirection: "column", background: T.bg, fontFamily: "var(--font)", overflow: "hidden" }}>
+      <BottomNav darkMode={dark} railOnly />
 
-      {/* Header */}
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: headerBg, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href="/" style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F4F5FA", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+      {/* Header (part of the column, not fixed, so it lines up on phones, tablets and laptops) */}
+      <div style={{ flexShrink: 0, background: T.surface, borderBottom: `1px solid ${T.border}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+        <Link href="/" aria-label="Back" style={{ width: 34, height: 34, borderRadius: 10, background: T.s2, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
           <ArrowLeft size={17} color={T.text} strokeWidth={2} />
         </Link>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: T.text, letterSpacing: "-0.2px" }}>Companion AI</div>
           <div style={{ fontSize: 11, color: "#31A24C", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
             <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#31A24C" }} />
             Online · JAMB expert
           </div>
         </div>
-        <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F4F5FA", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {dark ? <Sun size={16} color={T.text} /> : <Moon size={16} color={T.text} />}
-        </button>
-        <button onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }} style={{ width: 34, height: 34, borderRadius: 10, background: dark ? "#1E1E24" : "#F4F5FA", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <ThemeMenu darkMode={dark} onToggleDark={noop} />
+        <button
+          aria-label="New chat"
+          onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }}
+          style={{ width: 34, height: 34, borderRadius: 10, background: T.s2, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
           <RotateCcw size={15} color={T.sub} strokeWidth={2} />
         </button>
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "80px 16px 20px", display: "flex", flexDirection: "column", gap: 6 }}>
-        {messages.map((m) => {
-          const isUser = m.role === "user";
-          return (
-            <div key={m.id} style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 8, marginBottom: 2, animation: "fadeUp 0.2s ease both" }}>
-              {!isUser && (
-                <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
-                  <Sparkles size={13} color="#fff" strokeWidth={1.8} />
-                </div>
-              )}
-              <div style={{ maxWidth: "80%" }}>
-                {m.image && (
-                  <img src={m.image} alt="Attached" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: "12px 12px 0 0", display: "block", objectFit: "contain", background: dark ? "#2A2A35" : "#f0f0f0" }} />
-                )}
-                <div style={{
-                  padding: isUser ? "11px 15px" : "13px 16px",
-                  borderRadius: isUser
-                    ? m.image ? "0 0 4px 18px" : "18px 18px 4px 18px"
-                    : "4px 18px 18px 18px",
-                  background: isUser ? "#4F46E5" : aiBubBg,
-                  border: isUser ? "none" : `1px solid ${aiBubBord}`,
-                  color: isUser ? "#fff" : T.text,
-                  fontSize: 14, lineHeight: 1.65,
-                  boxShadow: isUser ? "0 2px 12px rgba(79,70,229,0.3)" : (dark ? "0 1px 4px rgba(0,0,0,0.4)" : "0 1px 8px rgba(0,0,0,0.07)"),
-                }}>
-                  {isUser
-                    ? <span><Rich>{m.content}</Rich></span>
-                    : <ReactMarkdown>{stripEmoji(m.content)}</ReactMarkdown>}
-                </div>
+      <div ref={listRef} style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "16px 16px 12px" }}>
+        <div className="chat-narrow" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {messages.map(m => <MessageBubble key={m.id} m={m} dark={dark} />)}
+
+          {loading && (
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 8, animation: "fadeUp 0.2s ease backwards" }}>
+              <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Sparkles size={13} color="#fff" strokeWidth={1.8} />
+              </div>
+              <div style={{ padding: "13px 18px", borderRadius: "4px 18px 18px 18px", background: T.surface, border: `1px solid ${T.border}`, display: "flex", gap: 5, alignItems: "center" }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: C.primary, animation: `dot 1.2s ease-in-out ${i * 0.18}s infinite` }} />
+                ))}
               </div>
             </div>
-          );
-        })}
-
-        {/* Typing indicator */}
-        {loading && (
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, animation: "fadeUp 0.2s ease both" }}>
-            <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Sparkles size={13} color="#fff" strokeWidth={1.8} />
-            </div>
-            <div style={{ padding: "13px 18px", borderRadius: "4px 18px 18px 18px", background: aiBubBg, border: `1px solid ${aiBubBord}`, display: "flex", gap: 5, alignItems: "center" }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#4F46E5", animation: `dot 1.2s ease-in-out ${i * 0.18}s infinite` }} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Persistent quick-action chips — always visible above input */}
-      <div style={{ padding: "8px 16px 0", display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", flexShrink: 0 }}>
-        {QUICK_ACTIONS.map((a, i) => (
-          <button key={i} onClick={() => { setInput(a.prompt); inputRef.current?.focus(); }} style={{
-            flexShrink: 0, padding: "7px 13px", borderRadius: 20,
-            border: `1px solid ${dark ? "#2A2A35" : "#E8EAED"}`,
-            background: dark ? "#1E1E24" : "#fff",
-            color: dark ? "#A7AEC2" : "#475569",
-            fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
-          }}>
-            <Rich>{a.label}</Rich>
-          </button>
-        ))}
-      </div>
-
-      {/* File error */}
-      {fileError && (
-        <div style={{ margin: "8px 16px 0", padding: "10px 14px", background: "#FEE2E2", border: "1px solid #FECACA", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ fontSize: 13, color: "#D0021B", fontWeight: 500 }}><Rich>{fileError}</Rich></span>
-          <button onClick={() => setFileError("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
-            <X size={14} color="#D0021B" strokeWidth={2} />
-          </button>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Attachment preview */}
-      {attachment && (
-        <div style={{ margin: "8px 16px 0", padding: "10px 14px", background: dark ? "#1E2A4A" : "#EBF3FF", border: "1px solid #4F46E544", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
-          {attachment.type === "image" ? (
-            <img src={attachment.preview} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
-          ) : (
-            <div style={{ width: 44, height: 44, borderRadius: 8, background: "#4F46E522", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <FileText size={20} color="#4F46E5" strokeWidth={1.8} />
+      {/* Composer */}
+      <div style={{ flexShrink: 0, background: T.surface, borderTop: `1px solid ${T.border}` }}>
+        <div className="chat-narrow" style={{ padding: "8px 16px calc(12px + env(safe-area-inset-bottom, 0px))" }}>
+
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8 }}>
+            {QUICK_ACTIONS.map((a, i) => (
+              <button key={i} onClick={() => { setInput(a.prompt); inputRef.current?.focus(); }} style={{
+                flexShrink: 0, padding: "7px 13px", borderRadius: 20,
+                border: `1px solid ${T.border}`, background: T.s2, color: T.sub,
+                fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+              }}>
+                {a.label}
+              </button>
+            ))}
+          </div>
+
+          {fileError && (
+            <div style={{ marginBottom: 8, padding: "10px 14px", background: "#FEE2E2", border: "1px solid #FECACA", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 13, color: "#D0021B", fontWeight: 500 }}>{fileError}</span>
+              <button onClick={() => setFileError("")} aria-label="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                <X size={14} color="#D0021B" strokeWidth={2} />
+              </button>
             </div>
           )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              <Rich>{attachment.file.name}</Rich>
-            </div>
-            <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>
-              {attachment.type === "image" ? "Image — AI will read and solve" : "Text file — AI will analyse content"}
-            </div>
-          </div>
-          <button onClick={() => setAttachment(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
-            <X size={16} color={T.sub} strokeWidth={2} />
-          </button>
-        </div>
-      )}
 
-      {/* Input area */}
-      <div style={{ padding: "10px 16px 28px", background: dark ? "rgba(13,13,15,0.95)" : "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderTop: `1px solid ${dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, marginTop: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: inputBg, borderRadius: 24, padding: "8px 8px 8px 14px", border: `1.5px solid ${inputBord}`, transition: "border-color 0.2s, box-shadow 0.2s", boxShadow: focused ? "0 0 0 3px rgba(79,70,229,0.12)" : "none" }}>
-          <label style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "2px" }}>
-            {attachment?.type === "image"
-              ? <Image size={18} color="#4F46E5" strokeWidth={1.8} />
-              : <Paperclip size={17} color={T.muted} strokeWidth={1.8} />}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif,text/plain,.txt"
-              style={{ display: "none" }}
-              onChange={handleFileChange}
+          {attachment && (
+            <div style={{ marginBottom: 8, padding: "10px 14px", background: T.s2, border: `1px solid ${C.primary}44`, borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+              {attachment.type === "image" ? (
+                <img src={attachment.preview} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: 44, height: 44, borderRadius: 8, background: `${C.primary}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <FileText size={20} color={C.primary} strokeWidth={1.8} />
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <Rich>{attachment.file.name}</Rich>
+                </div>
+                <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>
+                  {attachment.type === "image" ? "Image: AI will read and solve" : "Text file: AI will analyse content"}
+                </div>
+              </div>
+              <button onClick={() => setAttachment(null)} aria-label="Remove attachment" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
+                <X size={16} color={T.sub} strokeWidth={2} />
+              </button>
+            </div>
+          )}
+
+          <div className="chat-input" style={{ display: "flex", alignItems: "flex-end", gap: 8, background: T.s2, borderRadius: 24, padding: "8px 8px 8px 14px", border: `1.5px solid ${T.border}` }}>
+            <label style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "0 2px 7px" }} aria-label="Attach a file">
+              {attachment?.type === "image"
+                ? <ImageIcon size={18} color={C.primary} strokeWidth={1.8} />
+                : <Paperclip size={17} color={T.muted} strokeWidth={1.8} />}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,text/plain,.txt"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+            </label>
+            <textarea
+              ref={inputRef}
+              rows={1}
+              enterKeyHint="send"
+              style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", boxShadow: "none", resize: "none", fontSize: 15, lineHeight: 1.45, color: T.text, padding: "5px 0", fontFamily: "inherit", maxHeight: 160, overflowY: "auto", borderRadius: 0 }}
+              placeholder={attachment ? "Add a message (optional)…" : "Ask anything about JAMB…"}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
             />
-          </label>
-          <input
-            ref={inputRef}
-            style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: 15, color: T.text, padding: "4px 0", fontFamily: "inherit" }}
-            placeholder={attachment ? "Add a message (optional)…" : "Ask anything about JAMB…"}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-          />
-          <button
-            onClick={() => sendMessage(input)}
-            disabled={loading || (!input.trim() && !attachment)}
-            style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: loading || (!input.trim() && !attachment) ? (dark ? "#2A2A35" : "#E8EAED") : "#4F46E5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: loading || (!input.trim() && !attachment) ? "not-allowed" : "pointer", transition: "background 0.2s", boxShadow: !loading && (input.trim() || attachment) ? "0 2px 10px rgba(79,70,229,0.4)" : "none" }}
-          >
-            <Send size={16} color="#fff" strokeWidth={2} style={{ transform: "translateX(1px)" }} />
-          </button>
-        </div>
-        <div style={{ textAlign: "center", marginTop: 8 }}>
-          <span style={{ fontSize: 10, color: T.muted }}>Supports images (JPG, PNG) and text files · AI can make mistakes</span>
+            <button
+              onClick={() => sendMessage(input)}
+              disabled={!canSend}
+              aria-label="Send"
+              style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: canSend ? C.primary : T.s3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: canSend ? "pointer" : "not-allowed", transition: "background 0.2s", boxShadow: canSend ? "0 2px 10px rgba(79,70,229,0.4)" : "none" }}
+            >
+              <Send size={16} color="#fff" strokeWidth={2} style={{ transform: "translateX(1px)" }} />
+            </button>
+          </div>
+
+          <div style={{ textAlign: "center", marginTop: 8 }}>
+            <span style={{ fontSize: 10, color: T.muted }}>
+              Supports images (JPG, PNG) and text files · AI can make mistakes
+              <span className="kbd-hint"> · Enter to send, Shift+Enter for a new line</span>
+            </span>
+          </div>
         </div>
       </div>
 
       <style>{`
         @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes dot    { 0%,60%,100%{opacity:.3;transform:scale(.8)} 30%{opacity:1;transform:scale(1.2)} }
+        .chat-root   { height: 100vh; height: 100dvh; }
+        .chat-narrow { width: 100%; max-width: 820px; margin-left: auto; margin-right: auto; }
+        .chat-input:focus-within { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+        .kbd-hint { display: none; }
+        @media (min-width: 1024px) { .kbd-hint { display: inline; } }
+
+        /* answer formatting (Tailwind resets lists and headings, so restore them here) */
+        .md-body > :first-child { margin-top: 0; }
+        .md-body > :last-child  { margin-bottom: 0; }
+        .md-body p  { margin: 0 0 0.65em; }
+        .md-body ul { list-style: disc;    margin: 0 0 0.65em; padding-left: 1.3em; }
+        .md-body ol { list-style: decimal; margin: 0 0 0.65em; padding-left: 1.3em; }
+        .md-body li { margin: 0.2em 0; }
+        .md-body h1, .md-body h2, .md-body h3, .md-body h4 { font-weight: 800; line-height: 1.3; margin: 0.9em 0 0.4em; }
+        .md-body h1 { font-size: 1.25em; } .md-body h2 { font-size: 1.15em; } .md-body h3, .md-body h4 { font-size: 1.05em; }
+        .md-body pre { overflow-x: auto; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); margin: 0 0 0.65em; }
+        .md-body code { font-size: 0.92em; }
+        .md-body blockquote { margin: 0 0 0.65em; padding-left: 12px; border-left: 3px solid var(--border); color: var(--text-sub); }
       `}</style>
     </div>
   );

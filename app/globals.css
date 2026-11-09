@@ -420,3 +420,6 @@ html { color-scheme: light; }
 html[data-dark="true"] { color-scheme: dark; }
 /* server HTML is never visible un-themed; the splash covers this until the app has hydrated */
 html[data-booting="true"] .app-shell { visibility: hidden; }
+
+/* ── AI chat page: laptop side rail without the phone bottom tabs ───────────── */
+.bottom-nav.rail-only { display: none !important; }

@@ -42,7 +42,7 @@ function isActive(pathname: string, match: string[]): boolean {
   );
 }
 
-export default function BottomNav({ darkMode }: { darkMode?: boolean }) {
+export default function BottomNav({ darkMode, railOnly = false }: { darkMode?: boolean; railOnly?: boolean }) {
   const pathname = usePathname() ?? "";
   const dm = darkMode ?? false;
   const T  = palette(dm);
@@ -88,7 +88,7 @@ export default function BottomNav({ darkMode }: { darkMode?: boolean }) {
 
       {/* Phone + tablet: bottom tabs (hidden on laptop via CSS) */}
       <nav
-        className="navbar-fixed bottom-nav"
+        className={"navbar-fixed bottom-nav" + (railOnly ? " rail-only" : "")}
         style={{
           position:      "fixed",
           bottom:        0,

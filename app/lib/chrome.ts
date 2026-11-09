@@ -6,7 +6,7 @@ import { useSyncExternalStore } from "react";
  * or redraw while you move between pages.
  */
 export interface NavReg  { darkMode: boolean; hasToggle: boolean; toggle: () => void }
-export interface TabsReg { darkMode?: boolean }
+export interface TabsReg { darkMode?: boolean; railOnly?: boolean }
 
 interface Snapshot {
   nav:  { id: number; reg: NavReg }  | null;
@@ -39,7 +39,7 @@ export function unregisterNav(id: number) {
 
 export function registerTabs(id: number, reg: TabsReg) {
   const cur = snap.tabs;
-  if (cur && cur.id === id && cur.reg.darkMode === reg.darkMode) return;
+  if (cur && cur.id === id && cur.reg.darkMode === reg.darkMode && cur.reg.railOnly === reg.railOnly) return;
   commit({ ...snap, tabs: { id, reg } });
 }
 export function unregisterTabs(id: number) {

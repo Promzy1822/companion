@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useSyncExternalStore } from "react";
 
 export type ThemeMode = "system" | "light" | "dark";
 
@@ -34,4 +34,19 @@ export function setThemeMode(mode: ThemeMode): void {
   const d = document.documentElement;
   d.setAttribute("data-dark", String(dark));
   d.style.colorScheme = dark ? "dark" : "light";
+}
+
+function subscribeDark(cb: () => void) {
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-dark"] });
+  return () => mo.disconnect();
+}
+
+/** True when the app is currently dark. Safe for server rendering, and updates when the theme changes. */
+export function useDark(): boolean {
+  return useSyncExternalStore(
+    subscribeDark,
+    () => document.documentElement.getAttribute("data-dark") === "true",
+    () => false,
+  );
 }

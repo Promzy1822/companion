@@ -439,3 +439,9 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
   .plan-overview{display:grid !important;grid-template-columns:1fr 1fr;gap:12px !important}
   .plan-overview>*:first-child{grid-column:1/-1}
 }
+
+    /* Exam focus mode (mock exam): hide app chrome while an exam is running */
+    body.exam-focus .top-bar,
+    body.exam-focus .bottom-nav,
+    body.exam-focus .side-rail { display: none !important; }
+    

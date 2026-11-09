@@ -11,7 +11,7 @@ import BottomNavView from "./BottomNavView";
  * redesign reaches them in steps 2–5); they keep the tabs/rail.
  */
 const HIDE_ALL = ["/auth", "/landing", "/reset-password"];
-const HIDE_TOP = ["/ai", "/questions", "/syllabus", "/studyplan", "/solver"];
+const HIDE_TOP = ["/ai", "/questions", "/syllabus", "/studyplan"];
 /** Pages whose own bottom composer would collide with the phone tabs: rail only, as before. */
 const RAIL_ONLY = ["/ai"];
 

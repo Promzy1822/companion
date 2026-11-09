@@ -366,7 +366,7 @@ RULES:
                     ) : todayTask.type !== "rest" ? (
                       <div style={{ padding: "12px 18px", display: "flex", gap: 10 }}>
                         <Link
-                          href={`/solver?subject=${encodeURIComponent(todayTask.subject)}&question=Explain ${encodeURIComponent(todayTask.topic)}`}
+                          href={`/ai?q=${encodeURIComponent(`Explain ${todayTask.topic} (${todayTask.subject})`)}`}
                           style={{ flex: 1, padding: 11, borderRadius: 10, border: `1.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: T.text, fontWeight: 600, fontSize: 13, textDecoration: "none" }}
                         >
                           <BrainCircuit size={14} strokeWidth={1.8} />

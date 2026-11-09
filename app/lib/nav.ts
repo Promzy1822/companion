@@ -15,8 +15,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { icon: Home,        label: "Home",     href: "/",                    match: ["/"] },
   { icon: BookOpen,    label: "Learn",    href: "/subjects?mode=learn", match: ["/subjects", "/learn", "/lessons"] },
-  { icon: Bot,         label: "AI",       href: "/ai",                  match: ["/ai", "/solver"], center: true },
-  { icon: Target,      label: "Practice", href: "/questions",           match: ["/questions", "/mock"] },
+  { icon: Bot,         label: "AI",       href: "/ai",                  match: ["/ai"], center: true },
+  { icon: Target,      label: "Practice", href: "/practice", match: ["/practice", "/questions", "/mock"] },
   { icon: CalendarDays,label: "Plan",     href: "/studyplan",           match: ["/studyplan", "/syllabus"] },
 ];
 

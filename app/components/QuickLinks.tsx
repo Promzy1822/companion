@@ -10,7 +10,7 @@ const LINKS = [
   { icon: BookOpen,      label: "Learn",      sub: "Video lessons",  href: "/subjects?mode=learn",  color: "#0D8050",  bg: "#E6F4EA" },
   { icon: PenTool,       label: "Practice",   sub: "Past questions", href: "/subjects?mode=practice",color: "#7B3FBE", bg: "#F3E8FF" },
   { icon: ClipboardList, label: "Mock Exam",  sub: "Timed test",     href: "/mock",                 color: "#C75B21",  bg: "#FFF0E6" },
-  { icon: Lightbulb,     label: "Solver",     sub: "AI explains",    href: "/solver",               color: "#B07D00",  bg: "#FEF9E7" },
+  { icon: Lightbulb,     label: "Solver",     sub: "AI explains",    href: "/ai",               color: "#B07D00",  bg: "#FEF9E7" },
   { icon: CalendarDays,  label: "Study Plan", sub: "AI generated",   href: "/studyplan",            color: "#D0021B",  bg: "#FEE2E2" },
 ];
 

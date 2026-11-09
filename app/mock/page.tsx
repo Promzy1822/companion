@@ -1,5 +1,4 @@
 "use client";
-import { buildMockExamPrompt } from "../lib/syllabus";
 import { useState, useEffect, useRef } from "react";
 import AppLoader, { PageSkeleton } from "../components/AppLoader";
 import Link from "next/link";
@@ -11,21 +10,9 @@ import { C, palette } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { AppIcon, Rich } from "../components/AppIcon";
 
-interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; }
+interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; image?:string; }
 interface Result   { score:number; total:number; bySubject:Record<string,{correct:number;total:number}>; timeTaken:number; }
 
-const FALLBACK: Question[] = [
-  {id:1,subject:"Mathematics",question:"If 2x + 3 = 11, find x.",options:["2","3","4","5"],correct:2,explanation:"2x = 8, x = 4"},
-  {id:2,subject:"English Language",question:"Choose the word closest in meaning to 'Benevolent'.",options:["Cruel","Kind","Stingy","Harsh"],correct:1,explanation:"Benevolent means kind and generous"},
-  {id:3,subject:"Physics",question:"Which of these is a vector quantity?",options:["Mass","Temperature","Velocity","Speed"],correct:2,explanation:"Velocity has both magnitude and direction"},
-  {id:4,subject:"Chemistry",question:"The atomic number of Carbon is:",options:["6","12","14","8"],correct:0,explanation:"Carbon has 6 protons"},
-  {id:5,subject:"Biology",question:"Which organelle is called the powerhouse of the cell?",options:["Nucleus","Ribosome","Mitochondria","Golgi body"],correct:2,explanation:"Mitochondria produces ATP energy"},
-  {id:6,subject:"Mathematics",question:"Area of a circle with radius 7cm (π=22/7):",options:["44cm²","154cm²","22cm²","176cm²"],correct:1,explanation:"π×7²=154cm²"},
-  {id:7,subject:"English Language",question:"'The wind whispered through the trees' is:",options:["Simile","Metaphor","Personification","Hyperbole"],correct:2,explanation:"Attributing human quality to wind"},
-  {id:8,subject:"Physics",question:"SI unit of electric current:",options:["Volt","Watt","Ampere","Ohm"],correct:2,explanation:"Ampere (A)"},
-  {id:9,subject:"Chemistry",question:"Gas produced when zinc reacts with dilute H₂SO₄:",options:["Oxygen","Carbon dioxide","Hydrogen","Nitrogen"],correct:2,explanation:"Zn+H₂SO₄→ZnSO₄+H₂"},
-  {id:10,subject:"Biology",question:"Universal blood donor:",options:["A","B","AB","O"],correct:3,explanation:"Group O donates to all"},
-];
 
 export default function MockExam() {
   const dark = useDark();
@@ -56,16 +43,46 @@ export default function MockExam() {
 
   const startExam = async () => {
     setGenerating(true);
-    const user = (() => { try { return JSON.parse(localStorage.getItem("companion_user")||"{}"); } catch { return {}; }})();
-    const subjects = user.subjects || ["Mathematics","English Language","Physics","Chemistry","Biology"];
+    const user = (() => { try { return JSON.parse(localStorage.getItem("companion_user")||"{}"); } catch { return {}; } })();
+    const wanted: string[] = user.subjects || ["Mathematics","English Language","Physics","Chemistry","Biology"];
+    const BANK: Record<string,{id:string;label:string}> = {
+      "English Language":      { id:"english",     label:"English Language" },
+      "Mathematics":           { id:"mathematics", label:"Mathematics" },
+      "Physics":               { id:"physics",     label:"Physics" },
+      "Biology":               { id:"biology",     label:"Biology" },
+      "Government":            { id:"government",  label:"Government" },
+      "Economics":             { id:"economics",   label:"Economics" },
+      "Literature in English": { id:"literature",  label:"Literature in English" },
+    };
+    let bank = wanted.map(s => BANK[s]).filter(Boolean) as {id:string;label:string}[];
+    if (!bank.length) bank = Object.values(BANK);
+    const per = Math.ceil(numQ / bank.length);
+    const picked: Question[] = [];
     try {
-      const res  = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:buildMockExamPrompt(subjects, numQ), subjects})});
-      const data = await res.json();
-      const match = (data.reply||"").match(/\[[\s\S]*\]/);
-      if(match){ const p=JSON.parse(match[0]); if(Array.isArray(p)&&p.length) setQuestions(p); else setQuestions(FALLBACK.slice(0,numQ)); }
-      else setQuestions(FALLBACK.slice(0,numQ));
-    } catch { setQuestions(FALLBACK.slice(0,numQ)); }
-    setTimeLeft(numQ*90); setAnswers({}); setCurrent(0); setPhase("exam"); setGenerating(false);
+      await Promise.all(bank.map(async (b) => {
+        const res  = await fetch(`/api/qbank/questions?subject=${b.id}&limit=1000`);
+        const data = await res.json();
+        const usable = (data.questions || []).filter((q:any) =>
+          q.answer && q.options && q.options.A && q.options.B && q.options.C && q.options.D);
+        for (let i = usable.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [usable[i], usable[j]] = [usable[j], usable[i]]; }
+        usable.slice(0, per).forEach((q:any) => {
+          picked.push({
+            id: 0,
+            subject: b.label,
+            question: q.question,
+            options: [q.options.A, q.options.B, q.options.C, q.options.D],
+            correct: "ABCD".indexOf(q.answer),
+            explanation: `JAMB ${q.year} · Question ${q.num}`,
+            image: q.image || undefined,
+          });
+        });
+      }));
+    } catch {}
+    for (let i = picked.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [picked[i], picked[j]] = [picked[j], picked[i]]; }
+    const exam = picked.slice(0, numQ).map((q, i) => ({ ...q, id: i + 1 }));
+    if (!exam.length) { setGenerating(false); return; }
+    setQuestions(exam);
+    setTimeLeft(exam.length * 90); setAnswers({}); setCurrent(0); setPhase("exam"); setGenerating(false);
   };
 
   // Always keep submitRef pointing to latest submitExam
@@ -78,7 +95,7 @@ export default function MockExam() {
       bySubject[q.subject].total++;
       if(answers[i]===q.correct){score++;bySubject[q.subject].correct++;}
     });
-    const res:Result={score,total:questions.length,bySubject,timeTaken:(numQ*90)-timeLeft};
+    const res:Result={score,total:questions.length,bySubject,timeTaken:(questions.length*90)-timeLeft};
     setResult(res); setPhase("result");
     const jambEq=Math.round((score/questions.length)*400);
     const newH=[{score,total:questions.length,jambEquivalent:jambEq,date:new Date().toLocaleDateString()},...history].slice(0,10);
@@ -118,6 +135,13 @@ export default function MockExam() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase, current, questions]);
 
+  // Exam focus mode: hide the layout chrome (top bar, tabs, rail) while an exam runs
+  useEffect(() => {
+    if (phase !== "exam") return;
+    document.body.classList.add("exam-focus");
+    return () => { document.body.classList.remove("exam-focus"); };
+  }, [phase]);
+
   // ── SETUP ──────────────────────────────────────────────────────
   if (phase==="setup") return (
     <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
@@ -130,7 +154,7 @@ export default function MockExam() {
           </Link>
           <div>
             <div style={{color:"#fff",fontWeight:800,fontSize:"18px"}}>Mock Exam</div>
-            <div style={{color:"rgba(255,255,255,0.7)",fontSize:"12px"}}>AI-generated JAMB simulation</div>
+            <div style={{color:"rgba(255,255,255,0.7)",fontSize:"12px"}}>Real JAMB past questions</div>
           </div>
         </div>
       </div>
@@ -142,7 +166,7 @@ export default function MockExam() {
               <ClipboardList size={28} color={C.primary} strokeWidth={1.8} />
             </div>
             <h2 style={{fontSize:"20px",fontWeight:800,color:T.text,margin:"0 0 8px",letterSpacing:"-0.3px"}}>JAMB Mock Exam</h2>
-            <p style={{fontSize:"13px",color:T.sub,margin:0,lineHeight:"1.5"}}>AI generates questions from your subjects. Timer runs like real JAMB. Full debrief after.</p>
+            <p style={{fontSize:"13px",color:T.sub,margin:0,lineHeight:"1.5"}}>Built from real JAMB past questions in your subjects. Timer runs like real JAMB. Full debrief after.</p>
           </div>
           <div style={{marginBottom:"20px"}}>
             <label style={{fontSize:"12px",fontWeight:700,color:T.sub,display:"block",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Number of Questions</label>
@@ -156,7 +180,7 @@ export default function MockExam() {
             <p style={{fontSize:"11px",color:T.sub,marginTop:"8px",textAlign:"center"}}><AppIcon e="⏱" /> {Math.round(numQ*1.5)} minutes · {numQ} questions</p>
           </div>
           <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?"#ccc":C.primary,color:"#fff",fontWeight:700,fontSize:"15px",cursor:generating?"not-allowed":"pointer",boxShadow:generating?"none":`0 4px 14px rgba(79,70,229,0.35)`}}>
-            <Rich>{generating?"🤖 Generating questions…":"Start Mock Exam →"}</Rich>
+            <Rich>{generating?"Loading questions…":"Start Mock Exam →"}</Rich>
           </button>
         </div>
 
@@ -187,7 +211,7 @@ export default function MockExam() {
 
   // ── EXAM (no bottom nav — focus mode) ─────────────────────────
   if (phase==="exam") return (
-    <div className="focus-page" style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)",display:"flex",flexDirection:"column"}}>
+    <div className="focus-page" style={{minHeight:"100vh", paddingTop:"0px",background:T.bg,fontFamily:"var(--font)",display:"flex",flexDirection:"column"}}>
       {/* Sticky timer bar */}
       <div style={{background:dark?"linear-gradient(135deg,#111,#1F2050)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"14px 20px",position:"sticky",top:0,zIndex:50}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
@@ -214,6 +238,9 @@ export default function MockExam() {
           <div>
             <div style={{background:T.surface,borderRadius:"14px",padding:"18px",marginBottom:"14px",border:`1px solid ${T.border}`,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
               <div style={{fontSize:"11px",color:C.primary,fontWeight:700,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{questions[current].subject}</div>
+              {questions[current].image && (
+                <img src={questions[current].image} alt="Question diagram" style={{width:"100%",borderRadius:"10px",marginBottom:"10px",background:"#FFFFFF"}} />
+              )}
               <div style={{fontSize:"15px",color:T.text,fontWeight:600,lineHeight:"1.6"}}>{questions[current].question}</div>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:"9px"}}>

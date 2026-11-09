@@ -65,24 +65,32 @@ Return ONLY a raw JSON object, no markdown, no backticks, no explanation outside
 }`;
 
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method:  "POST",
-      headers: {
-        "Content-Type":  "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model:       "qwen/qwen3.6-27b",
-        messages:    [{ role: "user", content: prompt }],
-        max_tokens:  2048,
-        temperature: 0.4,
-      }),
-    });
+    // qwen3.6-27b retired 2026-09-14 — see /api/chat. Lessons are
+    // text-only, so gpt-oss-120b works as a fallback here too.
+    const lessonModels = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"];
+    let res: Response | null = null;
+    let lastErr = "";
+    for (const model of lessonModels) {
+      res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages:    [{ role: "user", content: prompt }],
+          max_tokens:  2048,
+          temperature: 0.4,
+        }),
+      });
+      if (res.ok) break;
+      lastErr = `Groq HTTP ${res.status} (${model}): ${(await res.text()).slice(0, 300)}`;
+      console.error("[lessons] Groq error:", lastErr);
+    }
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("[lessons] Groq error:", res.status, errText.slice(0, 200));
-      return { content: null, debugReason: `Groq HTTP ${res.status}: ${errText.slice(0, 300)}` };
+    if (!res || !res.ok) {
+      return { content: null, debugReason: lastErr || "Groq request failed" };
     }
 
     const data    = await res.json();

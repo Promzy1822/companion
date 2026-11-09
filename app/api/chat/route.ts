@@ -111,24 +111,35 @@ export async function POST(req: NextRequest) {
 
     messages.push({ role: "user", content: userContent });
 
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method:  "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type":  "application/json",
-      },
-      body: JSON.stringify({
-        model:       "qwen/qwen3.6-27b",
-        max_tokens:  1024,
-        temperature: 0.4,
-        messages,
-      }),
-    });
+    // Groq retired qwen/qwen3.6-27b on 2026-09-14; qwen/qwen3.8-27b is
+    // its replacement and the only Groq model that accepts images.
+    // Text-only requests also fall back to gpt-oss-120b, so a future
+    // retirement of the preview model does not take the tutor down.
+    const modelChain = imageBase64
+      ? ["qwen/qwen3.8-27b"]
+      : ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"];
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
-      console.error("[chat] Groq error:", groqRes.status, errText.slice(0, 200));
-      if (groqRes.status === 429) {
+    let groqRes: Response | null = null;
+    for (const model of modelChain) {
+      groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method:  "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type":  "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens:  1024,
+          temperature: 0.4,
+          messages,
+        }),
+      });
+      if (groqRes.ok) break;
+      console.error("[chat] Groq error:", model, groqRes.status, (await groqRes.text()).slice(0, 200));
+    }
+
+    if (!groqRes || !groqRes.ok) {
+      if (groqRes && groqRes.status === 429) {
         return NextResponse.json({ error: "AI is busy. Please try again in a moment." }, { status: 503 });
       }
       return NextResponse.json({ error: "AI service error. Please try again." }, { status: 502 });

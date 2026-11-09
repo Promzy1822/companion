@@ -447,6 +447,7 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
     body.exam-focus .install-banner { display: none !important; }
     
 /* Account menu becomes a bottom sheet on phones (redesign step 5) */
+.nav-scrim { display: none; }
 @media (max-width: 767px) {
   .nav-dropdown {
     top: auto !important;
@@ -454,6 +455,16 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
     left: 12px;
     right: 12px;
     width: auto !important;
+  }
+  /* Dim + blurred backdrop behind the account sheet so it stands out */
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 5, 10, 0.5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 305;
   }
 }
 

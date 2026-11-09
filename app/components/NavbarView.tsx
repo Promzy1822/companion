@@ -78,7 +78,7 @@ export default function NavbarView() {
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
 
           {user ? (
-            <div ref={dropRef} style={{ position: "relative" }}>
+            <div ref={dropRef} style={{ position: "relative", zIndex: open ? 310 : undefined }}>
               <button
                 onClick={() => setOpen(p => !p)}
                 style={{
@@ -223,6 +223,8 @@ export default function NavbarView() {
             </Link>
           )}
         </div>
+
+        {open && <div className="nav-scrim" aria-hidden="true" />}
       </header>
 
       <style>{`

@@ -11,6 +11,7 @@ import Navbar,    { NAVBAR_HEIGHT }     from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 import { Session } from "../lib/session";
+import { createClient } from "../lib/supabase/client";
 import { AppIcon } from "../components/AppIcon";
 
 interface UserData {
@@ -19,13 +20,6 @@ interface UserData {
   selfRating: string; createdAt?: string; passwordHash?: string;
 }
 
-function hashPw(pw: string): string {
-  const s = "companion_salt_2025_" + pw;
-  let h = 0;
-  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h = h & h; }
-  return Math.abs(h).toString(16) + Math.abs(h * 2654435761).toString(16) + Math.abs(h ^ 0xdeadbeef).toString(16);
-}
-function verifyPw(pw: string, hash: string): boolean { return hashPw(pw) === hash; }
 
 function Card({ children, darkMode, style }: { children: React.ReactNode; darkMode: boolean; style?: React.CSSProperties }) {
   const T = palette(darkMode);
@@ -64,6 +58,7 @@ export default function Profile() {
   const [confirmPw, setConfirmPw] = useState("");
   const [pwError,   setPwError]   = useState("");
   const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwBusy,    setPwBusy]    = useState(false);
   const [showOld,   setShowOld]   = useState(false);
   const [showNew,   setShowNew]   = useState(false);
   const router = useRouter();
@@ -87,23 +82,30 @@ export default function Profile() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const changePassword = () => {
+  const changePassword = async () => {
     setPwError(""); setPwSuccess(false);
+    if (!user) return;
     if (!oldPw || !newPw || !confirmPw) { setPwError("Fill all fields"); return; }
     if (newPw.length < 6) { setPwError("New password must be at least 6 characters"); return; }
     if (newPw !== confirmPw) { setPwError("Passwords do not match"); return; }
-    if (user?.passwordHash && !verifyPw(oldPw, user.passwordHash)) {
-      setPwError("Current password is incorrect"); return;
-    }
-    const updated = { ...user!, passwordHash: hashPw(newPw) };
-    localStorage.setItem("companion_user", JSON.stringify(updated));
+    if (newPw === oldPw) { setPwError("New password must be different from the current one"); return; }
+    setPwBusy(true);
     try {
-      const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
-      const idx = accs.findIndex((a: any) => a.email === updated.email);
-      if (idx >= 0) { accs[idx] = updated; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
-    } catch {}
-    setUser(updated); setOldPw(""); setNewPw(""); setConfirmPw("");
-    setPwSuccess(true); setTimeout(() => { setPwSuccess(false); setShowPwForm(false); }, 2000);
+      const supabase = createClient();
+      const { error: reauthErr } = await supabase.auth.signInWithPassword({ email: user.email, password: oldPw });
+      if (reauthErr) { setPwError("Current password is incorrect"); return; }
+      const { error: updErr } = await supabase.auth.updateUser({ password: newPw });
+      if (updErr) { setPwError(updErr.message); return; }
+      const updated = { ...user }; delete updated.passwordHash;
+      localStorage.setItem("companion_user", JSON.stringify(updated));
+      try {
+        const accs = JSON.parse(localStorage.getItem("companion_accounts") || "[]");
+        const idx = accs.findIndex((a: any) => a.email === updated.email);
+        if (idx >= 0) { delete accs[idx].passwordHash; localStorage.setItem("companion_accounts", JSON.stringify(accs)); }
+      } catch {}
+      setUser(updated); setOldPw(""); setNewPw(""); setConfirmPw("");
+      setPwSuccess(true); setTimeout(() => { setPwSuccess(false); setShowPwForm(false); }, 2000);
+    } finally { setPwBusy(false); }
   };
 
   const logout = () => { Session.logout(); router.replace("/landing"); };
@@ -301,8 +303,8 @@ export default function Profile() {
                   {pwError && (
                     <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}><AppIcon e="⚠️" /> {pwError}</div>
                   )}
-                  <button onClick={changePassword} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer" }}>
-                    Update Password
+                  <button onClick={changePassword} disabled={pwBusy} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer", opacity: pwBusy ? 0.6 : 1 }}>
+                    {pwBusy ? "Updating..." : "Update Password"}
                   </button>
                 </div>
               </div>

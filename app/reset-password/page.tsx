@@ -2,15 +2,17 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
-import { C } from "../lib/design";
+import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertTriangle } from "lucide-react";
+import { C, palette } from "../lib/design";
+import { useDark } from "../lib/theme";
 import { Session } from "../lib/session";
 import { validatePassword } from "../lib/auth";
 import { createClient } from "../lib/supabase/client";
-import { AppIcon } from "../components/AppIcon";
 
 function ResetContent() {
   const router = useRouter();
+  const dark = useDark();
+  const T = palette(dark);
 
   const [password,  setPassword]  = useState("");
   const [confirm,   setConfirm]   = useState("");
@@ -73,16 +75,16 @@ function ResetContent() {
 
   const inp: React.CSSProperties = {
     width:"100%", padding:"13px 16px", borderRadius:"10px",
-    border:"1.5px solid #E3E6EF", fontSize:"15px", outline:"none",
-    background:"#F8F9FC", color:"#0F172A", boxSizing:"border-box", fontFamily:"inherit",
+    border:`1.5px solid ${T.border}`, fontSize:"15px", outline:"none",
+    background:T.s2, color:T.text, boxSizing:"border-box", fontFamily:"inherit",
   };
 
   if (sessionOk === false) return (
-    <div style={{ minHeight:"100vh", background:"#F4F5FA", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"var(--font)" }}>
-      <div style={{ background:"#fff", borderRadius:"16px", padding:"32px 24px", textAlign:"center", maxWidth:360 }}>
-        <div style={{ fontSize:48, marginBottom:16 }}><AppIcon e="⚠️" /></div>
-        <h2 style={{ fontWeight:800, color:"#0F172A", marginBottom:8 }}>Invalid Link</h2>
-        <p style={{ color:"#475569", fontSize:"14px", marginBottom:24 }}>This reset link is invalid or has expired.</p>
+    <div style={{ minHeight:"100vh", background:T.bg, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"var(--font)" }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:"16px", padding:"32px 24px", textAlign:"center", maxWidth:360 }}>
+        <AlertTriangle size={44} color={T.warning} strokeWidth={1.5} style={{ margin:"0 auto 16px", display:"block" }} />
+        <h2 style={{ fontWeight:800, color:T.text, marginBottom:8 }}>Invalid Link</h2>
+        <p style={{ color:T.sub, fontSize:"14px", marginBottom:24 }}>This reset link is invalid or has expired.</p>
         <Link href="/auth" style={{ display:"block", padding:"13px", borderRadius:"10px", background:C.primary, color:"#fff", fontWeight:700, textDecoration:"none", textAlign:"center" }}>
           Back to Login
         </Link>
@@ -91,7 +93,7 @@ function ResetContent() {
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:"#F4F5FA", fontFamily:"var(--font)", display:"flex", flexDirection:"column" }}>
+    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"var(--font)", display:"flex", flexDirection:"column" }}>
       <div style={{ background:C.primary, padding:"16px 20px 24px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
           <Link href="/auth" style={{ width:34, height:34, borderRadius:"10px", background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
@@ -102,40 +104,40 @@ function ResetContent() {
       </div>
 
       <div style={{ flex:1, padding:"24px 16px" }}>
-        <div style={{ background:"#fff", borderRadius:"16px", padding:"24px", boxShadow:"0 1px 4px rgba(0,0,0,0.07)" }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:"16px", padding:"24px", boxShadow:"0 1px 4px rgba(0,0,0,0.07)", maxWidth:420, margin:"0 auto" }}>
           {success ? (
             <div style={{ textAlign:"center", padding:"16px 0" }}>
               <CheckCircle size={56} color="#31A24C" strokeWidth={1.5} style={{ margin:"0 auto 16px", display:"block" }} />
-              <h2 style={{ fontWeight:800, color:"#0F172A", marginBottom:8 }}>Password Reset!</h2>
-              <p style={{ color:"#475569", fontSize:"14px" }}>Logging you in automatically…</p>
+              <h2 style={{ fontWeight:800, color:T.text, marginBottom:8 }}>Password Reset!</h2>
+              <p style={{ color:T.sub, fontSize:"14px" }}>Logging you in automatically…</p>
             </div>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
               <div>
-                <h2 style={{ fontSize:"20px", fontWeight:800, color:"#0F172A", margin:"0 0 4px" }}>Create new password</h2>
-                <p style={{ fontSize:"13px", color:"#475569", margin:0 }}>Must be at least 6 characters</p>
+                <h2 style={{ fontSize:"20px", fontWeight:800, color:T.text, margin:"0 0 4px" }}>Create new password</h2>
+                <p style={{ fontSize:"13px", color:T.sub, margin:0 }}>Must be at least 6 characters</p>
               </div>
               <div>
-                <label style={{ fontSize:"13px", fontWeight:600, color:"#475569", display:"block", marginBottom:"6px" }}>New Password</label>
+                <label style={{ fontSize:"13px", fontWeight:600, color:T.sub, display:"block", marginBottom:"6px" }}>New Password</label>
                 <div style={{ position:"relative" }}>
                   <input style={{ ...inp, paddingRight:"44px" }} type={showPw?"text":"password"} placeholder="Min. 6 characters" value={password} onChange={e=>setPassword(e.target.value)} />
-                  <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:"#475569" }}>
+                  <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:T.sub }}>
                     {showPw ? <EyeOff size={18}/> : <Eye size={18}/>}
                   </button>
                 </div>
               </div>
               <div>
-                <label style={{ fontSize:"13px", fontWeight:600, color:"#475569", display:"block", marginBottom:"6px" }}>Confirm Password</label>
-                <input style={{ ...inp, borderColor: confirm && confirm !== password ? "#FA3E3E" : "#E3E6EF" }} type="password" placeholder="Repeat new password" value={confirm} onChange={e=>setConfirm(e.target.value)} />
+                <label style={{ fontSize:"13px", fontWeight:600, color:T.sub, display:"block", marginBottom:"6px" }}>Confirm Password</label>
+                <input style={{ ...inp, borderColor: confirm && confirm !== password ? "#FA3E3E" : T.border }} type="password" placeholder="Repeat new password" value={confirm} onChange={e=>setConfirm(e.target.value)} />
               </div>
               {error && (
-                <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}>
-                  <AppIcon e="⚠️" /> {error}
+                <div style={{ padding:"10px 14px", background:T.dangerTint, border:`1px solid ${T.danger}44`, borderRadius:"10px", color:T.danger, fontSize:"13px" }}>
+                  {error}
                 </div>
               )}
               <button onClick={handleReset} disabled={loading} style={{
                 width:"100%", padding:"14px", borderRadius:"10px", border:"none",
-                background: loading ? "#A7AEC2" : C.primary, color:"#fff",
+                background: loading ? T.s3 : C.primary, color:"#fff",
                 fontWeight:700, fontSize:"15px", cursor: loading?"not-allowed":"pointer",
                 boxShadow:`0 2px 10px rgba(79,70,229,0.3)`,
               }}>

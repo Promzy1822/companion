@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { palette } from "../lib/design";
-import { BookOpen, Bot, BarChart3, Newspaper, Calculator, ClipboardList, CheckCircle, ArrowRight, Star } from "lucide-react";
+import { BookOpen, Bot, BarChart3, ClipboardList, Timer, CalendarDays, ArrowRight } from "lucide-react";
 
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
 export default function Landing() {
@@ -21,25 +21,19 @@ export default function Landing() {
   if (!ready) return null;
 
   const FEATURES = [
-    { icon: BookOpen,      color: "#0D8050", bg: "#E6F4EA", title: "Smart Lessons",    desc: "Curated video lessons for all JAMB subjects, organised by topic" },
+    { icon: BookOpen,      color: "#0D8050", bg: "#E6F4EA", title: "Smart Lessons",    desc: "Curated video lessons for the 8 core JAMB subjects, organised by topic" },
     { icon: Bot,           color: T.primary, bg: "#EEF2FF", title: "AI Tutor 24/7",    desc: "Ask anything about JAMB — instant answers, every hour of the day" },
-    { icon: ClipboardList, color: "#C75B21", bg: "#FFF0E6", title: "Mock Exams",        desc: "AI-generated timed exams with full subject breakdown and debrief" },
+    { icon: Timer,         color: "#C75B21", bg: "#FFF0E6", title: "Mock Exams",        desc: "Timed exams built from real JAMB past questions, with a full breakdown" },
     { icon: BarChart3,     color: "#7B3FBE", bg: "#F3E8FF", title: "Track Progress",   desc: "Study streaks, performance analytics and personalised targets" },
-    { icon: Calculator,    color: "#B07D00", bg: "#FEF9E7", title: "Score Calculator", desc: "Instant JAMB aggregate and Post-UTME score calculations" },
-    { icon: Newspaper,     color: "#D0021B", bg: "#FEE2E2", title: "JAMB News",         desc: "Live updates on JAMB announcements, results and deadlines" },
+    { icon: ClipboardList, color: "#B07D00", bg: "#FEF9E7", title: "Past Questions",   desc: "3,333 real JAMB questions from 2010-2018, with answers and diagrams" },
+    { icon: CalendarDays,  color: "#D0021B", bg: "#FEE2E2", title: "Study Plan",       desc: "A day-by-day plan built from the official JAMB syllabus, matched to your exam date" },
   ];
 
   const STEPS = [
     { n:"1", title: "Create Account",  desc: "Sign up with your email and choose your target school and course" },
-    { n:"2", title: "Get Your Plan",   desc: "AI builds a week-by-week study plan based on your subjects and exam date" },
+    { n:"2", title: "Get Your Plan",   desc: "Get a week-by-week study plan built from the official syllabus, based on your subjects and exam date" },
     { n:"3", title: "Study Smart",     desc: "Learn, practice and ask AI — everything in one focused place" },
     { n:"4", title: "Ace Your JAMB",   desc: "Hit your target score and secure your university admission" },
-  ];
-
-  const TESTIMONIALS = [
-    { name: "Amaka O.", score: "321", school: "UNILAG",   text: "Companion helped me focus on the right topics. I scored 321!" },
-    { name: "Emeka C.", score: "298", school: "OAU",      text: "The AI tutor explained things my teacher couldn't. Got into OAU!" },
-    { name: "Fatima B.", score: "304", school: "UNILORIN", text: "I practiced past questions daily. This app is a game changer." },
   ];
 
   return (
@@ -93,7 +87,7 @@ export default function Landing() {
             boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
           }}>
             <div style={{ width:6, height:6, borderRadius:"50%", background:"#31A24C", animation:"pulse 2s infinite" }} />
-            <span style={{ fontSize:"12px", fontWeight:600, color:T.sub }}>Nigeria's #1 JAMB Study App</span>
+            <span style={{ fontSize:"12px", fontWeight:600, color:T.sub }}>Built for Nigerian JAMB students</span>
           </div>
           <div style={{ margin: "0 auto 20px", display: "inline-block" }}>
             <img src="/icon-192.png" alt="Companion" width={80} height={80}
@@ -122,7 +116,7 @@ export default function Landing() {
           gap: "1px", margin: "40px 0 0",
           background: T.border, borderRadius: "14px", overflow: "hidden",
         }}>
-          {[{n:"1.5M+",l:"Students"},{n:"10K+",l:"Questions"},{n:"24/7",l:"AI Help"},{n:"Free",l:"Always"}].map((s,i)=>(
+          {[{n:"3,333",l:"Past Questions"},{n:"8",l:"Subjects"},{n:"24/7",l:"AI Help"},{n:"Free",l:"Always"}].map((s,i)=>(
             <div key={i} style={{ padding:"16px 8px", textAlign:"center", background:T.surface }}>
               <div style={{ fontSize:"18px", fontWeight:900, color:T.primary }}>{s.n}</div>
               <div style={{ fontSize:"11px", color:T.sub, marginTop:"2px" }}>{s.l}</div>
@@ -173,34 +167,13 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* ── TESTIMONIALS ── */}
-      <div style={{ padding:"40px 20px", background:T.bg }}>
-        <div style={{ textAlign:"center", marginBottom:"24px" }}>
-          <div style={{ fontSize:"12px", fontWeight:700, color:T.primary, letterSpacing:"2px" }}>STUDENT STORIES</div>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
-          {TESTIMONIALS.map((t,i)=>(
-            <div key={i} style={{ background:T.surface, borderRadius:"16px", padding:"16px", border:`1px solid ${T.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-              <div style={{ display:"flex", gap:"2px", marginBottom:"8px" }}>
-                {[...Array(5)].map((_,j)=><Star key={j} size={14} color="#F7B928" fill="#F7B928" strokeWidth={0} />)}
-              </div>
-              <p style={{ fontSize:"13px", color:T.text, margin:"0 0 12px", lineHeight:1.55, fontStyle:"italic" }}>"{t.text}"</p>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ fontWeight:700, fontSize:"13px", color:T.text }}>{t.name}</span>
-                <span style={{ fontSize:"12px", fontWeight:600, color:T.primary, background:T.primaryTint, padding:"4px 10px", borderRadius:"20px" }}>{t.score} · {t.school}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* ── CTA ── */}
       <div style={{ padding:"56px 24px", background:`linear-gradient(135deg, ${T.primary}, ${T.primaryDark})`, textAlign:"center" }}>
         <img src="/icon-192.png" alt="Companion" width={60} height={60}
           style={{ borderRadius:"18px", margin:"0 auto 20px", display:"block", boxShadow:"0 8px 24px rgba(0,0,0,0.25)" }} />
         <h2 style={{ color:"#fff", fontSize:"26px", fontWeight:800, margin:"0 0 10px", letterSpacing:"-0.5px" }}>Ready to ace JAMB?</h2>
         <p style={{ color:"rgba(255,255,255,0.8)", fontSize:"14px", margin:"0 0 28px" }}>
-          Join thousands of students already using Companion
+          Start studying smarter today. Free forever.
         </p>
         <Link href="/auth" style={{
           display:"inline-flex", alignItems:"center", gap:"8px",

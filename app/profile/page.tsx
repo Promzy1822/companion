@@ -13,7 +13,6 @@ import { C, palette } from "../lib/design";
 import { setThemeMode, useDark } from "../lib/theme";
 import { Session } from "../lib/session";
 import { createClient } from "../lib/supabase/client";
-import { AppIcon } from "../components/AppIcon";
 
 interface UserData {
   name: string; email: string; institution: string; course: string;
@@ -132,8 +131,8 @@ export default function Profile() {
         {/* Hero */}
         <div style={{
           background: dark
-            ? "linear-gradient(160deg,#111827 0%,#1E3A5F 60%,#4F46E5 100%)"
-            : "linear-gradient(160deg,#4F46E5 0%,#1565C0 100%)",
+            ? "linear-gradient(160deg,#111827 0%,#1F2050 60%,#4F46E5 100%)"
+            : "linear-gradient(160deg,#4F46E5 0%,#3730A3 100%)",
           padding: "28px 20px 40px", position: "relative", overflow: "hidden",
         }}>
           <div style={{ position:"absolute", top:-40, right:-40, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }} />
@@ -141,9 +140,9 @@ export default function Profile() {
           <div style={{ textAlign: "center", position: "relative" }}>
             <div style={{
               width: 76, height: 76, borderRadius: "50%",
-              background: "linear-gradient(135deg,#fde68a,#f59e0b)",
+              background: "linear-gradient(135deg,#4F46E5,#818CF8)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 12px", fontSize: "30px", fontWeight: 800, color: "#7c2d12",
+              margin: "0 auto 12px", fontSize: "30px", fontWeight: 800, color: "#fff",
               boxShadow: "0 4px 20px rgba(0,0,0,0.2)", border: "3px solid rgba(255,255,255,0.5)",
             }}>
               {user.name.charAt(0).toUpperCase()}
@@ -157,7 +156,7 @@ export default function Profile() {
               { label: "Days left", value: daysLeft !== null ? `${daysLeft}d` : "—" },
               { label: "Subjects",  value: String(user.subjects?.length ?? 0) },
             ].map((s, i) => (
-              <div key={i} style={{ background: "rgba(255,255,255,0.12)", borderRadius: "12px", padding: "12px 8px", textAlign: "center", backdropFilter: "blur(4px)" }}>
+              <div key={i} style={{ background: "rgba(255,255,255,0.12)", borderRadius: "12px", padding: "12px 8px", textAlign: "center" }}>
                 <div style={{ color: "#FFF8DB", fontWeight: 900, fontSize: "18px", letterSpacing: "-0.5px", lineHeight: 1 }}>{s.value}</div>
                 <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "10px", marginTop: "4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</div>
               </div>
@@ -192,7 +191,7 @@ export default function Profile() {
               {editing ? (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
                   <div><label style={lbl}>Full Name</label><input style={inp} value={form.name||""} onChange={e=>setForm(p=>({...p,name:e.target.value}))} /></div>
-                  <div><label style={lbl}>Email Address</label><input style={inp} type="email" value={form.email||""} onChange={e=>setForm(p=>({...p,email:e.target.value}))} /></div>
+                  <div><label style={lbl}>Email Address</label><input style={{ ...inp, opacity: 0.6 }} type="email" value={form.email||""} readOnly /><div style={{ fontSize:"11px", color:T.muted, marginTop:"5px" }}>Email can't be changed here — it is your sign-in email.</div></div>
                   <div><label style={lbl}>JAMB Exam Date</label><input style={inp} type="date" value={form.deadline||""} onChange={e=>setForm(p=>({...p,deadline:e.target.value}))} /></div>
                   <div>
                     <label style={{ ...lbl, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -297,7 +296,7 @@ export default function Profile() {
                     <input style={{ ...inp, borderColor: confirmPw && confirmPw!==newPw ? "#FA3E3E" : T.border }} type="password" placeholder="Repeat new password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} />
                   </div>
                   {pwError && (
-                    <div style={{ padding:"10px 14px", background:"#FEE2E2", border:"1px solid #FECACA", borderRadius:"10px", color:"#D0021B", fontSize:"13px" }}><AppIcon e="⚠️" /> {pwError}</div>
+                    <div style={{ padding:"10px 14px", background:T.dangerTint, border:`1px solid ${T.danger}44`, borderRadius:"10px", color:T.danger, fontSize:"13px" }}>{pwError}</div>
                   )}
                   <button onClick={changePassword} disabled={pwBusy} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer", opacity: pwBusy ? 0.6 : 1 }}>
                     {pwBusy ? "Updating..." : "Update Password"}
@@ -336,8 +335,8 @@ export default function Profile() {
 
           {/* Logout */}
           <button onClick={logout} style={{
-            width:"100%", padding:"15px 18px", borderRadius:"14px", border:`1.5px solid #FA3E3E33`,
-            background: dark?"#1A0808":"#FEE2E2", color:"#D0021B",
+            width:"100%", padding:"15px 18px", borderRadius:"14px", border:`1.5px solid ${T.danger}33`,
+            background: T.dangerTint, color: T.danger,
             fontWeight:700, fontSize:"14px", cursor:"pointer",
             display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
           }}>

@@ -2,13 +2,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LogOut, ChevronDown, Sparkles } from "lucide-react";
+import { LogOut, ChevronDown, Sparkles, User, KeyRound } from "lucide-react";
 import AppLogo from "./AppLogo";
 import ThemeMenu from "./ThemeMenu";
 import { Session } from "../lib/session";
 import { palette } from "../lib/design";
 import { setThemeMode, useDark, useIsoLayoutEffect } from "../lib/theme";
-import { NAV_ITEMS, NAV_SECONDARY, isNavActive } from "../lib/nav";
+import { isNavActive } from "../lib/nav";
 
 interface UserData { name: string; email: string; target: string; institution?: string; }
 
@@ -51,7 +51,10 @@ export default function NavbarView() {
     router.push("/landing");
   };
 
-  const menuItems = [...NAV_ITEMS, ...NAV_SECONDARY];
+  const menuItems = [
+    { icon: User,     label: "Profile & Settings", href: "/profile", match: ["/profile"] },
+    { icon: KeyRound, label: "Change Password",    href: "/profile", match: [] as string[] },
+  ];
   const ic = { size: 17, strokeWidth: 1.8 } as const;
 
   return (
@@ -162,14 +165,14 @@ export default function NavbarView() {
                     </div>
                   </Link>
 
-                  {/* Nav links — same single definition as the tabs and rail */}
+                  {/* Account links */}
                   <div style={{ padding: "4px 0" }}>
                     {menuItems.map(item => {
                       const Icon   = item.icon;
                       const active = isNavActive(pathname, item.match);
                       return (
                         <Link
-                          key={item.href}
+                          key={item.label}
                           href={item.href}
                           onClick={() => setOpen(false)}
                           style={{

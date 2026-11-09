@@ -445,3 +445,13 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
     body.exam-focus .bottom-nav,
     body.exam-focus .side-rail { display: none !important; }
     
+/* Account menu becomes a bottom sheet on phones (redesign step 5) */
+@media (max-width: 767px) {
+  .nav-dropdown {
+    top: auto !important;
+    bottom: 76px;
+    left: 12px;
+    right: 12px;
+    width: auto !important;
+  }
+}

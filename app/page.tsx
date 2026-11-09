@@ -4,7 +4,6 @@ import AppLoader, { PageSkeleton } from "./components/AppLoader";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar, { NAVBAR_HEIGHT } from "./components/Navbar";
-import { useNews } from "./lib/useNews";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "./components/BottomNav";
 import QuickLinks from "./components/QuickLinks";
 import StreakCard from "./components/StreakCard";
@@ -12,38 +11,10 @@ import CountdownBanner from "./components/CountdownBanner";
 import { Session } from "./lib/session";
 import { C, D, palette } from "./lib/design";
 import { useDark } from "./lib/theme";
-import { RefreshCw, Calculator, Newspaper, ChevronDown, ChevronUp } from "lucide-react";
-import { AppIcon } from "./components/AppIcon";
+import { Calculator, ChevronDown, ChevronUp, Bot, Target, CalendarDays, ChevronRight } from "lucide-react";
+import { todayWAT } from "./lib/progress";
 
-interface NewsItem { title:string; url:string; source:string; time:string; image?:string; category?:string; }
 interface User { name:string; email:string; target:string; institution:string; subjects:string[]; course:string; }
-
-const CATS = ["All","Education","Exams","Admissions","Tech","General"];
-const IMGS = [
-  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&q=80",
-  "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=400&q=80",
-  "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=400&q=80",
-  "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80",
-  "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&q=80",
-];
-
-const catOf = (t:string) => {
-  const l = t.toLowerCase();
-  if (/exam|utme|waec|neco|result/.test(l)) return "Exams";
-  if (/admission|cutoff|screening/.test(l)) return "Admissions";
-  if (/tech|ai|digital/.test(l)) return "Tech";
-  if (/university|polytechnic|school/.test(l)) return "Education";
-  return "General";
-};
-
-const FALLBACK: NewsItem[] = [
-  {title:"JAMB 2025 UTME Registration Portal Now Open",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"2h ago"},
-  {title:"JAMB Releases Updated Syllabus for 2025 UTME",url:"https://www.jamb.gov.ng",source:"JAMB Official",time:"5h ago"},
-  {title:"UNILAG Post-UTME Screening 2025: Dates Released",url:"#",source:"UNILAG Info",time:"1d ago"},
-  {title:"How to Score 300+ in JAMB: Expert Study Tips",url:"#",source:"Education Guide",time:"1d ago"},
-  {title:"CBT Centres: Approved JAMB Centres 2025",url:"#",source:"JAMB Guide",time:"2d ago"},
-  {title:"OAU Cut-Off Marks for All Courses 2025",url:"#",source:"University News",time:"3d ago"},
-];
 
 export default function Home() {
   const darkMode = useDark();
@@ -54,29 +25,32 @@ export default function Home() {
       return u ? JSON.parse(u) : null;
     } catch { return null; }
   });
-  const {
-    filtered:  news,
-    loading:   newsLoad,
-    refreshing,
-    refresh:   fetchNews,
-    setCategory: setNewsCategory,
-    lastUpdated: newsLastUpdated,
-  } = useNews();
-  const [cat,      setCat]      = useState("All");
   const [showCalc, setShowCalc] = useState(false);
   const [calcType, setCalcType] = useState<"jamb"|"aggregate">("aggregate");
   const [jambS,    setJambS]    = useState("");
   const [postS,    setPostS]    = useState("");
   const [result,   setResult]   = useState<{agg:number;jamb:number;post:number;grade:string;color:string}|null>(null);
   const [calcErr,  setCalcErr]  = useState("");
-  const [pressed,  setPressed]  = useState<number|null>(null);
+  const [todayPlan] = useState<{ subject: string; topic: string; done: boolean; rest: boolean } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("companion_study_plan_v2");
+      if (!raw) return null;
+      const weeks = JSON.parse(raw) as { days: { date: string; subject: string; topic: string; type: string; done: boolean }[] }[];
+      const today = todayWAT();
+      for (const w of weeks) {
+        const day = (w.days || []).find(d => d.date === today);
+        if (day) return { subject: day.subject, topic: day.topic, done: day.done, rest: day.type === "rest" };
+      }
+      return null;
+    } catch { return null; }
+  });
   const router = useRouter();
   const T = palette(darkMode);
 
   useEffect(() => {
     Session.sync();
     if (!user) { router.replace("/landing"); return; }
-    fetchNews();
   }, [router]);
 
   const calcAggregate = () => {
@@ -99,7 +73,6 @@ export default function Home() {
 
   if (!user) return null;
 
-  const filteredNews = cat === "All" ? news : news.filter(n=>n.category===cat);
 
   const inp: React.CSSProperties = {
     width:"100%", padding:"12px 14px", borderRadius:"10px",
@@ -127,7 +100,7 @@ export default function Home() {
           padding: "24px 20px 32px",
         }}>
           <div style={{ color:"rgba(255,255,255,0.8)", fontSize:"13px", marginBottom:"4px" }}>
-            {greeting} <AppIcon e="👋" />
+            {greeting}
           </div>
           <div style={{ color:"#fff", fontSize:"22px", fontWeight:800, letterSpacing:"-0.4px" }}>
             {user?.name.split(" ")[0]}
@@ -144,6 +117,31 @@ export default function Home() {
           <div className="home-main">
           <CountdownBanner darkMode={darkMode} />
 
+          {/* Today's plan */}
+          <Link href="/studyplan" style={{ textDecoration:"none", display:"block", marginBottom:"14px" }}>
+            <div style={{ background:T.surface, borderRadius:"16px", border:"1px solid "+T.border, boxShadow:"0 1px 4px rgba(0,0,0,0.06)", padding:"16px 18px", display:"flex", alignItems:"center", gap:"14px" }}>
+              <div style={{ width:44, height:44, borderRadius:"12px", background:C.primaryLight, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <CalendarDays size={20} color={C.primary} strokeWidth={1.8} />
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:"11px", fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:"2px" }}>Today's Plan</div>
+                {todayPlan === null ? (
+                  <div style={{ fontWeight:700, color:T.text, fontSize:"14px" }}>Generate your study plan</div>
+                ) : todayPlan.rest ? (
+                  <div style={{ fontWeight:700, color:T.text, fontSize:"14px" }}>Rest day — recharge for tomorrow</div>
+                ) : (
+                  <div style={{ fontWeight:700, color:T.text, fontSize:"14px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                    {todayPlan.subject} · {todayPlan.topic}
+                  </div>
+                )}
+                <div style={{ fontSize:"12px", color:T.sub, marginTop:"2px" }}>
+                  {todayPlan === null ? "Built from the official syllabus" : todayPlan.rest ? "Rest is part of the plan" : todayPlan.done ? "Done for today. Well done." : "Tap to open today's plan"}
+                </div>
+              </div>
+              <ChevronRight size={18} color={T.sub} />
+            </div>
+          </Link>
+
           {/* AI CTA */}
           <Link href="/ai" style={{ textDecoration:"none", display:"block", marginBottom:"14px" }}>
             <div style={{
@@ -155,7 +153,7 @@ export default function Home() {
             }}>
               <div style={{ position:"absolute", top:"-20px", right:"-20px", width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }} />
               <div style={{ width:48, height:48, borderRadius:"14px", background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"24px", color:"#fff", flexShrink:0 }}>
-                <AppIcon e="🤖" />
+                <Bot size={24} color="#fff" strokeWidth={1.8} />
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ color:"#fff", fontWeight:800, fontSize:"16px", letterSpacing:"-0.2px" }}>Ask AI Anything</div>
@@ -174,6 +172,20 @@ export default function Home() {
           <div style={{ marginBottom:"14px" }}>
             <QuickLinks darkMode={darkMode} />
           </div>
+
+          {/* Practice CTA */}
+          <Link href="/practice" style={{ textDecoration:"none", display:"block", marginBottom:"14px" }}>
+            <div style={{ background:T.surface, borderRadius:"16px", border:"1px solid "+T.border, boxShadow:"0 1px 4px rgba(0,0,0,0.06)", padding:"16px 18px", display:"flex", alignItems:"center", gap:"14px" }}>
+              <div style={{ width:44, height:44, borderRadius:"12px", background:T.primaryTint, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Target size={20} color={C.primary} strokeWidth={1.8} />
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:700, color:T.text, fontSize:"15px" }}>Practice</div>
+                <div style={{ fontSize:"12px", color:T.sub, marginTop:"2px" }}>3,333 real past questions · Mock exams · Quick drills</div>
+              </div>
+              <ChevronRight size={18} color={T.sub} />
+            </div>
+          </Link>
 
           </div>
           <div className="home-side">
@@ -262,124 +274,10 @@ export default function Home() {
             )}
           </div>
 
-          {/* News */}
-          <div style={{
-            background:T.surface, borderRadius:"16px",
-            border:"1px solid "+T.border,
-            boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
-            overflow:"hidden",
-          }}>
-            <div style={{ padding:"16px 18px 0" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-                  <div style={{ width:36, height:36, borderRadius:"10px", background:"#FEE2E2", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    <Newspaper size={17} color="#D0021B" strokeWidth={1.8} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight:700, color:T.text, fontSize:"15px" }}>JAMB News</div>
-                    <div style={{ fontSize:"11px", color:"#31A24C", display:"flex", alignItems:"center", gap:"4px" }}>
-                      <div style={{ width:5, height:5, borderRadius:"50%", background:"#31A24C", animation:"pulse 2s infinite" }} />
-                      Live updates
-                    </div>
-                  </div>
-                </div>
-                <button onClick={()=>fetchNews()} style={{
-                  width:32, height:32, borderRadius:"8px", border:"none",
-                  background:T.s2, cursor:"pointer",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                }}>
-                  <RefreshCw size={15} color={T.sub} strokeWidth={2}
-                    style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none" }}
-                  />
-                </button>
-              </div>
-              <div style={{ display:"flex", gap:"7px", overflowX:"auto", paddingBottom:"12px", scrollbarWidth:"none" }}>
-                {CATS.map(c=>(
-                  <button key={c} onClick={()=>setCat(c)} style={{
-                    flexShrink:0, padding:"6px 14px", borderRadius:"50px", border:"none",
-                    cursor:"pointer", fontSize:"12px", fontWeight:600,
-                    background: cat===c ? C.primary : T.s2,
-                    color: cat===c ? "#fff" : T.sub,
-                    transition:"all 0.15s",
-                  }}>
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {newsLoad ? (
-              <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:"14px" }}>
-                {[0,1,2].map(i=>(
-                  <div key={i} style={{ display:"flex", gap:"12px" }}>
-                    <div style={{ flex:1 }}>
-                      <div className="skeleton" style={{ height:14, width:"90%", marginBottom:8 }} />
-                      <div className="skeleton" style={{ height:12, width:"55%" }} />
-                    </div>
-                    <div className="skeleton" style={{ width:72, height:72, flexShrink:0, borderRadius:10 }} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div>
-                {(filteredNews.length ? filteredNews : news).map((item,i)=>(
-                  <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                    style={{ textDecoration:"none", display:"block" }}
-                    onMouseDown={()=>setPressed(i)} onMouseUp={()=>setPressed(null)}
-                    onTouchStart={()=>setPressed(i)} onTouchEnd={()=>setPressed(null)}
-                  >
-                    <div style={{
-                      padding:"14px 18px",
-                      borderTop: i===0 ? "none" : "1px solid "+T.border,
-                      display:"flex", gap:"12px", alignItems:"flex-start",
-                      background: pressed===i ? T.s2 : "transparent",
-                      transition:"background 0.1s",
-                    }}>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:"11px", color:C.primary, fontWeight:700, marginBottom:"5px", display:"flex", alignItems:"center", gap:"5px" }}>
-                          <span>{item.source}</span>
-                          <span style={{ color:T.border }}>·</span>
-                          <span style={{ color:T.sub, fontWeight:500 }}>{item.time}</span>
-                        </div>
-                        <div style={{
-                          fontSize:"13px", color:T.text, fontWeight:700, lineHeight:1.4, marginBottom:"6px",
-                          display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden",
-                        }}>
-                          {item.title}
-                        </div>
-                        <span style={{ fontSize:"11px", color:T.sub, background:T.s2, padding:"3px 8px", borderRadius:"6px" }}>
-                          {item.category}
-                        </span>
-                      </div>
-                      {item.image && (
-                        <div style={{ width:72, height:72, borderRadius:"10px", overflow:"hidden", flexShrink:0 }}>
-                          <img src={item.image} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}
-                            onError={e=>{(e.target as HTMLImageElement).style.display="none"}} />
-                        </div>
-                      )}
-                    </div>
-                  </a>
-                ))}
-                <div style={{ padding:"14px 18px", borderTop:"1px solid "+T.border, textAlign:"center" }}>
-                  <button onClick={()=>fetchNews()} style={{
-                    background:"none", border:"none", color:C.primary, fontSize:"13px", fontWeight:700, cursor:"pointer",
-                  }}>
-                    {refreshing ? "Refreshing..." : "Refresh news"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div></div>
 
         <BottomNav darkMode={darkMode} />
 
-        <style>{`
-          @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.4} }
-          @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-          .skeleton { background: linear-gradient(90deg,#e0e0e0 25%,#f0f0f0 50%,#e0e0e0 75%); background-size:200% 100%; animation: shimmer 1.4s infinite; border-radius:6px; }
-          @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        `}</style>
       </div>
     </>
   );

@@ -1,5 +1,5 @@
 import {
-  Home, BookOpen, Bot, Target, CalendarDays, User,
+  Home, BookOpen, Bot, Target, CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,10 +20,8 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: CalendarDays,label: "Plan",     href: "/studyplan",           match: ["/studyplan", "/syllabus"] },
 ];
 
-/** Secondary destinations (rail + avatar menu only): Profile, until the account sheet absorbs it in step 5. (Syllabus was absorbed into Plan as Coverage in step 3.) */
-export const NAV_SECONDARY: NavItem[] = [
-  { icon: User,       label: "Profile",  href: "/profile",  match: ["/profile"] },
-];
+/** Profile lives in the avatar account menu now (step 5) — no secondary rail items remain. */
+export const NAV_SECONDARY: NavItem[] = [];
 
 export function isNavActive(pathname: string, match: string[]): boolean {
   return match.some(m =>

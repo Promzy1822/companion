@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, ClipboardList, Zap, ChevronRight, Trophy } from "lucide-react";
-import { C, palette } from "../lib/design";
+import { palette } from "../lib/design";
 import { useDark } from "../lib/theme";
+import { NAVBAR_HEIGHT } from "../components/NavbarView";
+import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
 
 const SUBJECTS = [
   { id: "english",     label: "English Language",      count: 773 },
@@ -41,17 +43,17 @@ export default function PracticeHub() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", paddingTop: "56px", background: T.bg, fontFamily: "var(--font)" }}>
-      <div className="page-narrow" style={{ padding: "20px 14px 100px" }}>
+    <div style={{ minHeight: "100vh", paddingTop: NAVBAR_HEIGHT, background: T.bg, fontFamily: "var(--font)" }}>
+      <div style={{ padding: `20px 20px calc(${BOTTOM_NAV_HEIGHT}px + 16px)` }}>
         <h1 style={{ fontSize: "24px", fontWeight: 800, color: T.text, margin: "0 0 4px", letterSpacing: "-0.5px" }}>Practice</h1>
-        <p style={{ fontSize: "13px", color: T.sub, margin: "0 0 18px" }}>Real JAMB questions, timed mocks and quick drills.</p>
+        <p style={{ fontSize: "13px", color: T.sub, margin: "0 0 20px" }}>Real JAMB questions, timed mocks and quick drills.</p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "22px" }}>
+        <div className="practice-modes" style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
           {CARDS.map(card => {
             const Icon = card.icon;
             return (
-              <Link key={card.title} href={card.href} style={{ display: "flex", alignItems: "center", gap: "14px", background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", padding: "16px", textDecoration: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-                <span style={{ width: 46, height: 46, borderRadius: "13px", background: T.primaryTint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Link key={card.title} href={card.href} style={{ display: "flex", alignItems: "center", gap: "14px", background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", padding: "16px", textDecoration: "none", minHeight: "44px" }}>
+                <span style={{ width: 44, height: 44, borderRadius: "12px", background: T.primaryTint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon size={22} color={T.primary} strokeWidth={1.8} />
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
@@ -64,22 +66,10 @@ export default function PracticeHub() {
           })}
         </div>
 
-        <div style={{ fontSize: "12px", fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>
-          Practice by subject
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "22px" }}>
-          {SUBJECTS.map(s => (
-            <Link key={s.id} href={`/questions?subject=${s.id}&mode=practice`} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "14px", padding: "13px 14px", textDecoration: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-              <span style={{ display: "block", fontSize: "13.5px", fontWeight: 700, color: T.text, lineHeight: 1.3 }}>{s.label}</span>
-              <span style={{ display: "block", fontSize: "11.5px", color: T.sub, marginTop: "3px" }}>{s.count} questions</span>
-            </Link>
-          ))}
-        </div>
-
         {history.length > 0 && (
-          <Link href="/mock" style={{ display: "block", background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", overflow: "hidden", textDecoration: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", overflow: "hidden" }}>
             <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: "8px" }}>
-              <Trophy size={16} color={C.primary} strokeWidth={1.8} />
+              <Trophy size={16} color={T.primary} strokeWidth={1.8} />
               <span style={{ fontWeight: 700, color: T.text, fontSize: "14px" }}>Recent mock results</span>
             </div>
             {history.slice(0, 3).map((h, i) => (
@@ -89,12 +79,12 @@ export default function PracticeHub() {
                   <div style={{ fontSize: "11px", color: T.sub }}>{h.date}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "20px", fontWeight: 900, color: h.jambEquivalent >= 250 ? "#31A24C" : h.jambEquivalent >= 200 ? "#F7B928" : "#FA3E3E", letterSpacing: "-1px" }}>{h.jambEquivalent}</div>
+                  <div style={{ fontSize: "20px", fontWeight: 900, color: h.jambEquivalent >= 250 ? "#2FBF71" : h.jambEquivalent >= 200 ? "#F7B928" : "#FF6B5E", letterSpacing: "-1px" }}>{h.jambEquivalent}</div>
                   <div style={{ fontSize: "10px", color: T.sub }}>JAMB equiv.</div>
                 </div>
               </div>
             ))}
-          </Link>
+          </div>
         )}
       </div>
     </div>

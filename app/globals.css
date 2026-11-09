@@ -513,3 +513,13 @@ html, body { overflow-x: clip; }
   .fd-auth-pitch { display: block; }
   .fd-auth-form { max-width: 420px; width: 100%; margin: 0 auto; }
 }
+
+/* ── Laptop: Practice mode cards as a three-column row ─────────────────────── */
+@media (min-width: 1024px) {
+  .practice-modes {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px !important;
+    align-items: stretch;
+  }
+}

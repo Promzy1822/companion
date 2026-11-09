@@ -8,9 +8,8 @@ import {
 } from "lucide-react";
 import { C, palette } from "../lib/design";
 import { Rich, stripEmoji } from "../components/AppIcon";
-import ThemeMenu from "../components/ThemeMenu";
 import BottomNav from "../components/BottomNav";
-import { setThemeMode, useDark, useIsoLayoutEffect } from "../lib/theme";
+import { useDark, useIsoLayoutEffect } from "../lib/theme";
 
 interface Message {
   role:    "user" | "assistant";
@@ -216,7 +215,6 @@ export default function AIChat() {
             Online · JAMB expert
           </div>
         </div>
-        <ThemeMenu darkMode={dark} onToggleDark={() => setThemeMode(dark ? "light" : "dark")} />
         <button
           aria-label="New chat"
           onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }}

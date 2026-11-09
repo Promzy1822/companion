@@ -4,10 +4,9 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { LogOut, ChevronDown, Sparkles, User, KeyRound } from "lucide-react";
 import AppLogo from "./AppLogo";
-import ThemeMenu from "./ThemeMenu";
 import { Session } from "../lib/session";
 import { palette } from "../lib/design";
-import { setThemeMode, useDark, useIsoLayoutEffect } from "../lib/theme";
+import { useDark, useIsoLayoutEffect } from "../lib/theme";
 import { isNavActive } from "../lib/nav";
 
 interface UserData { name: string; email: string; target: string; institution?: string; }
@@ -79,7 +78,6 @@ export default function NavbarView() {
         <span className="top-logo"><AppLogo size={28} showText darkMode={dark} /></span>
 
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          <ThemeMenu darkMode={dark} onToggleDark={() => setThemeMode(dark ? "light" : "dark")} />
 
           {user ? (
             <div ref={dropRef} style={{ position: "relative" }}>

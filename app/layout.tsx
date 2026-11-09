@@ -35,8 +35,9 @@ export const viewport: Viewport = {
 
 /*
  * Runs in <head>, before anything is painted:
- *  - works out the theme (System / Light / Dark) and sets data-dark + color-scheme
- *  - migrates the legacy "darkMode" key into "themeMode" once, then removes it
+ *  - the app is dark-only, so this just stamps data-dark + color-scheme
+ *  - clears the old theme keys ("themeMode" / "darkMode") left behind by the
+ *    removed theme settings
  *  - marks the app as "booting" so un-themed server HTML is never visible
  */
 const THEME_BOOT = `
@@ -44,21 +45,11 @@ const THEME_BOOT = `
   var d = document.documentElement;
   try {
     var ls = window.localStorage;
-    var mode = ls.getItem('themeMode');
-    if (mode !== 'light' && mode !== 'dark' && mode !== 'system') {
-      var old = ls.getItem('darkMode');
-      mode = old === 'true' ? 'dark' : old === 'false' ? 'light' : 'system';
-      ls.setItem('themeMode', mode);
-    }
-    var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
+    ls.removeItem('themeMode');
     ls.removeItem('darkMode');
-
-    d.setAttribute('data-dark', dark ? 'true' : 'false');
-    d.style.colorScheme = dark ? 'dark' : 'light';
-  } catch (e) {
-    d.setAttribute('data-dark', 'false');
-  }
+  } catch (e) {}
+  d.setAttribute('data-dark', 'true');
+  d.style.colorScheme = 'dark';
   d.setAttribute('data-booting', 'true');
 })();
 `;
@@ -68,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
-        <meta name="color-scheme" content="light dark" />
+        <meta name="color-scheme" content="dark" />
         <link rel="icon"             href="/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="mobile-web-app-capable"                content="yes" />

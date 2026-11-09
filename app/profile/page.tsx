@@ -4,13 +4,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   User, Mail, Building2, BookOpen, Target, Calendar,
-  Star, LogOut, Moon, Sun, ChevronRight, Edit3,
+  Star, LogOut, ChevronRight, Edit3,
   Shield, Bell, Check, X, Eye, EyeOff, KeyRound,
 } from "lucide-react";
 import Navbar,    { NAVBAR_HEIGHT }     from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
-import { setThemeMode, useDark } from "../lib/theme";
+import { useDark } from "../lib/theme";
 import { Session } from "../lib/session";
 import { createClient } from "../lib/supabase/client";
 
@@ -67,7 +67,6 @@ export default function Profile() {
     if (!user) { router.replace("/landing"); }
   }, [router]);
 
-  const toggleDark = () => setThemeMode(dark ? "light" : "dark");
 
   const saveProfile = () => {
     if (!user) return;
@@ -121,7 +120,7 @@ export default function Profile() {
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily:"var(--font)" }}>
-      <Navbar darkMode={dark} onToggleDark={toggleDark} />
+      <Navbar darkMode={dark} />
 
       <main style={{
         paddingTop: `${NAVBAR_HEIGHT}px`,
@@ -309,7 +308,6 @@ export default function Profile() {
           {/* Settings card */}
           <Card darkMode={dark}>
             {[
-              { icon: dark?Sun:Moon, label: dark?"Switch to Light Mode":"Switch to Dark Mode", detail: dark?"Currently dark":"Currently light", action: toggleDark },
               { icon: Bell,   label: "Study Reminders",  detail: "Coming soon", action: ()=>{} },
             ].map((item,i,arr)=>{
               const Icon = item.icon;

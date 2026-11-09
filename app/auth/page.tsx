@@ -168,7 +168,7 @@ export default function Auth() {
   const compColor = rec ? (COMP_DISP[rec.competition] || "#A5B4FC") : "#A5B4FC";
 
   return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(165deg, #2A1B6B 0%, #1F1156 60%, #150D38 100%)", fontFamily:"var(--font)", padding:"20px 16px 40px", boxSizing:"border-box" }}>
+    <div className="fd-page" style={{ minHeight:"100vh", background:"linear-gradient(165deg, #2A1B6B 0%, #1F1156 60%, #150D38 100%)", fontFamily:"var(--font)", padding:"20px 16px 40px", boxSizing:"border-box" }}>
       <div className="fd-auth-grid" style={{ maxWidth:"420px", margin:"0 auto" }}>
 
         {/* Laptop pitch panel — hidden below 1024px */}

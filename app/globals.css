@@ -500,6 +500,9 @@ html, body { overflow-x: clip; }
 }
 
 /* ── Front door: laptop composition (≥1024px) ───────────────────────────── */
+/* Front-door pages are full-bleed: the shell must not give them the rail
+   offset or the in-app width cap (same exemption exam pages get). */
+.app-shell:has(.fd-page) { max-width: none; margin-left: 0; margin-right: 0; box-shadow: none; }
 .fd-auth-pitch { display: none; }
 @media (min-width: 1024px) {
   .fd-hero-inner { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: end; }

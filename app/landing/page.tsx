@@ -30,7 +30,7 @@ export default function Landing() {
   const SUBJECTS = ["English Language", "Mathematics", "Physics", "Chemistry", "Biology", "Government", "Economics", "Literature in English"];
 
   return (
-    <div style={{ fontFamily:"var(--font)", background: T.bg, overflowX: "hidden" }}>
+    <div className="fd-page" style={{ fontFamily:"var(--font)", background: T.bg, overflowX: "hidden" }}>
 
       {/* ── NAV ── */}
       <nav style={{

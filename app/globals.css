@@ -429,3 +429,12 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
 @media (min-width:1024px){
   .profile-cols{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:20px !important;padding:20px 24px 0 !important;align-items:start}
 }
+
+/* Study Plan laptop layout (step c) */
+@media (min-width:1024px){
+  .plan-content{padding:20px 24px 80px !important}
+  .plan-today{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:20px;align-items:start}
+  .plan-today>*{min-width:0}
+  .plan-overview{display:grid !important;grid-template-columns:1fr 1fr;gap:12px !important}
+  .plan-overview>*:first-child{grid-column:1/-1}
+}

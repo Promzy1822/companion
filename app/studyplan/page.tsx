@@ -244,11 +244,11 @@ RULES:
         </div>
       </div>
 
-      <div style={{ padding: "16px 14px", paddingBottom: 80 }}>
+      <div className="plan-content" style={{ padding: "16px 14px", paddingBottom: 80 }}>
 
         {/* ── Generate Screen ── */}
         {!generated ? (
-          <div style={{ background: T.surface, borderRadius: 16, padding: 24, textAlign: "center", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+          <div className="page-narrow" style={{ background: T.surface, borderRadius: 16, padding: 24, textAlign: "center", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
             <div style={{ width: 64, height: 64, borderRadius: 18, background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <CalendarDays size={30} color="#4F46E5" strokeWidth={1.8} />
             </div>
@@ -325,7 +325,7 @@ RULES:
 
             {/* ── TODAY VIEW ── */}
             {view === "today" && (
-              <div>
+              <div className="plan-today">
                 {todayTask ? (
                   <div style={{ background: T.surface, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}`, marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                     {/* Task info */}
@@ -520,7 +520,7 @@ RULES:
 
             {/* ── OVERVIEW ── */}
             {view === "overview" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="plan-overview" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {/* Overall progress */}
                 <div style={{ background: T.surface, borderRadius: 16, padding: "16px 18px", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>

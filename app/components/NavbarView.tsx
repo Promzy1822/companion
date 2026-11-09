@@ -85,19 +85,19 @@ export default function NavbarView() {
                   display: "flex", alignItems: "center", gap: "7px",
                   background: open ? T.s2 : "transparent",
                   border: "none", borderRadius: "50px",
-                  padding: "4px 10px 4px 4px",
+                  padding: "4px 10px 4px 4px", minHeight: 44, boxSizing: "border-box",
                   cursor: "pointer", transition: "background 0.15s",
                 }}
               >
                 <div style={{
                   width: 30, height: 30, borderRadius: "50%",
-                  background: "linear-gradient(135deg,#4F46E5,#818CF8)",
+                  background: "linear-gradient(135deg,#6366F1,#818CF8)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "13px", fontWeight: 800, color: "#fff", flexShrink: 0,
                 }}>
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: T.text, lineHeight: 1 }}>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: T.text, lineHeight: 1, maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {user.name.split(" ")[0]}
                 </span>
                 <ChevronDown
@@ -138,7 +138,7 @@ export default function NavbarView() {
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                       <div style={{
                         width: 40, height: 40, borderRadius: "50%",
-                        background: "linear-gradient(135deg,#4F46E5,#818CF8)",
+                        background: "linear-gradient(135deg,#6366F1,#818CF8)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "17px", fontWeight: 800, color: "#fff",
                       }}>

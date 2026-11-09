@@ -3,13 +3,12 @@ import { useState, useEffect, useRef } from "react";
 import AppLoader, { PageSkeleton } from "../components/AppLoader";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, ClipboardList, Trophy, BarChart3, AlertTriangle } from "lucide-react";
-import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
-import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
-import { C, palette } from "../lib/design";
+import { ArrowLeft, ChevronLeft, ChevronRight, Check, CheckCircle2, Clock, PartyPopper, ArrowRight, ClipboardList, Trophy, BarChart3, AlertTriangle } from "lucide-react";
+import { NAVBAR_HEIGHT } from "../components/NavbarView";
+import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
+import { palette } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { Sync } from "../lib/sync";
-import { AppIcon, Rich } from "../components/AppIcon";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; image?:string; }
 interface Result   { score:number; total:number; bySubject:Record<string,{correct:number;total:number}>; timeTaken:number; }
@@ -147,12 +146,11 @@ export default function MockExam() {
   // ── SETUP ──────────────────────────────────────────────────────
   if (phase==="setup") return (
     <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
-      <Navbar darkMode={dark} />
 
-      <div className="hero-banner" style={{background:dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"20px 20px 32px"}}>
+      <div className="hero-banner" style={{background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)",padding:"20px 20px 32px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-          <Link href="/" style={{width:34,height:34,borderRadius:"10px",backgroundColor:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none"}}>
-            <ArrowLeft size={16} color="#fff" strokeWidth={2} />
+          <Link href="/" style={{width:44,height:44,borderRadius:"12px",backgroundColor:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none"}}>
+            <ArrowLeft size={18} color="#fff" strokeWidth={2} />
           </Link>
           <div>
             <div style={{color:"#fff",fontWeight:800,fontSize:"18px"}}>Mock Exam</div>
@@ -161,11 +159,11 @@ export default function MockExam() {
         </div>
       </div>
 
-      <div className="page-narrow" style={{padding:"16px 14px 100px"}}>
-        <div style={{background:T.surface,borderRadius:"16px",padding:"24px",border:`1px solid ${T.border}`,marginBottom:"14px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+      <div className="page-narrow" style={{padding:"16px 20px 100px"}}>
+        <div style={{background:T.surface,borderRadius:"16px",padding:"24px",border:`1px solid ${T.border}`,marginBottom:"14px"}}>
           <div style={{textAlign:"center",marginBottom:"24px"}}>
-            <div style={{width:64,height:64,borderRadius:"18px",background:C.primaryLight,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
-              <ClipboardList size={28} color={C.primary} strokeWidth={1.8} />
+            <div style={{width:64,height:64,borderRadius:"18px",background:T.primaryTint,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+              <ClipboardList size={28} color={T.primary} strokeWidth={1.8} />
             </div>
             <h2 style={{fontSize:"20px",fontWeight:800,color:T.text,margin:"0 0 8px",letterSpacing:"-0.3px"}}>JAMB Mock Exam</h2>
             <p style={{fontSize:"13px",color:T.sub,margin:0,lineHeight:"1.5"}}>Built from real JAMB past questions in your subjects. Timer runs like real JAMB. Full debrief after.</p>
@@ -174,22 +172,22 @@ export default function MockExam() {
             <label style={{fontSize:"12px",fontWeight:700,color:T.sub,display:"block",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Number of Questions</label>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"8px"}}>
               {[10,20,30,40].map(n=>(
-                <button key={n} onClick={()=>setNumQ(n)} style={{padding:"12px",borderRadius:"10px",border:"none",cursor:"pointer",fontWeight:700,fontSize:"14px",background:numQ===n?C.primary:T.s2,color:numQ===n?"#fff":T.sub,transition:"all 0.2s"}}>
+                <button key={n} onClick={()=>setNumQ(n)} style={{padding:"12px",borderRadius:"10px",border:"none",cursor:"pointer",fontWeight:700,fontSize:"14px",background:numQ===n?T.primary:T.s2,color:numQ===n?"#fff":T.sub,transition:"all 0.2s",minHeight:44}}>
                   {n}
                 </button>
               ))}
             </div>
-            <p style={{fontSize:"11px",color:T.sub,marginTop:"8px",textAlign:"center"}}><AppIcon e="⏱" /> {Math.round(numQ*1.5)} minutes · {numQ} questions</p>
+            <p style={{fontSize:"11px",color:T.sub,marginTop:"8px",display:"flex",alignItems:"center",justifyContent:"center",gap:"4px"}}><Clock size={11} strokeWidth={2}/> {Math.round(numQ*1.5)} minutes · {numQ} questions</p>
           </div>
-          <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?"#ccc":C.primary,color:"#fff",fontWeight:700,fontSize:"15px",cursor:generating?"not-allowed":"pointer",boxShadow:generating?"none":`0 4px 14px rgba(79,70,229,0.35)`}}>
-            <Rich>{generating?"Loading questions…":"Start Mock Exam →"}</Rich>
+          <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?T.s3:T.primary,color:generating?T.muted:"#fff",fontWeight:700,fontSize:"15px",cursor:generating?"not-allowed":"pointer"}}>
+            {generating?"Loading questions…":"Start Mock Exam"}
           </button>
         </div>
 
         {history.length>0 && (
-          <div style={{background:T.surface,borderRadius:"16px",border:`1px solid ${T.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+          <div style={{background:T.surface,borderRadius:"16px",border:`1px solid ${T.border}`,overflow:"hidden"}}>
             <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:"8px"}}>
-              <Trophy size={16} color={C.primary} strokeWidth={1.8} />
+              <Trophy size={16} color={T.primary} strokeWidth={1.8} />
               <span style={{fontWeight:700,color:T.text,fontSize:"14px"}}>Past Results</span>
             </div>
             {history.slice(0,3).map((h,i)=>(
@@ -207,7 +205,6 @@ export default function MockExam() {
           </div>
         )}
       </div>
-      <BottomNav darkMode={dark} />
     </div>
   );
 
@@ -215,11 +212,11 @@ export default function MockExam() {
   if (phase==="exam") return (
     <div className="focus-page" style={{minHeight:"100vh", paddingTop:"0px",background:T.bg,fontFamily:"var(--font)",display:"flex",flexDirection:"column"}}>
       {/* Sticky timer bar */}
-      <div style={{background:dark?"linear-gradient(135deg,#111,#1F2050)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"14px 20px",position:"sticky",top:0,zIndex:50}}>
+      <div style={{background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)",padding:"14px 20px",position:"sticky",top:0,zIndex:50}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px"}}>{current+1} / {questions.length}</div>
           <div style={{color:"#fff",fontSize:"22px",fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:"-0.5px"}}>{fmt(timeLeft)}</div>
-          <button onClick={submitExam} style={{padding:"6px 14px",borderRadius:"20px",border:"none",backgroundColor:"rgba(255,255,255,0.2)",color:"#fff",fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
+          <button onClick={submitExam} style={{padding:"6px 16px",minHeight:40,display:"flex",alignItems:"center",borderRadius:"20px",border:"none",backgroundColor:"rgba(255,255,255,0.2)",color:"#fff",fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
             Submit
           </button>
         </div>
@@ -228,9 +225,9 @@ export default function MockExam() {
         </div>
         <div className="q-chips" style={{display:"flex",gap:"4px",marginTop:"10px",overflowX:"auto",scrollbarWidth:"none"}}>
           {questions.map((_,i)=>(
-            <div key={i} onClick={()=>setCurrent(i)} style={{width:24,height:24,borderRadius:"6px",background:i===current?"#fff":answers[i]!==undefined?"rgba(255,255,255,0.55)":"rgba(255,255,255,0.15)",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",fontWeight:700,color:i===current?C.primary:"rgba(255,255,255,0.8)"}}>
+            <button key={i} onClick={()=>setCurrent(i)} style={{width:36,height:36,borderRadius:"8px",border:"none",background:i===current?"#fff":answers[i]!==undefined?"rgba(255,255,255,0.55)":"rgba(255,255,255,0.15)",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:700,color:i===current?T.primary:"rgba(255,255,255,0.8)",fontFamily:"inherit"}}>
               {i+1}
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -238,10 +235,10 @@ export default function MockExam() {
       <div className="page-narrow exam-body" style={{flex:1,padding:"16px",overflowY:"auto"}}>
         {questions[current] && (
           <div>
-            <div style={{background:T.surface,borderRadius:"14px",padding:"18px",marginBottom:"14px",border:`1px solid ${T.border}`,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
-              <div style={{fontSize:"11px",color:C.primary,fontWeight:700,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{questions[current].subject}</div>
+            <div style={{background:T.surface,borderRadius:"14px",padding:"18px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
+              <div style={{fontSize:"11px",color:T.primary,fontWeight:700,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{questions[current].subject}</div>
               {questions[current].image && (
-                <img src={questions[current].image} alt="Question diagram" style={{width:"100%",borderRadius:"10px",marginBottom:"10px",background:"#FFFFFF"}} />
+                <img src={questions[current].image} alt="Question diagram" style={{maxWidth:"100%",borderRadius:"10px",marginBottom:"10px",background:"#fff",padding:8,boxSizing:"border-box",display:"block"}} />
               )}
               <div style={{fontSize:"15px",color:T.text,fontWeight:600,lineHeight:"1.6"}}>{questions[current].question}</div>
             </div>
@@ -249,14 +246,14 @@ export default function MockExam() {
               {questions[current].options.map((opt,i)=>(
                 <button key={i} onClick={()=>setAnswers(p=>({...p,[current]:i}))} style={{
                   width:"100%",padding:"15px",borderRadius:"12px",
-                  border:`2px solid ${answers[current]===i?C.primary:T.border}`,
-                  background:answers[current]===i?C.primaryLight:T.surface,
-                  color:answers[current]===i?C.primary:T.text,
+                  border:`2px solid ${answers[current]===i?T.primary:T.border}`,
+                  background:answers[current]===i?T.primaryTint:T.surface,
+                  color:answers[current]===i?T.primary:T.text,
                   fontWeight:answers[current]===i?700:500,fontSize:"14px",
                   cursor:"pointer",textAlign:"left",transition:"all 0.15s",
                   display:"flex",alignItems:"center",gap:"12px",
                 }}>
-                  <div style={{width:28,height:28,borderRadius:"50%",background:answers[current]===i?C.primary:T.s2,color:answers[current]===i?"#fff":T.sub,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:700,flexShrink:0}}>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:answers[current]===i?T.primary:T.s2,color:answers[current]===i?"#fff":T.sub,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:700,flexShrink:0}}>
                     {["A","B","C","D"][i]}
                   </div>
                   {opt}
@@ -264,11 +261,11 @@ export default function MockExam() {
               ))}
             </div>
             <div style={{display:"flex",gap:"10px",marginTop:"14px"}}>
-              <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} style={{flex:1,padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:current===0?T.muted:T.text,fontWeight:700,cursor:current===0?"not-allowed":"pointer"}}>← Prev</button>
+              <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} style={{flex:1,padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:current===0?T.muted:T.text,fontWeight:700,cursor:current===0?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><ChevronLeft size={16}/> Prev</button>
               {current<questions.length-1?(
-                <button onClick={()=>setCurrent(c=>c+1)} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:C.primary,color:"#fff",fontWeight:700,cursor:"pointer",boxShadow:`0 2px 8px rgba(79,70,229,0.3)`}}>Next →</button>
+                <button onClick={()=>setCurrent(c=>c+1)} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:T.primary,color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>Next <ChevronRight size={16}/></button>
               ):(
-                <button onClick={submitExam} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:"#31A24C",color:"#fff",fontWeight:700,cursor:"pointer"}}>Submit ✓</button>
+                <button onClick={submitExam} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:"#31A24C",color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><Check size={16} strokeWidth={2.5}/> Submit</button>
               )}
             </div>
           </div>
@@ -286,23 +283,23 @@ export default function MockExam() {
 
     return (
       <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
-        <div style={{background:dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)",padding:"28px 20px 44px",textAlign:"center"}}>
+        <div style={{background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)",padding:"28px 20px 44px",textAlign:"center"}}>
           <div style={{width:64,height:64,borderRadius:"18px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
-            <Trophy size={30} color="#FFF8DB" strokeWidth={1.8} />
+            <Trophy size={30} color="#F97316" strokeWidth={1.8} />
           </div>
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginBottom:"4px"}}>Your Score</div>
           <div style={{color:"#fff",fontSize:"52px",fontWeight:900,letterSpacing:"-2px"}}>{result.score}/{result.total}</div>
-          <div style={{color:"#FFF8DB",fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{pct}% · JAMB equivalent: {jambEq}</div>
+          <div style={{color:"#F97316",fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{pct}% · JAMB equivalent: {jambEq}</div>
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
-            <Rich>{gap>=0 ? `✅ ${gap} pts above your target!` : `⚠️ ${Math.abs(gap)} pts below your target`}</Rich>
+            {gap>=0 ? `${gap} pts above your target!` : `${Math.abs(gap)} pts below your target — keep practising`}
           </div>
         </div>
 
-        <div style={{padding:"0 14px",marginTop:"-16px",paddingBottom:`calc(${BOTTOM_NAV_HEIGHT}px + 16px)`}}>
+        <div style={{padding:"0 20px",marginTop:"-16px",paddingBottom:`calc(${BOTTOM_NAV_HEIGHT}px + 16px)`}}>
           {/* Subject breakdown */}
-          <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+          <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"16px"}}>
-              <BarChart3 size={17} color={C.primary} strokeWidth={1.8} />
+              <BarChart3 size={17} color={T.primary} strokeWidth={1.8} />
               <span style={{fontWeight:700,color:T.text,fontSize:"15px"}}>Subject Breakdown</span>
             </div>
             {Object.entries(result.bySubject).map(([s,d])=>{
@@ -322,33 +319,32 @@ export default function MockExam() {
           </div>
 
           {/* Missed questions */}
-          <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+          <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"16px"}}>
               <AlertTriangle size={17} color="#F7B928" strokeWidth={1.8} />
               <span style={{fontWeight:700,color:T.text,fontSize:"15px"}}>Questions You Missed</span>
             </div>
             {questions.map((q,i)=>answers[i]!==q.correct&&(
-              <div key={i} style={{padding:"12px",borderRadius:"12px",background:dark?"#2A1010":"#FEE2E2",border:"1px solid #FA3E3E33",marginBottom:"10px"}}>
+              <div key={i} style={{padding:"12px",borderRadius:"12px",background:T.dangerTint,border:`1px solid ${T.danger}33`,marginBottom:"10px"}}>
                 <div style={{fontSize:"11px",color:"#FA3E3E",fontWeight:700,marginBottom:"4px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{q.subject}</div>
                 <div style={{fontSize:"13px",color:T.text,fontWeight:600,marginBottom:"6px"}}>{q.question}</div>
-                <div style={{fontSize:"12px",color:"#31A24C",fontWeight:600}}><AppIcon e="✅" /> {q.options[q.correct]}</div>
+                <div style={{fontSize:"12px",color:"#2FBF71",fontWeight:600,display:"flex",alignItems:"center",gap:"5px"}}><CheckCircle2 size={13} color="#2FBF71" strokeWidth={2.5}/> {q.options[q.correct]}</div>
                 <div style={{fontSize:"12px",color:T.sub,marginTop:"4px"}}>{q.explanation}</div>
               </div>
             ))}
-            {result.score===result.total && <div style={{textAlign:"center",padding:"20px",color:"#31A24C",fontWeight:700,fontSize:"15px"}}><AppIcon e="🎉" /> Perfect score! No mistakes!</div>}
+            {result.score===result.total && <div style={{textAlign:"center",padding:"20px",color:"#2FBF71",fontWeight:700,fontSize:"15px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><PartyPopper size={16} strokeWidth={2}/> Perfect score! No mistakes!</div>}
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
             <button onClick={()=>{setPhase("setup");setResult(null);setQuestions([]);setAnswers({});}} style={{padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
               Try Again
             </button>
-            <Link href="/studyplan" style={{padding:"13px",borderRadius:"12px",border:"none",background:C.primary,color:"#fff",fontWeight:700,textDecoration:"none",textAlign:"center",display:"block",boxShadow:`0 2px 8px rgba(79,70,229,0.3)`}}>
-              Study Plan →
+            <Link href="/studyplan" style={{padding:"13px",borderRadius:"12px",border:"none",background:T.primary,color:"#fff",fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+              Study Plan <ArrowRight size={14} strokeWidth={2}/>
             </Link>
           </div>
         </div>
-        <BottomNav darkMode={dark} />
-      </div>
+        </div>
     );
   }
   return null;

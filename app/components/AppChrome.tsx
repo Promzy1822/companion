@@ -10,11 +10,10 @@ import { Sync } from "../lib/sync";
  * The one and only top bar + bottom tabs / side rail. Lives in the root layout and is
  * owned by the layout — pages no longer register or theme the chrome.
  * HIDE_ALL: auth/marketing routes with no app chrome at all.
- * HIDE_TOP: pages that still draw their own header (removed route by route as the
- * redesign reaches them in steps 2–5); they keep the tabs/rail.
+ * HIDE_TOP: pages that draw their own header (AI, Questions, Plan); they keep the tabs/rail.
  */
 const HIDE_ALL = ["/auth", "/landing", "/reset-password"];
-const HIDE_TOP = ["/ai", "/questions", "/syllabus", "/studyplan"];
+const HIDE_TOP = ["/ai", "/questions", "/studyplan"];
 /** Pages whose own bottom composer would collide with the phone tabs: rail only, as before. */
 const RAIL_ONLY = ["/ai"];
 

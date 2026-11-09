@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertTriangle } from "lucide-react";
-import { C, palette } from "../lib/design";
+import { palette } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { Session } from "../lib/session";
 import { validatePassword } from "../lib/auth";
@@ -81,11 +81,11 @@ function ResetContent() {
 
   if (sessionOk === false) return (
     <div style={{ minHeight:"100vh", background:T.bg, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"var(--font)" }}>
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:"16px", padding:"32px 24px", textAlign:"center", maxWidth:360 }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:"16px", padding:"32px 24px", textAlign:"center", maxWidth:420, width:"100%" }}>
         <AlertTriangle size={44} color={T.warning} strokeWidth={1.5} style={{ margin:"0 auto 16px", display:"block" }} />
         <h2 style={{ fontWeight:800, color:T.text, marginBottom:8 }}>Invalid Link</h2>
         <p style={{ color:T.sub, fontSize:"14px", marginBottom:24 }}>This reset link is invalid or has expired.</p>
-        <Link href="/auth" style={{ display:"block", padding:"13px", borderRadius:"10px", background:C.primary, color:"#fff", fontWeight:700, textDecoration:"none", textAlign:"center" }}>
+        <Link href="/auth" style={{ display:"block", padding:"13px", borderRadius:"10px", background:T.primary, color:"#fff", fontWeight:700, textDecoration:"none", textAlign:"center" }}>
           Back to Login
         </Link>
       </div>
@@ -94,9 +94,9 @@ function ResetContent() {
 
   return (
     <div style={{ minHeight:"100vh", background:T.bg, fontFamily:"var(--font)", display:"flex", flexDirection:"column" }}>
-      <div style={{ background:C.primary, padding:"16px 20px 24px" }}>
+      <div style={{ background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)", padding:"16px 20px 24px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
-          <Link href="/auth" style={{ width:34, height:34, borderRadius:"10px", background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
+          <Link href="/auth" style={{ width:44, height:44, borderRadius:"12px", background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
             <ArrowLeft size={17} color="#fff" strokeWidth={2} />
           </Link>
           <div style={{ color:"#fff", fontWeight:800, fontSize:"17px" }}>Reset Password</div>
@@ -104,7 +104,7 @@ function ResetContent() {
       </div>
 
       <div style={{ flex:1, padding:"24px 16px" }}>
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:"16px", padding:"24px", boxShadow:"0 1px 4px rgba(0,0,0,0.07)", maxWidth:420, margin:"0 auto" }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:"16px", padding:"24px", maxWidth:420, margin:"0 auto" }}>
           {success ? (
             <div style={{ textAlign:"center", padding:"16px 0" }}>
               <CheckCircle size={56} color="#31A24C" strokeWidth={1.5} style={{ margin:"0 auto 16px", display:"block" }} />
@@ -121,7 +121,7 @@ function ResetContent() {
                 <label style={{ fontSize:"13px", fontWeight:600, color:T.sub, display:"block", marginBottom:"6px" }}>New Password</label>
                 <div style={{ position:"relative" }}>
                   <input style={{ ...inp, paddingRight:"44px" }} type={showPw?"text":"password"} placeholder="Min. 6 characters" value={password} onChange={e=>setPassword(e.target.value)} />
-                  <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:T.sub }}>
+                  <button onClick={()=>setShowPw(p=>!p)} style={{ position:"absolute", right:2, top:"50%", transform:"translateY(-50%)", width:44, height:44, background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:T.sub }}>
                     {showPw ? <EyeOff size={18}/> : <Eye size={18}/>}
                   </button>
                 </div>
@@ -137,11 +137,10 @@ function ResetContent() {
               )}
               <button onClick={handleReset} disabled={loading} style={{
                 width:"100%", padding:"14px", borderRadius:"10px", border:"none",
-                background: loading ? T.s3 : C.primary, color:"#fff",
+                background: loading ? T.s3 : T.primary, color: loading ? T.muted : "#fff",
                 fontWeight:700, fontSize:"15px", cursor: loading?"not-allowed":"pointer",
-                boxShadow:`0 2px 10px rgba(79,70,229,0.3)`,
               }}>
-                {loading ? "Resetting…" : "Reset Password →"}
+                {loading ? "Resetting…" : "Reset Password"}
               </button>
             </div>
           )}

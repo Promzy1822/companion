@@ -4,39 +4,40 @@
 
 /* ── Design System ─────────────────────────────────────────────── */
 :root {
-  /* Primary — Facebook blue */
-  --primary:        #4F46E5;
-  --primary-hover:  #4338CA;
-  --primary-dark:   #3730A3;
-  --primary-light:  #EEF2FF;
-  --primary-soft:   #F5F7FF;
+  /* Primary — Companion indigo. Dark is the default and only theme:
+   :root carries the dark values so nothing paints light before the boot script runs. */
+  --primary:        #6366F1;
+  --primary-hover:  #818CF8;
+  --primary-dark:   #4F46E5;
+  --primary-light:  #2A2B63;
+  --primary-soft:   #1D1E45;
 
   /* Surfaces */
-  --bg:             #F4F5FA;
-  --surface:        #FFFFFF;
-  --surface-2:      #F8F9FC;
-  --surface-3:      #EEF0F6;
+  --bg:             #0E1018;
+  --surface:        #161925;
+  --surface-2:      #1E2230;
+  --surface-3:      #2A2F42;
 
   /* Borders */
-  --border:         #E3E6EF;
-  --border-light:   #F0F2F7;
+  --border:         #2A2E3F;
+  --border-light:   #2A2E3F;
 
   /* Text */
-  --text:           #0F172A;
-  --text-sub:       #475569;
-  --text-muted:     #6B7385;
+  --text:           #E8EAF2;
+  --text-sub:       #A7AEC2;
+  --text-muted:     #7C849A;
 
   /* Semantic */
   --success:        #31A24C;
-  --success-light:  #E6F4EA;
+  --success-light:  #12291A;
   --warning:        #F7B928;
-  --warning-light:  #FEF6E4;
+  --warning-light:  #2E2410;
   --danger:         #FA3E3E;
-  --danger-light:   #FEE9E9;
+  --danger-light:   #33151A;
 
   /* Brand accent (keep orange for accents only) */
-  --accent:         #EA580C;
-  --accent-light:   #FFF3EE;
+  --accent:         #F97316;
+  --accent-light:   #331D0F;
 
   /* Layout */
   --nav-h:          56px;
@@ -417,13 +418,12 @@ html { scroll-behavior: auto; }
 }
 
 /* ── Theme + transitions ───────────────────────────────────────────────────── */
-html { color-scheme: light; }
+html { color-scheme: dark; }
 html[data-dark="true"] { color-scheme: dark; }
 /* server HTML is never visible un-themed; the splash covers this until the app has hydrated */
 html[data-booting="true"] .app-shell { visibility: hidden; }
 
 /* ── AI chat page: laptop side rail without the phone bottom tabs ───────────── */
-.bottom-nav.rail-only { display: none !important; }
 
 /* Profile laptop layout (step c) */
 .profile-main,.profile-side{display:flex;flex-direction:column;gap:14px;min-width:0}

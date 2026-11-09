@@ -43,11 +43,11 @@ function focusName(week: number, total: number): string {
 }
 
 const SUB_COLORS: Record<string, string> = {
-  "English Language": "#4F46E5", "Mathematics": "#7B3FBE",
-  "Physics": "#B07D00", "Chemistry": "#0D8050",
-  "Biology": "#C75B21", "Government": "#5B6ABF",
-  "Economics": "#0D8080", "Literature in English": "#C75B21",
-  "ALL": "#FA3E3E", "REST": "#6B7385",
+  "English Language": "#818CF8", "Mathematics": "#B07FE8",
+  "Physics": "#E3B341", "Chemistry": "#2FBF71",
+  "Biology": "#E87F35", "Government": "#8FA3E8",
+  "Economics": "#3FBFBF", "Literature in English": "#E87FB0",
+  "ALL": "#FA3E3E", "REST": "#9AA0B5",
 };
 
 export default function StudyPlan() {
@@ -179,19 +179,19 @@ export default function StudyPlan() {
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily:"var(--font)" }}>
 
       {/* ── Header ── */}
-      <div style={{ background: "linear-gradient(135deg,#4F46E5,#3730A3)", padding: "20px 20px 32px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)", padding: "20px 20px 32px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <Link href="/" style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
-            <ArrowLeft size={16} color="#fff" strokeWidth={2} />
+          <Link href="/" style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
+            <ArrowLeft size={18} color="#fff" strokeWidth={2} />
           </Link>
           <div style={{ flex: 1 }}>
             <div style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>My Study Plan</div>
             <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12 }}>Real JAMB topics · Built from the official syllabus</div>
           </div>
           {generated && (
-            <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "#FFF8DB", fontWeight: 700 }}>
+            <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "#F97316", fontWeight: 700 }}>
               {pct}% done
             </div>
           )}
@@ -201,20 +201,20 @@ export default function StudyPlan() {
           {STATS.map((s, i) => (
             <div key={i} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
               <s.Icon size={14} color="rgba(255,255,255,0.65)" strokeWidth={1.8} style={{ margin: "0 auto 4px", display: "block" }} />
-              <div style={{ color: "#FFF8DB", fontWeight: 900, fontSize: 18, lineHeight: 1 }}>{s.v}</div>
+              <div style={{ color: "#F97316", fontWeight: 900, fontSize: 18, lineHeight: 1 }}>{s.v}</div>
               <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginTop: 3 }}>{s.l}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="plan-content" style={{ padding: "16px 14px", paddingBottom: 80 }}>
+      <div className="plan-content" style={{ padding: "16px 20px", paddingBottom: 96 }}>
 
         {/* ── Generate Screen ── */}
         {!generated ? (
-          <div className="page-narrow" style={{ background: T.surface, borderRadius: 16, padding: 24, textAlign: "center", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-            <div style={{ width: 64, height: 64, borderRadius: 18, background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <CalendarDays size={30} color="#4F46E5" strokeWidth={1.8} />
+          <div className="page-narrow" style={{ background: T.surface, borderRadius: 16, padding: 24, textAlign: "center", border: `1px solid ${T.border}` }}>
+            <div style={{ width: 64, height: 64, borderRadius: 18, background: T.primaryTint, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <CalendarDays size={30} color={T.primary} strokeWidth={1.8} />
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: "0 0 10px", letterSpacing: "-0.3px" }}>
               Generate Your Study Plan
@@ -239,7 +239,7 @@ export default function StudyPlan() {
             )}
 
             {!user ? (
-              <Link href="/auth" style={{ display: "block", width: "100%", padding: 14, borderRadius: 12, background: "linear-gradient(135deg,#4F46E5,#3730A3)", color: "#fff", fontWeight: 700, fontSize: 15, textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+              <Link href="/auth" style={{ display: "block", width: "100%", padding: 14, borderRadius: 12, background: T.primary, color: "#fff", fontWeight: 700, fontSize: 15, textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
                 Log in to generate your plan
               </Link>
             ) : (
@@ -248,11 +248,11 @@ export default function StudyPlan() {
                 disabled={loading}
                 style={{
                   width: "100%", padding: 14, borderRadius: 12, border: "none",
-                  background: loading ? T.s3 : "linear-gradient(135deg,#4F46E5,#3730A3)",
+                  background: loading ? T.s3 : T.primary,
                   color: loading ? T.muted : "#fff",
                   fontWeight: 700, fontSize: 15,
                   cursor: loading ? "not-allowed" : "pointer",
-                  boxShadow: loading ? "none" : "0 4px 14px rgba(79,70,229,0.35)",
+                  
                   transition: "all 0.2s",
                 }}
               >
@@ -280,10 +280,10 @@ export default function StudyPlan() {
                   key={tab.v}
                   onClick={() => setView(tab.v)}
                   style={{
-                    flex: 1, padding: "9px 6px", borderRadius: 9, border: "none",
+                    flex: 1, padding: "9px 6px", minHeight: 44, borderRadius: 9, border: "none",
                     cursor: "pointer", fontSize: 12, fontWeight: 700,
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                    background: view === tab.v ? "#4F46E5" : "transparent",
+                    background: view === tab.v ? T.primary : "transparent",
                     color: view === tab.v ? "#fff" : T.sub,
                     transition: "all 0.2s",
                   }}
@@ -298,13 +298,13 @@ export default function StudyPlan() {
             {view === "today" && (
               <div className="plan-today">
                 {todayTask ? (
-                  <div style={{ background: T.surface, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}`, marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                  <div style={{ background: T.surface, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}`, marginBottom: 14 }}>
                     {/* Task info */}
-                    <div style={{ padding: "16px 18px", background: `linear-gradient(135deg,${SUB_COLORS[todayTask.subject] || "#4F46E5"}22,${SUB_COLORS[todayTask.subject] || "#4F46E5"}08)`, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ padding: "16px 18px", background: `linear-gradient(135deg,${SUB_COLORS[todayTask.subject] || T.primary}22,${SUB_COLORS[todayTask.subject] || T.primary}08)`, borderBottom: `1px solid ${T.border}` }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>
                         Today's Task
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: SUB_COLORS[todayTask.subject] || "#4F46E5", marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: SUB_COLORS[todayTask.subject] || T.primary, marginBottom: 6 }}>
                         {todayTask.subject}
                       </div>
                       <div style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 4, letterSpacing: "-0.2px" }}>
@@ -326,7 +326,7 @@ export default function StudyPlan() {
 
                     {/* Done state */}
                     {todayTask.done || active.has(today) ? (
-                      <div style={{ padding: "14px 18px", background: dark ? "#0A1A0A" : "#E6F4EA", display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ padding: "14px 18px", background: "rgba(49,162,76,0.12)", display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#31A24C", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <CheckCircle size={17} color="#fff" strokeWidth={2.5} />
                         </div>
@@ -350,7 +350,7 @@ export default function StudyPlan() {
                             const di = plan[wi]?.days.findIndex(d => d.date === today);
                             if (wi >= 0 && di >= 0) markDone(wi, di);
                           }}
-                          style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "linear-gradient(135deg,#4F46E5,#3730A3)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                          style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.primary, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                         >
                           <CheckCircle size={14} strokeWidth={2.5} />
                           Mark Done
@@ -365,8 +365,8 @@ export default function StudyPlan() {
                   </div>
                 ) : (
                   <div style={{ background: T.surface, borderRadius: 16, padding: 28, textAlign: "center", border: `1px solid ${T.border}`, marginBottom: 14 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                      <CalendarDays size={24} color="#4F46E5" strokeWidth={1.8} />
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: T.primaryTint, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                      <CalendarDays size={24} color={T.primary} strokeWidth={1.8} />
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>No task scheduled today</div>
                     <div style={{ fontSize: 13, color: T.sub, marginTop: 6 }}>Check back tomorrow or browse past topics below.</div>
@@ -374,13 +374,13 @@ export default function StudyPlan() {
                 )}
 
                 {/* Upcoming */}
-                <div style={{ background: T.surface, borderRadius: 16, border: `1px solid ${T.border}`, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div style={{ background: T.surface, borderRadius: 16, border: `1px solid ${T.border}`, overflow: "hidden" }}>
                   <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "1px" }}>
                     Coming Up
                   </div>
                   {plan.flatMap(w => w.days).filter(d => d.date > today).slice(0, 5).map((d, i, arr) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : "none" }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: SUB_COLORS[d.subject] || "#4F46E5", flexShrink: 0 }} />
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: SUB_COLORS[d.subject] || T.primary, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.topic}</div>
                         <div style={{ fontSize: 11, color: T.sub }}>
@@ -403,7 +403,7 @@ export default function StudyPlan() {
                     <button
                       key={i}
                       onClick={() => setActiveW(i)}
-                      style={{ flexShrink: 0, padding: "7px 16px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: activeW === i ? "#4F46E5" : T.s2, color: activeW === i ? "#fff" : T.sub, transition: "all 0.2s" }}
+                      style={{ flexShrink: 0, padding: "7px 16px", minHeight: 44, display: "flex", alignItems: "center", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: activeW === i ? T.primary : T.s2, color: activeW === i ? "#fff" : T.sub, transition: "all 0.2s" }}
                     >
                       W{w.week}
                     </button>
@@ -411,9 +411,9 @@ export default function StudyPlan() {
                 </div>
 
                 {plan[activeW] && (
-                  <div style={{ background: T.surface, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                  <div style={{ background: T.surface, borderRadius: 16, overflow: "hidden", border: `1px solid ${T.border}` }}>
                     {/* Week header */}
-                    <div style={{ padding: "16px 18px", background: "linear-gradient(135deg,#4F46E5,#818CF8)" }}>
+                    <div style={{ padding: "16px 18px", background: "linear-gradient(135deg,#6366F1,#818CF8)" }}>
                       <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, textTransform: "uppercase", letterSpacing: "1px" }}>
                         WEEK {plan[activeW].week}
                       </div>
@@ -439,12 +439,12 @@ export default function StudyPlan() {
                             style={{
                               display: "flex", alignItems: "center", gap: 12,
                               padding: "11px 10px", borderRadius: 10, marginBottom: 4,
-                              background: isToday ? (dark ? "#1F2050" : "#EBF3FF") : "transparent",
-                              border: `1px solid ${isToday ? "#4F46E5" : "transparent"}`,
+                              background: isToday ? T.primaryTint : "transparent",
+                              border: `1px solid ${isToday ? T.primary : "transparent"}`,
                             }}
                           >
                             {/* Day indicator */}
-                            <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: done ? "#4F46E5" : isRest ? T.s2 : T.s2, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: done ? T.primary : T.s2, display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {done
                                 ? <CheckCircle size={15} color="#fff" strokeWidth={2.5} />
                                 : isRest
@@ -475,7 +475,7 @@ export default function StudyPlan() {
                             {!done && !isRest && isToday && (
                               <button
                                 onClick={() => markDone(activeW, i)}
-                                style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#4F46E5", color: "#fff", fontWeight: 700, fontSize: 11, cursor: "pointer", flexShrink: 0 }}
+                                style={{ padding: "6px 14px", minHeight: 44, borderRadius: 8, border: "none", background: T.primary, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", flexShrink: 0 }}
                               >
                                 Done
                               </button>
@@ -493,13 +493,13 @@ export default function StudyPlan() {
             {view === "overview" && (
               <div className="plan-overview" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {/* Overall progress */}
-                <div style={{ background: T.surface, borderRadius: 16, padding: "16px 18px", border: `1px solid ${T.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div style={{ background: T.surface, borderRadius: 16, padding: "16px 18px", border: `1px solid ${T.border}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Overall Progress</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: "#4F46E5" }}>{pct}%</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: T.primary }}>{pct}%</span>
                   </div>
                   <div style={{ height: 10, borderRadius: 5, background: T.s3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#4F46E5,#818CF8)", borderRadius: 5, transition: "width 0.5s" }} />
+                    <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#6366F1,#818CF8)", borderRadius: 5, transition: "width 0.5s" }} />
                   </div>
                   <div style={{ fontSize: 12, color: T.sub, marginTop: 6 }}>
                     {doneCt} of {allStudy.length} study sessions completed
@@ -514,7 +514,7 @@ export default function StudyPlan() {
                     <button
                       key={wi}
                       onClick={() => { setActiveW(wi); setView("week"); }}
-                      style={{ background: T.surface, borderRadius: 14, padding: "14px 16px", border: `1px solid ${activeW === wi ? "#4F46E5" : T.border}`, cursor: "pointer", textAlign: "left", width: "100%", transition: "border-color 0.2s" }}
+                      style={{ background: T.surface, borderRadius: 14, padding: "14px 16px", border: `1px solid ${activeW === wi ? T.primary : T.border}`, cursor: "pointer", textAlign: "left", width: "100%", transition: "border-color 0.2s" }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                         <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
@@ -522,12 +522,12 @@ export default function StudyPlan() {
                           <div style={{ fontSize: 11, color: T.sub, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.goal}</div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: wp >= 70 ? "#31A24C" : "#4F46E5" }}>{wp}%</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: wp >= 70 ? "#31A24C" : T.primary }}>{wp}%</div>
                           <div style={{ fontSize: 10, color: T.sub }}>{wDone}/{w.days.length}</div>
                         </div>
                       </div>
                       <div style={{ height: 5, borderRadius: 3, background: T.s3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${wp}%`, background: wp >= 70 ? "#31A24C" : "#4F46E5", transition: "width 0.5s" }} />
+                        <div style={{ height: "100%", width: `${wp}%`, background: wp >= 70 ? "#31A24C" : T.primary, transition: "width 0.5s" }} />
                       </div>
                     </button>
                   );

@@ -4,18 +4,21 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronDown, ChevronRight,
-  CheckCircle, Search, BookOpen, Target, Link2,
+  CheckCircle, Check, Search, BookOpen, Target, Link2,
+  Bot, PenTool, ClipboardList,
+  Languages, Sigma, Atom, FlaskConical, Dna, Landmark, TrendingUp,
+  type LucideIcon,
 } from "lucide-react";
-import { palette, C } from "../lib/design";
+import { palette } from "../lib/design";
 import { JAMB_SYLLABUS, SYLLABUS_STATS, searchSyllabus } from "../lib/syllabus";
 import { Progress } from "../lib/progress";
-import { AppIcon, Rich } from "../components/AppIcon";
+import { Rich } from "../components/AppIcon";
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
 
-const ICONS: Record<string, string> = {
-  english:"📝", physics:"⚛️", mathematics:"📐",
-  chemistry:"🧪", biology:"🌿", government:"🏛️",
-  economics:"📊", geography:"🌍", literature:"📖", crs:"✝️",
+const ICONS: Record<string, LucideIcon> = {
+  english: Languages, physics: Atom, mathematics: Sigma,
+  chemistry: FlaskConical, biology: Dna, government: Landmark,
+  economics: TrendingUp, literature: BookOpen,
 };
 
 export default function CoverageView() {
@@ -65,7 +68,7 @@ export default function CoverageView() {
     <div style={{ fontFamily:"var(--font)" }}>
 
       {/* Header */}
-      <div style={{ background:C.primary, padding:"16px 20px 0", borderRadius:16, overflow:"hidden", marginBottom:14 }}>
+      <div style={{ background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)", padding:"16px 20px 0", borderRadius:16, overflow:"hidden", marginBottom:14 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
           <div style={{ flex:1 }}>
             <div style={{ color:"#fff", fontWeight:800, fontSize:17 }}>Syllabus Coverage</div>
@@ -74,23 +77,23 @@ export default function CoverageView() {
             </div>
           </div>
           <div style={{ textAlign:"right" }}>
-            <div style={{ color:"#FFF8DB", fontWeight:900, fontSize:20, lineHeight:1 }}><Rich>{overallPct}</Rich>%</div>
+            <div style={{ color:"#F97316", fontWeight:900, fontSize:20, lineHeight:1 }}><Rich>{overallPct}</Rich>%</div>
             <div style={{ color:"rgba(255,255,255,0.7)", fontSize:10 }}>overall</div>
           </div>
         </div>
 
         {/* Search bar */}
         <div style={{ position:"relative", marginBottom:14 }}>
-          <Search size={15} color="#6B7385" style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
+          <Search size={15} color="rgba(255,255,255,0.6)" style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search any topic, subtopic or concept…"
             style={{
               width:"100%", padding:"10px 12px 10px 36px",
-              borderRadius:10, border:"none", outline:"none",
-              fontSize:13, background:"rgba(255,255,255,0.95)",
-              color:"#0F172A", boxSizing:"border-box",
+              borderRadius:10, border:"1px solid rgba(255,255,255,0.16)", outline:"none",
+              fontSize:13, background:"rgba(255,255,255,0.1)",
+              color:"#fff", boxSizing:"border-box",
             }}
           />
         </div>
@@ -103,15 +106,15 @@ export default function CoverageView() {
               const subPct  = Math.round((subDone / s.topics.length) * 100);
               return (
                 <button key={key} onClick={()=>{ setActiveSubject(key); setExpandedTopic(null); }} style={{
-                  flexShrink:0, padding:"7px 14px", borderRadius:"10px 10px 0 0", border:"none",
+                  flexShrink:0, padding:"7px 14px", minHeight:44, display:"flex", alignItems:"center", gap:6, borderRadius:"10px 10px 0 0", border:"none",
                   cursor:"pointer", fontSize:12, fontWeight:700,
                   background: activeSubject===key ? T.bg : "rgba(255,255,255,0.12)",
-                  color: activeSubject===key ? C.primary : "rgba(255,255,255,0.85)",
+                  color: activeSubject===key ? T.primary : "rgba(255,255,255,0.85)",
                   transition:"all 0.2s", position:"relative",
                 }}>
-                  <Rich>{ICONS[key] || "📖"}</Rich> <Rich>{s.display_name.split(" ")[0]}</Rich>
+                  {(() => { const TabIcon = ICONS[key] || BookOpen; return <TabIcon size={13} strokeWidth={2} />; })()} <Rich>{s.display_name.split(" ")[0]}</Rich>
                   {subPct > 0 && (
-                    <span style={{ marginLeft:4, fontSize:10, color:activeSubject===key?C.primary:"rgba(255,255,255,0.7)" }}>
+                    <span style={{ marginLeft:4, fontSize:10, color:activeSubject===key?T.primary:"rgba(255,255,255,0.7)" }}>
                       <Rich>{subPct}</Rich>%
                     </span>
                   )}
@@ -122,7 +125,7 @@ export default function CoverageView() {
         )}
       </div>
 
-      <div style={{ padding:"14px 14px 0" }}>
+      <div style={{ padding:"14px 0 0" }}>
 
         {/* Search results */}
         {view === "search" && (
@@ -142,7 +145,7 @@ export default function CoverageView() {
                     border:`1px solid ${T.border}`, textAlign:"left", cursor:"pointer",
                     display:"block", width:"100%",
                   }}>
-                    <div style={{ fontSize:11, color:C.primary, fontWeight:700, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" }}>
+                    <div style={{ fontSize:11, color:T.primary, fontWeight:700, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" }}>
                       <Rich>{r.subject.display_name}</Rich> · <Rich>{r.matchedIn}</Rich>
                     </div>
                     <div style={{ fontSize:14, fontWeight:700, color:T.text }}><Rich>{r.topic.topic}</Rich></div>
@@ -160,22 +163,22 @@ export default function CoverageView() {
             <div style={{ background:T.surface, borderRadius:14, padding:16, marginBottom:14, border:`1px solid ${T.border}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
                 <span style={{ fontWeight:700, fontSize:14, color:T.text }}><Rich>{syllabus.display_name}</Rich></span>
-                <span style={{ fontSize:13, color:pct===100?"#31A24C":C.primary, fontWeight:700 }}><Rich>{done}</Rich>/<Rich>{topics.length}</Rich> done</span>
+                <span style={{ fontSize:13, color:pct===100?"#31A24C":T.primary, fontWeight:700 }}><Rich>{done}</Rich>/<Rich>{topics.length}</Rich> done</span>
               </div>
               <div style={{ height:6, borderRadius:3, background:T.s2, overflow:"hidden", marginBottom:6 }}>
-                <div style={{ height:"100%", width:`${pct}%`, background:pct===100?"#31A24C":C.primary, transition:"width 0.4s" }}/>
+                <div style={{ height:"100%", width:`${pct}%`, background:pct===100?"#31A24C":T.primary, transition:"width 0.4s" }}/>
               </div>
               <div style={{ fontSize:11, color:T.sub }}>
-                {pct===0 && "Tap ✓ on each topic when studied"}
+                {pct===0 && "Tap the circle on each topic when studied"}
                 {pct>0&&pct<100 && `${pct}% — ${topics.length-done} topics remaining`}
-                <Rich>{pct===100 && "✅ All topics covered! Keep reviewing."}</Rich>
+                <Rich>{pct===100 && "All topics covered! Keep reviewing."}</Rich>
               </div>
               {syllabus.general_objectives && (
                 <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
                   <div style={{ fontSize:11, color:T.sub, fontWeight:700, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.5px" }}>General Objectives</div>
                   {syllabus.general_objectives.map((obj, i) => (
                     <div key={i} style={{ display:"flex", gap:6, fontSize:12, color:T.sub, marginBottom:4, lineHeight:1.4 }}>
-                      <span style={{ color:C.primary, flexShrink:0 }}>•</span>
+                      <span style={{ color:T.primary, flexShrink:0 }}>•</span>
                       <span><Rich>{obj}</Rich></span>
                     </div>
                   ))}
@@ -200,9 +203,9 @@ export default function CoverageView() {
                       onClick={()=>setExpandedTopic(isExpanded ? null : topic.id)}>
                       <div style={{
                         width:28, height:28, borderRadius:8, flexShrink:0,
-                        background: isDone?"#31A24C15":C.primaryLight,
+                        background: isDone?"#31A24C15":T.primaryTint,
                         display:"flex", alignItems:"center", justifyContent:"center",
-                        fontSize:12, fontWeight:800, color:isDone?"#31A24C":C.primary,
+                        fontSize:12, fontWeight:800, color:isDone?"#31A24C":T.primary,
                       }}>
                         {idx+1}
                       </div>
@@ -216,11 +219,11 @@ export default function CoverageView() {
                       <button
                         onClick={e => { e.stopPropagation(); toggleStudied(topic.id); }}
                         style={{
-                          width:30, height:30, borderRadius:"50%", border:"none",
+                          width:40, height:40, borderRadius:"50%", border:"none",
                           background: isDone?"#31A24C":"transparent",
                           cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
                           flexShrink:0, outline:`1.5px solid ${isDone?"transparent":T.border}`,
-                          boxShadow: isDone?"0 2px 8px rgba(49,162,76,0.3)":"none",
+                          
                         }}
                       >
                         <CheckCircle size={15} color={isDone?"#fff":T.muted} strokeWidth={isDone?2.5:1.5} />
@@ -239,7 +242,7 @@ export default function CoverageView() {
                           </div>
                           {topic.subtopics.map((sub, i) => (
                             <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:7, marginBottom:5 }}>
-                              <div style={{ width:4, height:4, borderRadius:"50%", background:C.primary, marginTop:6, flexShrink:0 }}/>
+                              <div style={{ width:4, height:4, borderRadius:"50%", background:T.primary, marginTop:6, flexShrink:0 }}/>
                               <span style={{ fontSize:12, color:T.text, lineHeight:1.5 }}><Rich>{sub}</Rich></span>
                             </div>
                           ))}
@@ -252,7 +255,7 @@ export default function CoverageView() {
                           </div>
                           {topic.objectives.map((obj, i) => (
                             <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:7, marginBottom:5 }}>
-                              <span style={{ color:"#31A24C", fontSize:11, flexShrink:0, marginTop:1 }}>✓</span>
+                              <Check size={11} color="#31A24C" strokeWidth={3} style={{ flexShrink:0, marginTop:2 }} />
                               <span style={{ fontSize:12, color:T.sub, lineHeight:1.5 }}><Rich>{obj}</Rich></span>
                             </div>
                           ))}
@@ -261,15 +264,15 @@ export default function CoverageView() {
                         {/* Cross-subject links */}
                         {topic.cross_subject_links && topic.cross_subject_links.length > 0 && (
                           <div style={{ padding:"8px 10px", borderRadius:8, background:T.s2, marginBottom:12, display:"flex", alignItems:"flex-start", gap:6 }}>
-                            <Link2 size={12} color={C.primary} style={{ flexShrink:0, marginTop:2 }}/>
+                            <Link2 size={12} color={T.primary} style={{ flexShrink:0, marginTop:2 }}/>
                             <div style={{ fontSize:11, color:T.sub, lineHeight:1.5 }}>
-                              <strong style={{ color:C.primary }}>Related topics:</strong>{" "}
+                              <strong style={{ color:T.primary }}>Related topics:</strong>{" "}
                               {topic.cross_subject_links.map((lid, i) => {
                                 const found = Object.values(JAMB_SYLLABUS).flatMap(s => s.topics).find(t => t.id === lid);
                                 return found ? (
                                   <span key={lid}>
                                     {i > 0 && ", "}
-                                    <button onClick={()=>{ const s = Object.entries(JAMB_SYLLABUS).find(([,sv]) => sv.topics.some(t=>t.id===lid)); if(s){ setActiveSubject(s[0]); setExpandedTopic(lid); }}} style={{ background:"none", border:"none", color:C.primary, cursor:"pointer", fontSize:11, fontWeight:600, padding:0 }}>
+                                    <button onClick={()=>{ const s = Object.entries(JAMB_SYLLABUS).find(([,sv]) => sv.topics.some(t=>t.id===lid)); if(s){ setActiveSubject(s[0]); setExpandedTopic(lid); }}} style={{ background:"none", border:"none", color:T.primary, cursor:"pointer", fontSize:11, fontWeight:600, padding:0 }}>
                                       <Rich>{found.topic}</Rich>
                                     </button>
                                   </span>
@@ -282,16 +285,16 @@ export default function CoverageView() {
                         {/* Action buttons */}
                         <div style={{ display:"flex", gap:8 }}>
                           <Link href={`/ai?q=Teach me ${encodeURIComponent(topic.topic)} for JAMB ${encodeURIComponent(syllabus.display_name)} step by step`}
-                            style={{ flex:1, padding:"10px 8px", borderRadius:10, background:C.primaryLight, border:`1px solid ${C.primary}33`, textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:C.primary }}>
-                            <AppIcon e="🤖" /> Study with AI
+                            style={{ flex:1, padding:"10px 8px", borderRadius:10, background:T.primaryTint, border:`1px solid ${T.primary}33`, textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:T.primary, display:"flex", alignItems:"center", justifyContent:"center", gap:6, minHeight:44 }}>
+                            <Bot size={13} strokeWidth={2} /> Study with AI
                           </Link>
                           <Link href={`/questions?subject=${activeSubject}&topic=${encodeURIComponent(topic.topic)}`}
-                            style={{ flex:1, padding:"10px 8px", borderRadius:10, background:T.s2, border:`1px solid ${T.border}`, textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:T.text }}>
-                            <AppIcon e="✏️" /> Practice
+                            style={{ flex:1, padding:"10px 8px", borderRadius:10, background:T.s2, border:`1px solid ${T.border}`, textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:T.text, display:"flex", alignItems:"center", justifyContent:"center", gap:6, minHeight:44 }}>
+                            <PenTool size={13} strokeWidth={2} /> Practice
                           </Link>
                           <Link href={`/mock?subject=${activeSubject}&topic=${encodeURIComponent(topic.topic)}`}
-                            style={{ flex:1, padding:"10px 8px", borderRadius:10, background:"#E6F4EA", border:"1px solid #31A24C33", textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:"#31A24C" }}>
-                            <AppIcon e="📝" /> Mock
+                            style={{ flex:1, padding:"10px 8px", borderRadius:10, background:"rgba(49,162,76,0.12)", border:"1px solid rgba(49,162,76,0.3)", textAlign:"center", textDecoration:"none", fontSize:12, fontWeight:700, color:"#2FBF71", display:"flex", alignItems:"center", justifyContent:"center", gap:6, minHeight:44 }}>
+                            <ClipboardList size={13} strokeWidth={2} /> Mock
                           </Link>
                         </div>
                       </div>
@@ -304,7 +307,7 @@ export default function CoverageView() {
             {/* Source note */}
             <div style={{ margin:"14px 0", padding:"12px 14px", borderRadius:12, background:T.s2, border:`1px solid ${T.border}` }}>
               <div style={{ fontSize:11, color:T.sub, lineHeight:1.6 }}>
-                <AppIcon e="📋" /> <strong style={{ color:T.text }}>Source:</strong> <Rich>{SYLLABUS_STATS.source}</Rich> · <Rich>{SYLLABUS_STATS.totalSubjects}</Rich> subjects · <Rich>{SYLLABUS_STATS.totalTopics}</Rich> topics · <Rich>{SYLLABUS_STATS.totalSubtopics}</Rich> subtopics · <Rich>{SYLLABUS_STATS.totalObjectives}</Rich> learning objectives. All Companion lessons, mock exams, and study plans are aligned to this syllabus.
+                <strong style={{ color:T.text }}>Source:</strong> <Rich>{SYLLABUS_STATS.source}</Rich> · <Rich>{SYLLABUS_STATS.totalSubjects}</Rich> subjects · <Rich>{SYLLABUS_STATS.totalTopics}</Rich> topics · <Rich>{SYLLABUS_STATS.totalSubtopics}</Rich> subtopics · <Rich>{SYLLABUS_STATS.totalObjectives}</Rich> learning objectives. All Companion lessons, mock exams, and study plans are aligned to this syllabus.
               </div>
             </div>
           </div>

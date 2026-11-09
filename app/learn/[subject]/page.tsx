@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, PlayCircle } from "lucide-react";
-import Navbar, { NAVBAR_HEIGHT } from "../../components/Navbar";
-import BottomNav, { BOTTOM_NAV_HEIGHT } from "../../components/BottomNav";
-import { C, palette, R, S } from "../../lib/design";
+import { ArrowLeft, CheckCircle2, ChevronRight, PlayCircle } from "lucide-react";
+import { NAVBAR_HEIGHT } from "../../components/NavbarView";
+import { BOTTOM_NAV_HEIGHT } from "../../components/BottomNavView";
+import { palette, R } from "../../lib/design";
 import { useDark } from "../../lib/theme";
 import { getTopics, getSubjectSyllabus } from "../../lib/syllabus";
 import { getLessonVideo } from "../../lib/lesson-videos";
@@ -29,45 +29,42 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
   if (!subjectInfo) {
     return (
       <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily: "var(--font)" }}>
-        <Navbar darkMode={dark} />
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 16px", textAlign: "center" }}>
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 20px", textAlign: "center" }}>
           <p style={{ color: T.text, fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Subject not found</p>
           <p style={{ color: T.sub, fontSize: 13, marginBottom: 18 }}>We don't have lessons for "{subject}" yet.</p>
-          <Link href="/subjects" style={{ display: "inline-block", padding: "11px 22px", borderRadius: 999, background: C.primary, color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+          <Link href="/subjects" style={{ display: "inline-block", padding: "11px 22px", borderRadius: 999, background: T.primary, color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
             Browse all subjects
           </Link>
         </div>
-        <BottomNav darkMode={dark} />
       </div>
     );
   }
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily: "var(--font)" }}>
-      <Navbar darkMode={dark} />
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "16px" }}>
-        <Link href="/subjects" style={{ display: "flex", alignItems: "center", gap: 6, color: T.sub, fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 12 }}>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "20px" }}>
+        <Link href="/subjects" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: T.sub, fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 12, minHeight: "44px" }}>
           <ArrowLeft size={16} /> All subjects
         </Link>
 
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: T.text, marginBottom: 4 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: T.text, marginBottom: 4, letterSpacing: "-0.5px" }}>
           {subjectInfo?.display_name || subject}
         </h1>
         <p style={{ fontSize: 13, color: T.sub, marginBottom: 16 }}>
-          {topics.length} topics · video, summary and exercises for each
+          {topics.length} topics · summary and exercises for each
         </p>
 
         {topics.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.sub, marginBottom: 6 }}>
               <span>{doneCount} of {topics.length} topics completed</span>
-              <span style={{ fontWeight: 700, color: C.primary }}>{pctDone}%</span>
+              <span style={{ fontWeight: 700, color: T.primary }}>{pctDone}%</span>
             </div>
             <div style={{ height: 6, borderRadius: 3, background: T.s2, overflow: "hidden", marginBottom: 12 }}>
-              <div style={{ height: "100%", width: `${pctDone}%`, background: C.primary, transition: "width 0.4s" }} />
+              <div style={{ height: "100%", width: `${pctDone}%`, background: T.primary, transition: "width 0.4s" }} />
             </div>
-            <Link href={`/questions?subject=${subject}&mode=practice`} style={{ fontSize: 13, fontWeight: 700, color: C.primary, textDecoration: "none" }}>
-              Practice {subjectInfo?.display_name || subject} questions →
+            <Link href={`/questions?subject=${subject}&mode=practice`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 700, color: T.primary, textDecoration: "none", minHeight: "44px" }}>
+              Practice {subjectInfo?.display_name || subject} questions <ChevronRight size={14} strokeWidth={2.4} />
             </Link>
           </div>
         )}
@@ -80,8 +77,8 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
               <Link key={t.id} href={`/lessons/${t.id}`} style={{ textDecoration: "none" }}>
                 <div style={{
                   background: T.surface, borderRadius: R.lg, padding: "14px 16px",
-                  border: `1px solid ${done ? C.success + "55" : T.border}`,
-                  boxShadow: S.sm, display: "flex", alignItems: "center", justifyContent: "space-between",
+                  border: `1px solid ${done ? T.success + "55" : T.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
                 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{t.topic}</div>
@@ -90,7 +87,7 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
                     </div>
                   </div>
                   {done
-                    ? <CheckCircle2 size={20} color={C.success} />
+                    ? <CheckCircle2 size={20} color={T.success} />
                     : (hasVideo ? <PlayCircle size={20} color={T.muted} /> : null)}
                 </div>
               </Link>
@@ -98,7 +95,6 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
           })}
         </div>
       </div>
-      <BottomNav darkMode={dark} />
     </div>
   );
 }

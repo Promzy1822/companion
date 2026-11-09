@@ -7,9 +7,9 @@ import {
   Star, LogOut, ChevronRight, Edit3,
   Shield, Bell, Check, X, Eye, EyeOff, KeyRound,
 } from "lucide-react";
-import Navbar,    { NAVBAR_HEIGHT }     from "../components/Navbar";
-import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
-import { C, palette } from "../lib/design";
+import { NAVBAR_HEIGHT } from "../components/NavbarView";
+import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
+import { palette } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { Session } from "../lib/session";
 import { Sync } from "../lib/sync";
@@ -25,7 +25,7 @@ interface UserData {
 function Card({ children, darkMode, style }: { children: React.ReactNode; darkMode: boolean; style?: React.CSSProperties }) {
   const T = palette(darkMode);
   return (
-    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", ...style }}>
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", overflow: "hidden", ...style }}>
       {children}
     </div>
   );
@@ -133,7 +133,6 @@ export default function Profile() {
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily:"var(--font)" }}>
-      <Navbar darkMode={dark} />
 
       <main style={{
         paddingTop: `${NAVBAR_HEIGHT}px`,
@@ -142,9 +141,7 @@ export default function Profile() {
       }}>
         {/* Hero */}
         <div style={{
-          background: dark
-            ? "linear-gradient(160deg,#111827 0%,#1F2050 60%,#4F46E5 100%)"
-            : "linear-gradient(160deg,#4F46E5 0%,#3730A3 100%)",
+          background: "linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)",
           padding: "28px 20px 40px", position: "relative", overflow: "hidden",
         }}>
           <div style={{ position:"absolute", top:-40, right:-40, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }} />
@@ -152,7 +149,7 @@ export default function Profile() {
           <div style={{ textAlign: "center", position: "relative" }}>
             <div style={{
               width: 76, height: 76, borderRadius: "50%",
-              background: "linear-gradient(135deg,#4F46E5,#818CF8)",
+              background: "linear-gradient(135deg,#6366F1,#818CF8)",
               display: "flex", alignItems: "center", justifyContent: "center",
               margin: "0 auto 12px", fontSize: "30px", fontWeight: 800, color: "#fff",
               boxShadow: "0 4px 20px rgba(0,0,0,0.2)", border: "3px solid rgba(255,255,255,0.5)",
@@ -169,21 +166,21 @@ export default function Profile() {
               { label: "Subjects",  value: String(user.subjects?.length ?? 0) },
             ].map((s, i) => (
               <div key={i} style={{ background: "rgba(255,255,255,0.12)", borderRadius: "12px", padding: "12px 8px", textAlign: "center" }}>
-                <div style={{ color: "#FFF8DB", fontWeight: 900, fontSize: "18px", letterSpacing: "-0.5px", lineHeight: 1 }}>{s.value}</div>
+                <div style={{ color: "#F97316", fontWeight: 900, fontSize: "18px", letterSpacing: "-0.5px", lineHeight: 1 }}>{s.value}</div>
                 <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "10px", marginTop: "4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="profile-cols" style={{ padding: "16px 14px 0", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div className="profile-cols" style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
           <div className="profile-main">
 
           {/* Save banner */}
           {saved && (
-            <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"12px 16px", borderRadius:"12px", background: dark?"#0A1A0A":"#E6F4EA", border:"1px solid #31A24C44", animation:"fadeUp 0.2s ease both" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"12px 16px", borderRadius:"12px", background:"rgba(49,162,76,0.12)", border:"1px solid rgba(49,162,76,0.35)", animation:"fadeUp 0.2s ease both" }}>
               <Check size={16} color="#31A24C" strokeWidth={2.5} />
-              <span style={{ fontSize:"13px", color:"#0D8050", fontWeight:600 }}>Profile saved successfully</span>
+              <span style={{ fontSize:"13px", color:"#2FBF71", fontWeight:600 }}>Profile saved successfully</span>
             </div>
           )}
 
@@ -192,8 +189,8 @@ export default function Profile() {
             <CardHeader darkMode={dark} title="Personal Info" action={
               <button onClick={() => { setEditing(p => !p); if (editing) setForm(user); }} style={{
                 display:"flex", alignItems:"center", gap:"5px", padding:"6px 12px", borderRadius:"8px", border:"none",
-                background: editing ? C.primaryLight : T.s2,
-                color: editing ? C.primary : T.sub,
+                background: editing ? T.primaryTint : T.s2,
+                color: editing ? T.primary : T.sub,
                 fontWeight:600, fontSize:"13px", cursor:"pointer",
               }}>
                 {editing ? <><X size={13} strokeWidth={2} /> Cancel</> : <><Edit3 size={13} strokeWidth={2} /> Edit</>}
@@ -208,11 +205,11 @@ export default function Profile() {
                   <div>
                     <label style={{ ...lbl, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span>Target Score</span>
-                      <span style={{ color:C.primary, fontWeight:800, fontSize:"16px" }}>{form.target}</span>
+                      <span style={{ color:T.primary, fontWeight:800, fontSize:"16px" }}>{form.target}</span>
                     </label>
-                    <input type="range" min="180" max="400" step="5" value={form.target||"260"} onChange={e=>setForm(p=>({...p,target:e.target.value}))} style={{ width:"100%", accentColor:C.primary }} />
+                    <input type="range" min="180" max="400" step="5" value={form.target||"260"} onChange={e=>setForm(p=>({...p,target:e.target.value}))} style={{ width:"100%", accentColor:T.primary }} />
                   </div>
-                  <button onClick={saveProfile} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer", boxShadow:`0 2px 10px rgba(79,70,229,0.3)` }}>
+                  <button onClick={saveProfile} style={{ padding:"13px", borderRadius:"10px", border:"none", background:T.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer" }}>
                     Save Changes
                   </button>
                 </div>
@@ -230,8 +227,8 @@ export default function Profile() {
                     const Icon = row.icon;
                     return (
                       <div key={i} style={{ display:"flex", alignItems:"center", gap:"12px", paddingBottom: i<arr.length-1?"14px":0, borderBottom: i<arr.length-1?`1px solid ${T.border}`:"none" }}>
-                        <div style={{ width:38, height:38, borderRadius:"10px", background:C.primaryLight, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          <Icon size={16} color={C.primary} strokeWidth={1.8} />
+                        <div style={{ width:38, height:38, borderRadius:"10px", background:T.primaryTint, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          <Icon size={16} color={T.primary} strokeWidth={1.8} />
                         </div>
                         <div style={{ minWidth:0 }}>
                           <div style={{ fontSize:"11px", color:T.sub, fontWeight:600, marginBottom:"2px" }}>{row.label}</div>
@@ -252,7 +249,7 @@ export default function Profile() {
             <CardHeader darkMode={dark} title="JAMB Subjects" />
             <div style={{ padding:"14px 18px", display:"flex", flexWrap:"wrap", gap:"8px" }}>
               {(user.subjects||[]).map((s,i)=>(
-                <span key={i} style={{ padding:"7px 14px", borderRadius:"50px", background:C.primaryLight, border:`1px solid ${C.primary}33`, fontSize:"13px", fontWeight:600, color:C.primary }}>
+                <span key={i} style={{ padding:"7px 14px", borderRadius:"50px", background:T.primaryTint, border:`1px solid ${T.primary}33`, fontSize:"13px", fontWeight:600, color:T.primary }}>
                   {s}
                 </span>
               ))}
@@ -281,16 +278,16 @@ export default function Profile() {
               <div style={{ padding:"0 18px 18px", borderTop:`1px solid ${T.border}` }}>
                 <div style={{ display:"flex", flexDirection:"column", gap:"12px", marginTop:"14px" }}>
                   {pwSuccess && (
-                    <div style={{ padding:"10px 14px", background:"#E6F4EA", border:"1px solid #31A24C44", borderRadius:"10px", display:"flex", alignItems:"center", gap:"8px" }}>
+                    <div style={{ padding:"10px 14px", background:"rgba(49,162,76,0.12)", border:"1px solid rgba(49,162,76,0.35)", borderRadius:"10px", display:"flex", alignItems:"center", gap:"8px" }}>
                       <Check size={15} color="#31A24C" strokeWidth={2.5} />
-                      <span style={{ fontSize:"13px", color:"#0D8050", fontWeight:600 }}>Password changed successfully!</span>
+                      <span style={{ fontSize:"13px", color:"#2FBF71", fontWeight:600 }}>Password changed successfully!</span>
                     </div>
                   )}
                   <div>
                     <label style={lbl}>Current Password</label>
                     <div style={{ position:"relative" }}>
                       <input style={{ ...inp, paddingRight:"44px" }} type={showOld?"text":"password"} placeholder="Enter current password" value={oldPw} onChange={e=>setOldPw(e.target.value)} />
-                      <button onClick={()=>setShowOld(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:T.muted }}>
+                      <button onClick={()=>setShowOld(p=>!p)} style={{ position:"absolute", right:2, top:"50%", transform:"translateY(-50%)", width:44, height:44, background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:T.muted }}>
                         {showOld ? <EyeOff size={16}/> : <Eye size={16}/>}
                       </button>
                     </div>
@@ -299,7 +296,7 @@ export default function Profile() {
                     <label style={lbl}>New Password</label>
                     <div style={{ position:"relative" }}>
                       <input style={{ ...inp, paddingRight:"44px" }} type={showNew?"text":"password"} placeholder="Min. 6 characters" value={newPw} onChange={e=>setNewPw(e.target.value)} />
-                      <button onClick={()=>setShowNew(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", display:"flex", color:T.muted }}>
+                      <button onClick={()=>setShowNew(p=>!p)} style={{ position:"absolute", right:2, top:"50%", transform:"translateY(-50%)", width:44, height:44, background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:T.muted }}>
                         {showNew ? <EyeOff size={16}/> : <Eye size={16}/>}
                       </button>
                     </div>
@@ -311,7 +308,7 @@ export default function Profile() {
                   {pwError && (
                     <div style={{ padding:"10px 14px", background:T.dangerTint, border:`1px solid ${T.danger}44`, borderRadius:"10px", color:T.danger, fontSize:"13px" }}>{pwError}</div>
                   )}
-                  <button onClick={changePassword} disabled={pwBusy} style={{ padding:"13px", borderRadius:"10px", border:"none", background:C.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer", opacity: pwBusy ? 0.6 : 1 }}>
+                  <button onClick={changePassword} disabled={pwBusy} style={{ padding:"13px", borderRadius:"10px", border:"none", background:T.primary, color:"#fff", fontWeight:700, fontSize:"14px", cursor:"pointer", opacity: pwBusy ? 0.6 : 1 }}>
                     {pwBusy ? "Updating..." : "Update Password"}
                   </button>
                 </div>
@@ -364,8 +361,6 @@ export default function Profile() {
         </div>
       </main>
 
-      <BottomNav darkMode={dark} />
-      <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
 }

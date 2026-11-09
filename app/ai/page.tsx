@@ -6,9 +6,8 @@ import {
   ArrowLeft, Send, Paperclip,
   Sparkles, X, RotateCcw, Image as ImageIcon, FileText,
 } from "lucide-react";
-import { C, palette } from "../lib/design";
-import { Rich, stripEmoji } from "../components/AppIcon";
-import BottomNav from "../components/BottomNav";
+import { palette } from "../lib/design";
+import { stripEmoji } from "../components/AppIcon";
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
 
 interface Message {
@@ -27,7 +26,7 @@ const QUICK_ACTIONS = [
 
 const WELCOME: Message = {
   role: "assistant", id: 0,
-  content: "Hello! I'm **Companion AI**.\n\nI can help you:\n- Solve past questions with step-by-step explanations\n- Explain difficult JAMB topics clearly\n- Analyse photos of questions or textbook pages\n- Build study plans and give exam tips\n\nYou can type a question or attach a photo of a question. What would you like to work on?",
+  content: "Hello! I'm **your AI Tutor**.\n\nI can help you:\n- Solve past questions with step-by-step explanations\n- Explain difficult JAMB topics clearly\n- Analyse photos of questions or textbook pages\n- Build study plans and give exam tips\n\nYou can type a question or attach a photo of a question. What would you like to work on?",
 };
 
 
@@ -38,7 +37,7 @@ const MessageBubble = React.memo(function MessageBubble({ m, dark }: { m: Messag
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 8, marginBottom: 2, animation: "fadeUp 0.2s ease backwards" }}>
       {!isUser && (
-        <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#6366F1,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
           <Sparkles size={13} color="#fff" strokeWidth={1.8} />
         </div>
       )}
@@ -53,16 +52,16 @@ const MessageBubble = React.memo(function MessageBubble({ m, dark }: { m: Messag
             borderRadius: isUser
               ? m.image ? "0 0 4px 18px" : "18px 18px 4px 18px"
               : "4px 18px 18px 18px",
-            background: isUser ? C.primary : T.surface,
+            background: isUser ? T.primary : T.surface,
             border: isUser ? "none" : `1px solid ${T.border}`,
             color: isUser ? "#fff" : T.text,
             fontSize: 14, lineHeight: 1.65,
-            boxShadow: isUser ? "0 2px 12px rgba(79,70,229,0.3)" : "0 1px 6px rgba(0,0,0,0.06)",
+            boxShadow: "none",
             overflowWrap: "anywhere",
           }}
         >
           {isUser
-            ? <span style={{ whiteSpace: "pre-wrap" }}><Rich>{m.content}</Rich></span>
+            ? <span style={{ whiteSpace: "pre-wrap" }}>{m.content}</span>
             : <ReactMarkdown>{stripEmoji(m.content)}</ReactMarkdown>}
         </div>
       </div>
@@ -201,15 +200,14 @@ export default function AIChat() {
 
   return (
     <div className="chat-root" style={{ display: "flex", flexDirection: "column", background: T.bg, fontFamily: "var(--font)", overflow: "hidden" }}>
-      <BottomNav darkMode={dark} railOnly />
 
       {/* Header (part of the column, not fixed, so it lines up on phones, tablets and laptops) */}
       <div style={{ flexShrink: 0, background: T.surface, borderBottom: `1px solid ${T.border}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href="/" aria-label="Back" style={{ width: 34, height: 34, borderRadius: 10, background: T.s2, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+        <Link href="/" aria-label="Back" style={{ width: 44, height: 44, borderRadius: 12, background: T.s2, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
           <ArrowLeft size={17} color={T.text} strokeWidth={2} />
         </Link>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 15, color: T.text, letterSpacing: "-0.2px" }}>Companion AI</div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: T.text, letterSpacing: "-0.2px" }}>AI Tutor</div>
           <div style={{ fontSize: 11, color: "#31A24C", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
             <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#31A24C" }} />
             Online · JAMB expert
@@ -218,7 +216,7 @@ export default function AIChat() {
         <button
           aria-label="New chat"
           onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }}
-          style={{ width: 34, height: 34, borderRadius: 10, background: T.s2, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{ width: 44, height: 44, borderRadius: 12, background: T.s2, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <RotateCcw size={15} color={T.sub} strokeWidth={2} />
         </button>
@@ -231,12 +229,12 @@ export default function AIChat() {
 
           {loading && (
             <div style={{ display: "flex", alignItems: "flex-end", gap: 8, animation: "fadeUp 0.2s ease backwards" }}>
-              <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#4F46E5,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 28, height: 28, borderRadius: 9, flexShrink: 0, background: "linear-gradient(135deg,#6366F1,#818CF8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Sparkles size={13} color="#fff" strokeWidth={1.8} />
               </div>
               <div style={{ padding: "13px 18px", borderRadius: "4px 18px 18px 18px", background: T.surface, border: `1px solid ${T.border}`, display: "flex", gap: 5, alignItems: "center" }}>
                 {[0, 1, 2].map(i => (
-                  <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: C.primary, animation: `dot 1.2s ease-in-out ${i * 0.18}s infinite` }} />
+                  <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: T.primary, animation: `dot 1.2s ease-in-out ${i * 0.18}s infinite` }} />
                 ))}
               </div>
             </div>
@@ -251,7 +249,7 @@ export default function AIChat() {
           <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8 }}>
             {QUICK_ACTIONS.map((a, i) => (
               <button key={i} onClick={() => { setInput(a.prompt); inputRef.current?.focus(); }} style={{
-                flexShrink: 0, padding: "7px 13px", borderRadius: 20,
+                flexShrink: 0, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", borderRadius: 20,
                 border: `1px solid ${T.border}`, background: T.s2, color: T.sub,
                 fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
               }}>
@@ -263,39 +261,39 @@ export default function AIChat() {
           {fileError && (
             <div style={{ marginBottom: 8, padding: "10px 14px", background: T.dangerTint, border: "1px solid " + T.danger + "44", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontSize: 13, color: T.danger, fontWeight: 500 }}>{fileError}</span>
-              <button onClick={() => setFileError("")} aria-label="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+              <button onClick={() => setFileError("")} aria-label="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", padding: 10, margin: -6, display: "flex" }}>
                 <X size={14} color={T.danger} strokeWidth={2} />
               </button>
             </div>
           )}
 
           {attachment && (
-            <div style={{ marginBottom: 8, padding: "10px 14px", background: T.s2, border: `1px solid ${C.primary}44`, borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ marginBottom: 8, padding: "10px 14px", background: T.s2, border: `1px solid ${T.primary}44`, borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
               {attachment.type === "image" ? (
                 <img src={attachment.preview} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 44, height: 44, borderRadius: 8, background: `${C.primary}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <FileText size={20} color={C.primary} strokeWidth={1.8} />
+                <div style={{ width: 44, height: 44, borderRadius: 8, background: `${T.primary}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <FileText size={20} color={T.primary} strokeWidth={1.8} />
                 </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  <Rich>{attachment.file.name}</Rich>
+                  {attachment.file.name}
                 </div>
                 <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>
                   {attachment.type === "image" ? "Image: AI will read and solve" : "Text file: AI will analyse content"}
                 </div>
               </div>
-              <button onClick={() => setAttachment(null)} aria-label="Remove attachment" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
+              <button onClick={() => setAttachment(null)} aria-label="Remove attachment" style={{ background: "none", border: "none", cursor: "pointer", padding: 12, margin: -6, display: "flex" }}>
                 <X size={16} color={T.sub} strokeWidth={2} />
               </button>
             </div>
           )}
 
           <div className="chat-input" style={{ display: "flex", alignItems: "flex-end", gap: 8, background: T.s2, borderRadius: 24, padding: "8px 8px 8px 14px", border: `1.5px solid ${T.border}` }}>
-            <label style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "0 2px 7px" }} aria-label="Attach a file">
+            <label style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, width: 40, height: 40, marginBottom: 2 }} aria-label="Attach a file">
               {attachment?.type === "image"
-                ? <ImageIcon size={18} color={C.primary} strokeWidth={1.8} />
+                ? <ImageIcon size={18} color={T.primary} strokeWidth={1.8} />
                 : <Paperclip size={17} color={T.muted} strokeWidth={1.8} />}
               <input
                 type="file"
@@ -318,7 +316,7 @@ export default function AIChat() {
               onClick={() => sendMessage(input)}
               disabled={!canSend}
               aria-label="Send"
-              style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: canSend ? C.primary : T.s3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: canSend ? "pointer" : "not-allowed", transition: "background 0.2s", boxShadow: canSend ? "0 2px 10px rgba(79,70,229,0.4)" : "none" }}
+              style={{ width: 44, height: 44, borderRadius: "50%", border: "none", background: canSend ? T.primary : T.s3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: canSend ? "pointer" : "not-allowed", transition: "background 0.2s", boxShadow: "none" }}
             >
               <Send size={16} color="#fff" strokeWidth={2} style={{ transform: "translateX(1px)" }} />
             </button>
@@ -334,11 +332,10 @@ export default function AIChat() {
       </div>
 
       <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes dot    { 0%,60%,100%{opacity:.3;transform:scale(.8)} 30%{opacity:1;transform:scale(1.2)} }
         .chat-root   { height: 100vh; height: 100dvh; }
         .chat-narrow { width: 100%; max-width: 820px; margin-left: auto; margin-right: auto; }
-        .chat-input:focus-within { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+        .chat-input:focus-within { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
         .kbd-hint { display: none; }
         @media (min-width: 1024px) { .kbd-hint { display: inline; } }
 

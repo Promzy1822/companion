@@ -4,11 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
-  CheckCircle, XCircle, RotateCcw, PlayCircle, ExternalLink,
+  CheckCircle, XCircle, RotateCcw,
+  Languages, Sigma, Atom, Dna, Landmark, TrendingUp, BookOpen,
+  Bot, Inbox, Trophy, ThumbsUp, ClipboardList,
+  type LucideIcon,
 } from "lucide-react";
-import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
-import { C, palette } from "../lib/design";
-import { AppIcon, Rich } from "../components/AppIcon";
+import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
+import { palette } from "../lib/design";
 
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
 interface Question {
@@ -23,44 +25,26 @@ interface Question {
   image?: string | null;
 }
 
-const SUBJECTS = [
-  { key: "english",    label: "English",    icon: "📚" },
-  { key: "mathematics", label: "Mathematics", icon: "🔢" },
-  { key: "physics",    label: "Physics",    icon: "⚡" },
-  { key: "biology",    label: "Biology",    icon: "🌿" },
-  { key: "government", label: "Government", icon: "🏛️" },
-  { key: "economics",  label: "Economics",  icon: "📈" },
-  { key: "literature", label: "Literature", icon: "📖" },
+const SUBJECTS: { key: string; label: string; Icon: LucideIcon }[] = [
+  { key: "english",    label: "English",    Icon: Languages },
+  { key: "mathematics", label: "Mathematics", Icon: Sigma },
+  { key: "physics",    label: "Physics",    Icon: Atom },
+  { key: "biology",    label: "Biology",    Icon: Dna },
+  { key: "government", label: "Government", Icon: Landmark },
+  { key: "economics",  label: "Economics",  Icon: TrendingUp },
+  { key: "literature", label: "Literature", Icon: BookOpen },
 ];
 
 const YEARS = ["All","2010","2011","2012","2013","2014","2015","2016","2017","2018"];
-
-const LESSONS: Record<string, { title: string; url: string }[]> = {
-  biology: [
-    { title: "Cell Biology",           url: "https://www.youtube.com/results?search_query=JAMB+biology+cell+biology" },
-    { title: "Genetics & Heredity",    url: "https://www.youtube.com/results?search_query=JAMB+genetics+heredity" },
-    { title: "Ecology & Environment",  url: "https://www.youtube.com/results?search_query=JAMB+ecology+biology" },
-    { title: "Nutrition & Digestion",  url: "https://www.youtube.com/results?search_query=JAMB+nutrition+digestion" },
-    { title: "Reproduction",           url: "https://www.youtube.com/results?search_query=JAMB+reproduction+biology" },
-  ],
-  government: [
-    { title: "Arms of Government",     url: "https://www.youtube.com/results?search_query=JAMB+government+arms+legislature" },
-    { title: "Nigerian Constitution",  url: "https://www.youtube.com/results?search_query=JAMB+government+constitution+nigeria" },
-    { title: "Political Parties",      url: "https://www.youtube.com/results?search_query=JAMB+political+parties+nigeria" },
-    { title: "Electoral Systems",      url: "https://www.youtube.com/results?search_query=JAMB+electoral+system+nigeria" },
-    { title: "International Orgs",     url: "https://www.youtube.com/results?search_query=JAMB+government+UN+AU+ECOWAS" },
-  ],
-};
 
 function QuestionsContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const initSubject  = searchParams.get("subject") || "biology";
-  const initMode     = searchParams.get("mode")    || "practice";
 
   const dark = useDark();
   const [subject,   setSubject]   = useState(initSubject);
-  const [mode,      setMode]      = useState<"learn"|"practice">(initMode as "learn"|"practice");
+  const mode = "practice" as const;
   const [year,      setYear]      = useState("All");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [current,   setCurrent]   = useState(0);
@@ -151,18 +135,18 @@ function QuestionsContent() {
 
   const optStyle = (opt: string): React.CSSProperties => {
     if (!revealed) return {
-      background: selected === opt ? C.primaryLight : T.surface,
-      border:     `2px solid ${selected === opt ? C.primary : T.border}`,
-      color:      selected === opt ? C.primary : T.text,
+      background: selected === opt ? T.primaryTint : T.surface,
+      border:     `2px solid ${selected === opt ? T.primary : T.border}`,
+      color:      selected === opt ? T.primary : T.text,
     };
-    if (opt === q?.answer) return { background:"#E6F4EA", border:"2px solid #31A24C", color:"#0D8050" };
-    if (opt === selected)  return { background:"#FEE2E2", border:"2px solid #FA3E3E", color:"#D0021B" };
+    if (opt === q?.answer) return { background:"rgba(49,162,76,0.14)", border:"2px solid #31A24C", color:"#2FBF71" };
+    if (opt === selected)  return { background:"rgba(250,62,62,0.12)", border:"2px solid #FA3E3E", color:"#FF6B5E" };
     return { background: T.surface, border:`2px solid ${T.border}`, color:T.muted };
   };
 
   const circleStyle = (opt: string): React.CSSProperties => {
     if (!revealed) return {
-      background: selected === opt ? C.primary : T.s2,
+      background: selected === opt ? T.primary : T.s2,
       color:      selected === opt ? "#fff" : T.sub,
     };
     if (opt === q?.answer) return { background:"#31A24C", color:"#fff" };
@@ -178,10 +162,10 @@ function QuestionsContent() {
     }}>
 
       {/* ── HEADER ── */}
-      <div style={{ position:"sticky", top:0, zIndex:50, background:C.primary }}>
+      <div style={{ position:"sticky", top:0, zIndex:50, background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)" }}>
         <div style={{ height:56, display:"flex", alignItems:"center", gap:12, padding:"0 16px" }}>
           <button onClick={()=>router.back()} style={{
-            width:34, height:34, borderRadius:10,
+            width:44, height:44, borderRadius:12,
             background:"rgba(255,255,255,0.15)", border:"none",
             cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
           }}>
@@ -200,8 +184,8 @@ function QuestionsContent() {
               background:"rgba(255,255,255,0.15)", borderRadius:20,
               padding:"4px 12px", textAlign:"center",
             }}>
-              <div style={{ color:"#FFF8DB", fontWeight:900, fontSize:16, lineHeight:1 }}><Rich>{scorePct}</Rich>%</div>
-              <div style={{ color:"rgba(255,255,255,0.7)", fontSize:9 }}><Rich>{score.correct}</Rich>/<Rich>{totalDone}</Rich></div>
+              <div style={{ color:"#F97316", fontWeight:900, fontSize:16, lineHeight:1 }}>{scorePct}%</div>
+              <div style={{ color:"rgba(255,255,255,0.7)", fontSize:9 }}>{score.correct}/{totalDone}</div>
             </div>
           )}
         </div>
@@ -214,65 +198,22 @@ function QuestionsContent() {
         )}
       </div>
 
-      <div style={{ padding:"14px 14px 0" }}>
+      <div style={{ padding:"14px 20px 0" }}>
 
         {/* ── SUBJECT TABS ── */}
         <div style={{ display:"flex", gap:8, marginBottom:12, overflowX:"auto", scrollbarWidth:"none" }}>
           {SUBJECTS.map(s=>(
             <button key={s.key} onClick={()=>{ setSubject(s.key); setCurrent(0); }} style={{
-              flex:"0 0 auto", padding:"10px 14px", whiteSpace:"nowrap", borderRadius:12, cursor:"pointer",
+              flex:"0 0 auto", padding:"10px 14px", minHeight:44, display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap", borderRadius:12, cursor:"pointer",
               fontWeight:700, fontSize:13,
-              background: subject===s.key ? C.primary : T.surface,
+              background: subject===s.key ? T.primary : T.surface,
               color:      subject===s.key ? "#fff" : T.sub,
               border:     subject===s.key ? "none" : `1px solid ${T.border}`,
             }}>
-              <Rich>{s.icon}</Rich> <Rich>{s.label}</Rich>
+              <s.Icon size={14} strokeWidth={2}/> {s.label}
             </button>
           ))}
         </div>
-
-        {/* ── MODE TABS ── */}
-        <div style={{ display:"flex", gap:8, marginBottom:14, background:T.s2, borderRadius:12, padding:4 }}>
-          {(["learn","practice"] as const).map(m=>(
-            <button key={m} onClick={()=>setMode(m)} style={{
-              flex:1, padding:"9px", borderRadius:9, border:"none",
-              cursor:"pointer", fontWeight:700, fontSize:13,
-              background: mode===m ? "#fff" : "transparent",
-              color:      mode===m ? C.primary : T.sub,
-              boxShadow:  mode===m ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-              transition: "all 0.2s",
-            }}>
-              <Rich>{m==="learn" ? "🎬 Lessons" : "✏️ Practice"}</Rich>
-            </button>
-          ))}
-        </div>
-
-        {/* ── LEARN MODE ── */}
-        {mode==="learn" && (
-          <div>
-            <p style={{ fontSize:13, color:T.sub, marginBottom:14 }}>
-              Curated YouTube lessons for <Rich>{SUBJECTS.find(s=>s.key===subject)?.label}</Rich>.
-            </p>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {(LESSONS[subject] || []).map((l,i)=>(
-                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" style={{
-                  display:"flex", alignItems:"center", gap:12, padding:"14px 16px",
-                  borderRadius:14, background:T.surface, border:`1px solid ${T.border}`,
-                  textDecoration:"none", color:T.text,
-                }}>
-                  <div style={{
-                    width:40, height:40, borderRadius:10, flexShrink:0,
-                    background:"#FF000015", display:"flex", alignItems:"center", justifyContent:"center",
-                  }}>
-                    <PlayCircle size={20} color="#FF0000"/>
-                  </div>
-                  <span style={{ fontSize:14, fontWeight:600, flex:1 }}><Rich>{l.title}</Rich></span>
-                  <ExternalLink size={14} color={T.muted}/>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── PRACTICE MODE ── */}
         {mode==="practice" && (
@@ -281,13 +222,13 @@ function QuestionsContent() {
             <div style={{ display:"flex", gap:6, overflowX:"auto", scrollbarWidth:"none", marginBottom:14 }}>
               {YEARS.map(y=>(
                 <button key={y} onClick={()=>setYear(y)} style={{
-                  flexShrink:0, padding:"6px 12px", borderRadius:20, border:"none",
+                  flexShrink:0, padding:"6px 14px", minHeight:40, display:"flex", alignItems:"center", borderRadius:20, border:"none",
                   cursor:"pointer", fontSize:12, fontWeight:600,
-                  background: year===y ? C.primary : T.surface,
+                  background: year===y ? T.primary : T.surface,
                   color:      year===y ? "#fff" : T.sub,
                   outline:    year===y ? "none" : `1px solid ${T.border}`,
                 }}>
-                  <Rich>{y}</Rich>
+                  {y}
                 </button>
               ))}
             </div>
@@ -301,10 +242,10 @@ function QuestionsContent() {
                     const state = a === undefined ? "todo" : a === qq.answer ? "ok" : "bad";
                     return (
                       <button key={qq.id} onClick={() => goTo(i)} style={{
-                        height:34, borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"inherit",
-                        border: i === current ? `2px solid ${C.primary}` : `1px solid ${T.border}`,
-                        background: state === "ok" ? "#E6F4EA" : state === "bad" ? "#FEE2E2" : T.s2,
-                        color: state === "ok" ? "#0D8050" : state === "bad" ? "#D0021B" : T.sub,
+                        height:40, borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"inherit",
+                        border: i === current ? `2px solid ${T.primary}` : `1px solid ${T.border}`,
+                        background: state === "ok" ? "rgba(49,162,76,0.14)" : state === "bad" ? "rgba(250,62,62,0.12)" : T.s2,
+                        color: state === "ok" ? "#2FBF71" : state === "bad" ? "#FF6B5E" : T.sub,
                       }}>{i + 1}</button>
                     );
                   })}
@@ -321,7 +262,7 @@ function QuestionsContent() {
               <div style={{ textAlign:"center", padding:"60px 20px" }}>
                 <div style={{
                   width:32, height:32, borderRadius:"50%",
-                  border:"3px solid #F4F5FA", borderTopColor:"#EA580C",
+                  border:`3px solid ${T.s3}`, borderTopColor:"#F97316",
                   animation:"spin 0.8s linear infinite", margin:"0 auto 12px",
                 }}/>
                 <div style={{ fontSize:13, color:T.sub }}>Loading questions…</div>
@@ -335,12 +276,12 @@ function QuestionsContent() {
                 padding:"40px 20px", textAlign:"center",
                 background:T.surface, borderRadius:16, border:`1px solid ${T.border}`,
               }}>
-                <div style={{ fontSize:40, marginBottom:12 }}><AppIcon e="📭" /></div>
+                <div style={{ marginBottom:12, display:"flex", justifyContent:"center" }}><Inbox size={40} color={T.muted} strokeWidth={1.5}/></div>
                 <div style={{ fontWeight:700, color:T.text, marginBottom:6 }}>No questions yet</div>
-                <div style={{ fontSize:13, color:T.sub, marginBottom:16 }}><Rich>{error}</Rich></div>
+                <div style={{ fontSize:13, color:T.sub, marginBottom:16 }}>{error}</div>
                 <button onClick={()=>loadQuestions(subject,year)} style={{
-                  padding:"10px 24px", borderRadius:50, border:"none",
-                  background:C.primary, color:"#fff", fontWeight:700, cursor:"pointer",
+                  padding:"10px 24px", minHeight:44, borderRadius:50, border:"none",
+                  background:T.primary, color:"#fff", fontWeight:700, cursor:"pointer",
                 }}>
                   Retry
                 </button>
@@ -354,12 +295,12 @@ function QuestionsContent() {
                 <div style={{ display:"flex", gap:8, marginBottom:10, alignItems:"center", flexWrap:"wrap" }}>
                   <span style={{
                     padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:700,
-                    background:C.primaryLight, color:C.primary,
-                  }}>JAMB <Rich>{q.year}</Rich></span>
+                    background:T.primaryTint, color:T.primary,
+                  }}>JAMB {q.year}</span>
                   <span style={{
                     padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:700,
                     background:T.s2, color:T.sub,
-                  }}>Question <Rich>{q.num}</Rich></span>
+                  }}>Question {q.num}</span>
                   {revealed && (
                     <span style={{
                       marginLeft:"auto", display:"flex", alignItems:"center", gap:4,
@@ -376,7 +317,7 @@ function QuestionsContent() {
                 {/* Question text */}
                 {q.image && (
                   <div style={{ marginBottom:12, textAlign:"center" }}>
-                    <img src={"/" + q.image} alt="Question diagram" style={{ maxWidth:"100%", borderRadius:12, border:`1px solid ${T.border}`, background:"#fff" }} />
+                    <img src={"/" + q.image} alt="Question diagram" style={{ maxWidth:"100%", borderRadius:12, border:`1px solid ${T.border}`, background:"#fff", padding:8, boxSizing:"border-box" }} />
                   </div>
                 )}
                 <div style={{
@@ -384,7 +325,7 @@ function QuestionsContent() {
                   border:`1px solid ${T.border}`, marginBottom:12,
                   fontSize:15, color:T.text, fontWeight:600, lineHeight:1.65,
                 }}>
-                  <Rich>{q.question}</Rich>
+                  {q.question}
                 </div>
 
                 {/* Options */}
@@ -402,9 +343,9 @@ function QuestionsContent() {
                         display:"flex", alignItems:"center", justifyContent:"center",
                         fontSize:12, fontWeight:800,
                         ...circleStyle(opt),
-                      }}><Rich>{opt}</Rich></div>
+                      }}>{opt}</div>
                       <span style={{ fontSize:14, fontWeight:500, flex:1, lineHeight:1.4 }}>
-                        <Rich>{q.options[opt]}</Rich>
+                        {q.options[opt]}
                       </span>
                       {revealed && opt===q.answer && (
                         <CheckCircle size={15} color="#31A24C" strokeWidth={2.5}/>
@@ -420,21 +361,23 @@ function QuestionsContent() {
                 {revealed && (
                   <div style={{
                     padding:"12px 14px", borderRadius:12, marginBottom:14,
-                    background: selected===q.answer ? "#E6F4EA" : "#FFF3EE",
-                    border:`1px solid ${selected===q.answer?"#31A24C44":"#EA580C44"}`,
+                    background: selected===q.answer ? "rgba(49,162,76,0.12)" : "rgba(249,115,22,0.1)",
+                    border:`1px solid ${selected===q.answer?"rgba(49,162,76,0.35)":"rgba(249,115,22,0.3)"}`,
                   }}>
                     <div style={{
                       fontSize:13, fontWeight:700,
-                      color: selected===q.answer ? "#0D8050" : "#C75B21",
+                      color: selected===q.answer ? "#2FBF71" : "#F08C4A",
                     }}>
-                      <Rich>{selected===q.answer
-                        ? `✅ Correct! Answer: ${q.answer}. ${q.options[q.answer as keyof typeof q.options]}`
-                        : `❌ Wrong. Correct answer: ${q.answer}. ${q.options[q.answer as keyof typeof q.options]}`
-                      }</Rich>
+                      {selected===q.answer
+                        ? `Correct! Answer: ${q.answer}. ${q.options[q.answer as keyof typeof q.options]}`
+                        : `Wrong. Correct answer: ${q.answer}. ${q.options[q.answer as keyof typeof q.options]}`
+                      }
                     </div>
-                    <div style={{ fontSize:11, color:T.sub, marginTop:6 }}>
-                      Ask AI to explain → tap <AppIcon e="🤖" /> below
-                    </div>
+                    {selected!==q.answer && (
+                      <div style={{ fontSize:11, color:T.sub, marginTop:6 }}>
+                        Tap the button below and the AI Tutor will explain it step by step.
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -445,12 +388,11 @@ function QuestionsContent() {
                     style={{
                       display:"flex", alignItems:"center", justifyContent:"center", gap:8,
                       padding:"12px", borderRadius:12, marginBottom:14,
-                      background:"linear-gradient(135deg,#4F46E5,#4338CA)",
+                      background:T.primary,
                       color:"#fff", textDecoration:"none", fontWeight:700, fontSize:13,
-                      boxShadow:"0 2px 10px rgba(79,70,229,0.3)",
                     }}
                   >
-                    <AppIcon e="🤖" /> Ask AI to explain this answer
+                    <Bot size={15} strokeWidth={2}/> Ask AI to explain this answer
                   </Link>
                 )}
 
@@ -479,9 +421,8 @@ function QuestionsContent() {
                   {current < questions.length-1 ? (
                     <button onClick={()=>goTo(current+1)} style={{
                       flex: revealed?2:1, padding:"13px", borderRadius:12, border:"none",
-                      background:C.primary, color:"#fff", fontWeight:700, cursor:"pointer",
+                      background:T.primary, color:"#fff", fontWeight:700, cursor:"pointer",
                       display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-                      boxShadow:"0 2px 10px rgba(79,70,229,0.3)",
                     }}>
                       Next <ChevronRight size={16}/>
                     </button>
@@ -504,36 +445,40 @@ function QuestionsContent() {
                     marginTop:14, padding:"24px 20px", borderRadius:16, textAlign:"center",
                     background:T.surface, border:`1px solid ${T.border}`,
                   }}>
-                    <div style={{ fontSize:40, marginBottom:10 }}>
-                      <Rich>{scorePct>=70?"🏆":scorePct>=50?"👍":"📚"}</Rich>
+                    <div style={{ marginBottom:10, display:"flex", justifyContent:"center" }}>
+                      {scorePct>=70
+                        ? <Trophy size={40} color="#E3B341" strokeWidth={1.5}/>
+                        : scorePct>=50
+                          ? <ThumbsUp size={40} color={T.primary} strokeWidth={1.5}/>
+                          : <BookOpen size={40} color={T.primary} strokeWidth={1.5}/>}
                     </div>
                     <div style={{ fontWeight:800, fontSize:17, color:T.text, marginBottom:6 }}>
                       Session Complete!
                     </div>
                     <div style={{ fontSize:14, color:T.sub, marginBottom:4 }}>
-                      Score: <Rich>{score.correct}</Rich>/<Rich>{totalDone}</Rich> (<Rich>{scorePct}</Rich>%)
+                      Score: {score.correct}/{totalDone} ({scorePct}%)
                     </div>
                     <div style={{ fontSize:12, color:T.muted, marginBottom:20 }}>
-                      <Rich>{scorePct>=70?"Excellent! Keep it up! 🔥"
+                      {scorePct>=70?"Excellent! Keep it up!"
                         :scorePct>=50?"Good effort! Review weak areas."
-                        :"Review these topics and try again."}</Rich>
+                        :"Review these topics and try again."}
                     </div>
                     <div style={{ display:"flex", gap:10 }}>
                       <button onClick={()=>loadQuestions(subject,year)} style={{
-                        flex:1, padding:"12px", borderRadius:50, border:"none",
-                        background:C.primary, color:"#fff", fontWeight:700,
+                        flex:1, padding:"12px", minHeight:48, borderRadius:50, border:"none",
+                        background:T.primary, color:"#fff", fontWeight:700,
                         cursor:"pointer", fontSize:13,
-                        boxShadow:"0 2px 10px rgba(79,70,229,0.3)",
+                        display:"flex", alignItems:"center", justifyContent:"center", gap:6,
                       }}>
-                        <AppIcon e="🔄" /> Try Again
+                        <RotateCcw size={13} strokeWidth={2}/> Try Again
                       </button>
                       <Link href="/mock" style={{
-                        flex:1, padding:"12px", borderRadius:50, border:"none",
+                        flex:1, padding:"12px", minHeight:48, borderRadius:50, border:"none",
                         background:"#31A24C", color:"#fff", fontWeight:700,
                         cursor:"pointer", fontSize:13, textDecoration:"none",
-                        textAlign:"center", display:"block",
+                        display:"flex", alignItems:"center", justifyContent:"center", gap:6,
                       }}>
-                        <AppIcon e="📝" /> Mock Exam
+                        <ClipboardList size={13} strokeWidth={2}/> Mock Exam
                       </Link>
                     </div>
                   </div>
@@ -544,7 +489,6 @@ function QuestionsContent() {
         )}
       </div>
 
-      <BottomNav darkMode={dark}/>
     </div>
   );
 }

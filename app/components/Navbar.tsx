@@ -1,31 +1,15 @@
 "use client";
-import { useRef, useState } from "react";
-import { useIsoLayoutEffect } from "../lib/theme";
-import { nextChromeId, registerNav, unregisterNav } from "../lib/chrome";
 
 export { NAVBAR_HEIGHT } from "./NavbarView";
 
 /**
- * Pages keep using <Navbar darkMode onToggleDark /> exactly as before, but this no longer draws
- * anything: it tells the shared top bar (mounted once in the layout) how to look on this page.
+ * Legacy per-page top bar registration — now inert. The top bar is owned by the
+ * root layout (AppChrome) and always rendered; pages no longer register or theme
+ * it. Kept, with the same props, so existing page code compiles unchanged.
  */
-export default function Navbar({
-  darkMode = false,
-  onToggleDark,
-}: {
+export default function Navbar(_props: {
   darkMode?: boolean;
   onToggleDark?: () => void;
 }) {
-  const [id] = useState(nextChromeId);
-  const toggleRef = useRef(onToggleDark);
-  toggleRef.current = onToggleDark;
-  const hasToggle = !!onToggleDark;
-
-  useIsoLayoutEffect(() => {
-    registerNav(id, { darkMode, hasToggle, toggle: () => toggleRef.current?.() });
-  }, [id, darkMode, hasToggle]);
-
-  useIsoLayoutEffect(() => () => unregisterNav(id), [id]);
-
   return null;
 }

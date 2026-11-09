@@ -2,44 +2,27 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  Home, Bot, BookOpen, ClipboardList,
-  CalendarDays, Settings, LogOut, ChevronDown,
-  Sun, Moon, Sparkles,
-} from "lucide-react";
+import { LogOut, ChevronDown, Sparkles } from "lucide-react";
 import AppLogo from "./AppLogo";
 import ThemeMenu from "./ThemeMenu";
 import { Session } from "../lib/session";
-import { C, D, palette } from "../lib/design";
+import { palette } from "../lib/design";
+import { setThemeMode, useDark, useIsoLayoutEffect } from "../lib/theme";
+import { NAV_ITEMS, NAV_SECONDARY, isNavActive } from "../lib/nav";
 
-import { useIsoLayoutEffect } from "../lib/theme";
 interface UserData { name: string; email: string; target: string; institution?: string; }
-
-const NAV = [
-  { icon: Home,          label: "Dashboard",  href: "/"                       },
-  { icon: Bot,           label: "Ask AI",      href: "/ai"                     },
-  { icon: BookOpen,      label: "Learn",       href: "/subjects?mode=learn"    },
-  { icon: ClipboardList, label: "Mock Exam",   href: "/mock"                   },
-  { icon: CalendarDays,  label: "Study Plan",  href: "/studyplan"              },
-  { icon: Settings,      label: "Profile",     href: "/profile"                },
-];
 
 // NAVBAR_HEIGHT is exported so pages can use it for paddingTop
 export const NAVBAR_HEIGHT = 56;
 
-export default function Navbar({
-  darkMode = false,
-  onToggleDark,
-}: {
-  darkMode?: boolean;
-  onToggleDark?: () => void;
-}) {
+export default function NavbarView() {
   const [user, setUser] = useState<UserData | null>(null);
   const [open, setOpen] = useState(false);
   const dropRef  = useRef<HTMLDivElement>(null);
   const router   = useRouter();
-  const pathname = usePathname();
-  const T        = palette(darkMode);
+  const pathname = usePathname() ?? "";
+  const dark     = useDark();
+  const T        = palette(dark);
 
   useEffect(() => { setOpen(false); }, [pathname]);
 
@@ -68,16 +51,11 @@ export default function Navbar({
     router.push("/landing");
   };
 
+  const menuItems = [...NAV_ITEMS, ...NAV_SECONDARY];
   const ic = { size: 17, strokeWidth: 1.8 } as const;
 
   return (
     <>
-      {/*
-        CRITICAL: position fixed — NOT sticky.
-        Sticky breaks when a parent has overflow set or transform applied.
-        Fixed always works relative to the viewport.
-        The page content must have paddingTop: NAVBAR_HEIGHT to compensate.
-      */}
       <header className="top-bar" style={{
         position:   "fixed",
         top:        0,
@@ -92,14 +70,13 @@ export default function Navbar({
         borderBottom: `1px solid ${T.border}`,
         boxShadow:  "0 1px 0 rgba(0,0,0,0.06)",
         zIndex:     200,
-        /* Prevent any layout shift from subpixel rendering */
         willChange: "auto",
-        transform:  "translateZ(0)", /* creates its own stacking context, prevents paint issues */
+        transform:  "translateZ(0)",
       }}>
-        <span className="top-logo"><AppLogo size={28} showText darkMode={darkMode} /></span>
+        <span className="top-logo"><AppLogo size={28} showText darkMode={dark} /></span>
 
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          {onToggleDark && <ThemeMenu darkMode={darkMode} onToggleDark={onToggleDark} />}
+          <ThemeMenu darkMode={dark} onToggleDark={() => setThemeMode(dark ? "light" : "dark")} />
 
           {user ? (
             <div ref={dropRef} style={{ position: "relative" }}>
@@ -136,11 +113,6 @@ export default function Navbar({
 
               {open && (
                 <div className="nav-dropdown" style={{
-                  /*
-                    position fixed relative to viewport, not relative to the navbar.
-                    top: NAVBAR_HEIGHT ensures it appears directly below the header.
-                    This avoids any clipping from parent overflow settings.
-                  */
                   position:  "fixed",
                   top:       `${NAVBAR_HEIGHT + 4}px`,
                   right:     "12px",
@@ -150,7 +122,7 @@ export default function Navbar({
                   borderRadius: "14px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
                   overflow:  "hidden",
-                  zIndex:    300, /* above navbar */
+                  zIndex:    300,
                   animation: "navDropIn 0.15s ease both",
                 }}>
                   {/* User header */}
@@ -159,7 +131,7 @@ export default function Navbar({
                     onClick={() => setOpen(false)}
                     style={{
                       display: "block", padding: "14px 16px",
-                      background: darkMode ? D.surface2 : "#F7F8FF",
+                      background: T.s2,
                       borderBottom: `1px solid ${T.border}`,
                       textDecoration: "none",
                     }}
@@ -183,18 +155,18 @@ export default function Navbar({
                       padding: "7px 10px", borderRadius: "8px", background: T.s2,
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <Sparkles size={12} color={C.primary} strokeWidth={1.8} />
+                        <Sparkles size={12} color={T.primary} strokeWidth={1.8} />
                         <span style={{ fontSize: "12px", color: T.sub }}>Target score</span>
                       </div>
-                      <span style={{ fontSize: "13px", fontWeight: 700, color: C.primary }}>{user.target} pts</span>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: T.primary }}>{user.target} pts</span>
                     </div>
                   </Link>
 
-                  {/* Nav links */}
+                  {/* Nav links — same single definition as the tabs and rail */}
                   <div style={{ padding: "4px 0" }}>
-                    {NAV.map(item => {
+                    {menuItems.map(item => {
                       const Icon   = item.icon;
-                      const active = pathname === item.href || pathname.startsWith(item.href + "?");
+                      const active = isNavActive(pathname, item.match);
                       return (
                         <Link
                           key={item.href}
@@ -203,21 +175,21 @@ export default function Navbar({
                           style={{
                             display: "flex", alignItems: "center", gap: "12px",
                             padding: "10px 16px", textDecoration: "none",
-                            background: active ? (darkMode ? "#1F2050" : C.primaryLight) : "transparent",
+                            background: active ? T.primaryTint : "transparent",
                             transition: "background 0.1s",
                           }}
                         >
-                          <Icon {...ic} color={active ? C.primary : T.sub} />
+                          <Icon {...ic} color={active ? T.primary : T.sub} />
                           <span style={{
                             fontSize: "14px",
                             fontWeight: active ? 700 : 500,
-                            color: active ? C.primary : T.text,
+                            color: active ? T.primary : T.text,
                             flex: 1,
                           }}>
                             {item.label}
                           </span>
                           {active && (
-                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.primary }} />
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.primary }} />
                           )}
                         </Link>
                       );
@@ -232,8 +204,8 @@ export default function Navbar({
                         padding: "10px 16px", background: "none", border: "none", cursor: "pointer",
                       }}
                     >
-                      <LogOut size={17} strokeWidth={1.8} color={C.danger} />
-                      <span style={{ fontSize: "14px", fontWeight: 600, color: C.danger }}>Log Out</span>
+                      <LogOut size={17} strokeWidth={1.8} color={T.danger} />
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: T.danger }}>Log Out</span>
                     </button>
                   </div>
                 </div>
@@ -243,7 +215,7 @@ export default function Navbar({
             <Link
               href="/auth"
               style={{
-                background: C.primary, color: "#fff",
+                background: T.primary, color: "#fff",
                 borderRadius: "50px", padding: "8px 18px",
                 fontSize: "13px", fontWeight: 700, textDecoration: "none",
               }}

@@ -153,6 +153,12 @@ export default function AIChat() {
       content: typeof m.content === "string" ? m.content : String(m.content),
     }));
     const payload: Record<string, unknown> = { message: t, history };
+    // Send the student's registered subjects so the AI answers inside
+    // their syllabus (the chat route builds a detailed prompt from them).
+    try {
+      const u = JSON.parse(localStorage.getItem("companion_user") || "null");
+      if (u && Array.isArray(u.subjects) && u.subjects.length) payload.subjects = u.subjects;
+    } catch { /* subjects are optional context */ }
     if (attachment?.type === "image") {
       payload.imageBase64 = attachment.base64;
       payload.imageType   = attachment.file.type;

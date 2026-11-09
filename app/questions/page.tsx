@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -47,6 +47,16 @@ function QuestionsContent() {
 
   const dark = useDark();
   const [subject,   setSubject]   = useState(initSubject);
+  const subjectRowRef = useRef<HTMLDivElement>(null);
+  // Keep the selected subject tab visible: centre it in the tab row
+  // whenever the subject changes (including first load).
+  useEffect(() => {
+    const row = subjectRowRef.current;
+    if (!row) return;
+    const btn = row.querySelector<HTMLElement>(`[data-subject="${subject}"]`);
+    if (!btn) return;
+    row.scrollTo({ left: btn.offsetLeft - (row.clientWidth - btn.clientWidth) / 2, behavior: "smooth" });
+  }, [subject]);
   const mode = "practice" as const;
   const [year,      setYear]      = useState("All");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -204,9 +214,9 @@ function QuestionsContent() {
       <div style={{ padding:"14px 20px 0" }}>
 
         {/* ── SUBJECT TABS ── */}
-        <div style={{ display:"flex", gap:8, marginBottom:12, overflowX:"auto", scrollbarWidth:"none" }}>
+        <div ref={subjectRowRef} style={{ display:"flex", gap:8, marginBottom:12, overflowX:"auto", scrollbarWidth:"none", scrollPaddingLeft:20 }}>
           {SUBJECTS.map(s=>(
-            <button key={s.key} onClick={()=>{ setSubject(s.key); setYear("All"); setCurrent(0); }} style={{
+            <button key={s.key} data-subject={s.key} onClick={()=>{ setSubject(s.key); setYear("All"); setCurrent(0); }} style={{
               flex:"0 0 auto", padding:"10px 14px", minHeight:44, display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap", borderRadius:12, cursor:"pointer",
               fontWeight:700, fontSize:13,
               background: subject===s.key ? T.primary : T.surface,

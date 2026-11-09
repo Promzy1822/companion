@@ -1,6 +1,6 @@
 // Cache version — update this string on every deployment to bust old caches.
 // Format: companion-YYYYMMDD-N
-const CACHE_NAME    = 'companion-20250609-1';
+const CACHE_NAME    = 'companion-20261109-1';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icon-192.png',
@@ -35,20 +35,34 @@ self.addEventListener('activate', function(event) {
 });
 
 // Fetch strategy:
-//   - HTML pages:     network-first (always fresh)
-//   - API calls:      network-only  (never cache)
-//   - Static assets:  cache-first   (icons, manifest)
+//   - HTML pages:     network-first (always fresh), cached copy only as an
+//                     offline fallback
+//   - API + RSC:      network-only (never cache — a cached RSC payload pins a
+//                     page to the build that produced it, which is how pages
+//                     ended up rendering different deployments side by side)
+//   - Static assets:  cache-first (icons, manifest, hashed build chunks)
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
 
-  const url = event.request.url;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
 
   // Never cache API calls
-  if (url.includes('/api/')) return;
+  if (url.pathname.startsWith('/api/')) return;
 
-  // Never cache Next.js build chunks from _next/static differently —
-  // they have content hashes so cache-first is safe
-  if (url.includes('/_next/static/')) {
+  // Never cache React Server Component payloads (client-side navigation
+  // data). Serving one from cache mixes an old build's pages into a new
+  // build's session.
+  if (url.searchParams.has('_rsc') ||
+      (event.request.headers.get('accept') || '').includes('text/x-component') ||
+      event.request.headers.get('RSC') === '1' ||
+      event.request.headers.get('Next-Router-State-Tree')) {
+    return;
+  }
+
+  // Next.js build chunks have content hashes in the URL, so cache-first is
+  // safe: a new deployment produces new URLs that miss the cache.
+  if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
       caches.match(event.request).then(function(cached) {
         return cached || fetch(event.request).then(function(res) {
@@ -61,7 +75,7 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // HTML navigation: network-first, fall back to cache
+  // HTML navigation: network-first, fall back to cache when offline
   if (event.request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(event.request)

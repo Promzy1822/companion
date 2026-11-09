@@ -30,7 +30,7 @@ export default function Landing() {
   const SUBJECTS = ["English Language", "Mathematics", "Physics", "Chemistry", "Biology", "Government", "Economics", "Literature in English"];
 
   return (
-    <div className="fd-page" style={{ fontFamily:"var(--font)", background: T.bg, overflowX: "hidden" }}>
+    <div className="fd-page" style={{ fontFamily:"var(--font)", background: T.bg, overflowX: "clip" }}>
 
       {/* ── NAV ── */}
       <nav style={{
@@ -52,7 +52,7 @@ export default function Landing() {
           }}>
             Log In
           </Link>
-          <Link href="/auth" style={{
+          <Link href="/auth/signup" style={{
             background: "#F97316", color: "#fff",
             borderRadius: "50px", padding: "8px 16px",
             fontSize: "13px", fontWeight: 700, textDecoration: "none",
@@ -79,7 +79,7 @@ export default function Landing() {
           <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.78)", lineHeight: 1.6, margin: "0 auto 32px", maxWidth: "520px" }}>
             Companion is the free JAMB study app built for Nigerian students — it plans your days and keeps you on track until exam day.
           </p>
-          <Link href="/auth" style={{
+          <Link href="/auth/signup" style={{
             display: "inline-flex", alignItems: "center", gap: "8px",
             background: "#F97316", color: "#fff",
             borderRadius: "50px", padding: "16px 32px",
@@ -181,7 +181,7 @@ export default function Landing() {
         <p style={{ color:"rgba(255,255,255,0.8)", fontSize:"14px", margin:"0 0 28px" }}>
           Tell Companion your subjects and exam date — it handles the rest.
         </p>
-        <Link href="/auth" style={{
+        <Link href="/auth/signup" style={{
           display:"inline-flex", alignItems:"center", gap:"8px",
           background:"#F97316", color:"#fff",
           borderRadius:"50px", padding:"16px 32px",

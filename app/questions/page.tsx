@@ -23,8 +23,13 @@ interface Question {
 }
 
 const SUBJECTS = [
+  { key: "english",    label: "English",    icon: "📚" },
+  { key: "mathematics", label: "Mathematics", icon: "🔢" },
+  { key: "physics",    label: "Physics",    icon: "⚡" },
   { key: "biology",    label: "Biology",    icon: "🌿" },
   { key: "government", label: "Government", icon: "🏛️" },
+  { key: "economics",  label: "Economics",  icon: "📈" },
+  { key: "literature", label: "Literature", icon: "📖" },
 ];
 
 const YEARS = ["All","2010","2011","2012","2013","2014","2015","2016","2017","2018"];
@@ -79,7 +84,7 @@ function QuestionsContent() {
     setScore({ correct: 0, total: 0 });
     try {
       const yrParam = yr !== "All" ? `&year=${yr}` : "";
-      const res  = await fetch(`/api/qbank/questions?subject=${subj}&limit=100${yrParam}`);
+      const res  = await fetch(`/api/qbank/questions?subject=${subj}&limit=1000${yrParam}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load");
       const withAns = (data.questions || []).filter((q: Question) => q.answer);

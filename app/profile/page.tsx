@@ -67,6 +67,17 @@ export default function Profile() {
     if (!user) { router.replace("/landing"); }
   }, [router]);
 
+  // Arriving from the account menu's "Change Password" row: open the form
+  // and scroll it into view.
+  useEffect(() => {
+    if (window.location.hash !== "#password") return;
+    setShowPwForm(true);
+    const t = setTimeout(() => {
+      document.getElementById("password")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => clearTimeout(t);
+  }, []);
+
 
   const saveProfile = () => {
     if (!user) return;
@@ -248,6 +259,7 @@ export default function Profile() {
           </Card>
 
           {/* Change Password card */}
+          <div id="password" style={{ scrollMarginTop: "72px" }} />
           <Card darkMode={dark}>
             <button onClick={()=>{setShowPwForm(p=>!p);setPwError("");setPwSuccess(false);}} style={{
               width:"100%", display:"flex", alignItems:"center", gap:"12px",

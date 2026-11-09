@@ -52,7 +52,7 @@ export default function NavbarView() {
 
   const menuItems = [
     { icon: User,     label: "Profile & Settings", href: "/profile", match: ["/profile"] },
-    { icon: KeyRound, label: "Change Password",    href: "/profile", match: [] as string[] },
+    { icon: KeyRound, label: "Change Password",    href: "/profile#password", match: [] as string[] },
   ];
   const ic = { size: 17, strokeWidth: 1.8 } as const;
 
@@ -72,8 +72,6 @@ export default function NavbarView() {
         borderBottom: `1px solid ${T.border}`,
         boxShadow:  "0 1px 0 rgba(0,0,0,0.06)",
         zIndex:     200,
-        willChange: "auto",
-        transform:  "translateZ(0)",
       }}>
         <span className="top-logo"><AppLogo size={28} showText darkMode={dark} /></span>
 

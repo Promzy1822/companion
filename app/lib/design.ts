@@ -22,6 +22,7 @@ export const C = {
   success:      "#31A24C",
   successLight: "#E6F4EA",
   warning:      "#F7B928",
+  warningLight: "#FEF6E4",
   danger:       "#FA3E3E",
   dangerLight:  "#FEE9E9",
 
@@ -30,14 +31,33 @@ export const C = {
 };
 
 export const D = {
-  bg:       "#0E1018",
-  surface:  "#161925",
-  surface2: "#1E2230",
-  surface3: "#2A2F42",
-  border:   "#2A2E3F",
-  text:     "#E3E6EF",
-  sub:      "#A7AEC2",
-  muted:    "#7C849A",
+  primary:      "#6366F1",
+  primaryHover: "#818CF8",
+  primaryDark:  "#4F46E5",
+  primaryLight: "#2A2B63",
+  primarySoft:  "#1D1E45",
+
+  bg:           "#0E1018",
+  surface:      "#161925",
+  surface2:     "#1E2230",
+  surface3:     "#2A2F42",
+
+  border:       "#2A2E3F",
+  borderLight:  "#2A2E3F",
+
+  text:         "#E3E6EF",
+  sub:          "#A7AEC2",
+  muted:        "#7C849A",
+
+  success:      "#31A24C",
+  successLight: "#12291A",
+  warning:      "#F7B928",
+  warningLight: "#2E2410",
+  danger:       "#FA3E3E",
+  dangerLight:  "#33151A",
+
+  accent:       "#F97316",
+  accentLight:  "#331D0F",
 };
 
 export function palette(dark: boolean) {
@@ -47,9 +67,24 @@ export function palette(dark: boolean) {
     s2:      dark ? D.surface2: C.surface2,
     s3:      dark ? D.surface3: C.surface3,
     border:  dark ? D.border  : C.border,
+    borderLight: dark ? D.borderLight : C.borderLight,
     text:    dark ? D.text    : C.text,
     sub:     dark ? D.sub     : C.sub,
     muted:   dark ? D.muted   : C.muted,
+    primary: dark ? D.primary : C.primary,
+    primaryHover: dark ? D.primaryHover : C.primaryHover,
+    primaryDark:  dark ? D.primaryDark  : C.primaryDark,
+    primaryTint:  dark ? D.primaryLight : C.primaryLight,
+    primarySoft:  dark ? D.primarySoft  : C.primarySoft,
+    success: dark ? D.success : C.success,
+    successTint: dark ? D.successLight : C.successLight,
+    warning: dark ? D.warning : C.warning,
+    warningTint: dark ? D.warningLight : C.warningLight,
+    danger:  dark ? D.danger  : C.danger,
+    dangerTint:  dark ? D.dangerLight  : C.dangerLight,
+    accent:  dark ? D.accent  : C.accent,
+    accentTint:  dark ? D.accentLight  : C.accentLight,
+    onPrimary: "#FFFFFF",
   };
 }
 

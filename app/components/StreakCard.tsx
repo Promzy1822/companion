@@ -2,12 +2,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Progress, todayWAT } from "../lib/progress";
-import { AppIcon } from "./AppIcon";
+import { palette } from "../lib/design";
+import { Flame, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useIsoLayoutEffect } from "../lib/theme";
 interface Props { darkMode: boolean; }
 
 export default function StreakCard({ darkMode }: Props) {
+  const T = palette(darkMode);
   const [streak, setStreak] = useState(Progress.getStreak());
   const [viewDate, setViewDate] = useState(() => new Date(Date.now() + 60 * 60 * 1000));
   const [mounted, setMounted] = useState(false);
@@ -44,15 +46,6 @@ export default function StreakCard({ darkMode }: Props) {
   };
   const isFuture     = (d: number) => isoDate(d) > today;
 
-  // ── Style helpers ────────────────────────────────────────────────
-  const LC = {
-    card:   darkMode ? "#1c1c1e" : "#fff",
-    text:   darkMode ? "#f2f2f7" : "#1c1c1e",
-    sub:    darkMode ? "#98989d" : "#6e6e73",
-    muted:  darkMode ? "#2c2c2e" : "#f2f2f7",
-    border: darkMode ? "#2c2c2e" : "#e5e5ea",
-  };
-
   const daysOfWeek = ["S","M","T","W","T","F","S"];
 
   // Stats
@@ -66,64 +59,82 @@ export default function StreakCard({ darkMode }: Props) {
   }
   const weekScore = weekDays.filter(d => activeDays.has(d)).length;
 
+  const navBtn: React.CSSProperties = {
+    width: 40, height: 40, borderRadius: 10, background: "transparent",
+    border: "1px solid " + T.border, cursor: "pointer", color: T.sub,
+    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+  };
+
   return (
     <div style={{
-      backgroundColor: LC.card, borderRadius: "20px",
-      boxShadow: darkMode ? "0 2px 12px rgba(0,0,0,0.4)" : "0 2px 16px rgba(0,0,0,0.08)",
-      border: `1px solid ${LC.border}`, marginBottom: "16px", overflow: "hidden"
+      background: T.surface, borderRadius: 16,
+      border: "1px solid " + T.border, overflow: "hidden",
     }}>
       {/* Header */}
-      <div style={{
-        padding: "18px 20px 14px",
-        background: "linear-gradient(135deg,#c2410c,#ea580c)",
-        display: "flex", justifyContent: "space-between", alignItems: "flex-end"
-      }}>
+      <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+          background: T.accentTint,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Flame size={20} color="#F97316" strokeWidth={1.8} />
+        </div>
         <div>
-          <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "12px", marginBottom: "2px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 2 }}>
             Study Streak
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-            <span style={{ color: "#fff", fontSize: "40px", fontWeight: "900", lineHeight: 1, letterSpacing: "-2px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+            <span style={{ color: T.text, fontSize: 28, fontWeight: 900, lineHeight: 1, letterSpacing: "-1px" }}>
               {streak.current}
             </span>
-            <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px" }}>days <AppIcon e="🔥" /></span>
+            <span style={{ color: T.sub, fontSize: 13 }}>days</span>
           </div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", textAlign: "center" }}>
-          {[
-            { label: "Best",  value: streak.longest   },
-            { label: "Total", value: streak.totalDays  },
-            { label: "Week",  value: `${weekScore}/7`  },
-            { label: "Active",value: activeDays.size    },
-          ].map((s, i) => (
-            <div key={i} style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: "10px", padding: "6px 10px" }}>
-              <div style={{ color: "#fde68a", fontWeight: "800", fontSize: "16px" }}>{s.value}</div>
-              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: "10px" }}>{s.label}</div>
-            </div>
-          ))}
         </div>
       </div>
 
-      <div style={{ padding: "18px 20px" }}>
+      {/* Stats */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+        borderTop: "1px solid " + T.border, padding: "12px 18px",
+      }}>
+        {[
+          { label: "Best",   value: streak.longest  },
+          { label: "Total",  value: streak.totalDays },
+          { label: "Week",   value: `${weekScore}/7` },
+          { label: "Active", value: activeDays.size  },
+        ].map((s, i) => (
+          <div key={i}>
+            <div style={{ color: T.text, fontWeight: 800, fontSize: 16 }}>{s.value}</div>
+            <div style={{ color: T.muted, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginTop: 1 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: "16px 18px 18px", borderTop: "1px solid " + T.border }}>
         {/* Month navigation */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-          <button onClick={prevMonth} style={{ background: "none", border: "none", cursor: "pointer", color: LC.sub, fontSize: "18px", padding: "4px 8px" }}>‹</button>
-          <span style={{ fontSize: "14px", fontWeight: "700", color: LC.text }}>{monthName}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <button onClick={prevMonth} aria-label="Previous month" style={navBtn}>
+            <ChevronLeft size={18} />
+          </button>
+          <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{monthName}</span>
           <button
             onClick={nextMonth}
+            aria-label="Next month"
             disabled={year === new Date().getFullYear() && month >= new Date().getMonth()}
-            style={{ background: "none", border: "none", cursor: "pointer", color: LC.sub, fontSize: "18px", padding: "4px 8px", opacity: (year === new Date().getFullYear() && month >= new Date().getMonth()) ? 0.3 : 1 }}>›</button>
+            style={{ ...navBtn, opacity: (year === new Date().getFullYear() && month >= new Date().getMonth()) ? 0.3 : 1 }}>
+            <ChevronRight size={18} />
+          </button>
         </div>
 
         {/* Day-of-week headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "6px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 6 }}>
           {daysOfWeek.map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontSize: "11px", color: LC.sub, fontWeight: "600", padding: "2px 0" }}>{d}</div>
+            <div key={i} style={{ textAlign: "center", fontSize: 11, color: T.muted, fontWeight: 600, padding: "2px 0" }}>{d}</div>
           ))}
         </div>
 
         {/* Calendar grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "3px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 }}>
           {/* Leading empty cells */}
           {Array.from({ length: firstDay }).map((_, i) => (
             <div key={`e-${i}`} />
@@ -136,69 +147,66 @@ export default function StreakCard({ darkMode }: Props) {
             const future  = isFuture(day);
 
             let bg = "transparent";
-            let color = LC.sub;
+            let color = T.sub;
             let border = "none";
-            let emoji = "";
 
             if (active) {
-              bg = "#ea580c"; color = "#fff"; emoji = ""; // filled orange
+              bg = "#F97316"; color = "#fff";
             } else if (todayD && !active) {
-              bg = "transparent"; color = "#ea580c"; border = `2px solid #ea580c`;
+              bg = "transparent"; color = "#F97316"; border = "2px solid #F97316";
             } else if (missed) {
-              bg = darkMode ? "#2a1010" : "#fff0ee"; color = "#dc2626";
+              bg = T.dangerTint; color = T.dangerText;
             } else if (future) {
-              color = darkMode ? "#3a3a3c" : "#d0d0d0";
+              color = T.s3;
             }
 
             return (
               <div key={day} style={{
-                aspectRatio: "1", borderRadius: "8px", backgroundColor: bg,
-                border, display: "flex", flexDirection: "column",
+                aspectRatio: "1", borderRadius: 8, background: bg,
+                border, display: "flex",
                 alignItems: "center", justifyContent: "center",
-                fontSize: "12px", fontWeight: active || todayD ? "800" : "400",
-                color, position: "relative", transition: "all 0.15s",
+                fontSize: 12, fontWeight: active || todayD ? 800 : 400,
+                color, transition: "all 0.15s",
+                boxSizing: "border-box",
               }}>
                 {day}
-                {active && (
-                  <div style={{ position: "absolute", bottom: "1px", fontSize: "7px", lineHeight: 1 }}>●</div>
-                )}
               </div>
             );
           })}
         </div>
 
         {/* Legend */}
-        <div style={{ display: "flex", gap: "14px", marginTop: "12px", justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 14, marginTop: 12, justifyContent: "center" }}>
           {[
-            { color: "#ea580c", label: "Studied" },
-            { color: "#dc2626", label: "Missed" },
-            { color: darkMode ? "#3a3a3c" : "#d0d0d0", label: "Upcoming" },
+            { color: "#F97316",   label: "Studied"  },
+            { color: "#FF6B5E",   label: "Missed"   },
+            { color: T.s3,        label: "Upcoming" },
           ].map((l, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <div style={{ width: "10px", height: "10px", borderRadius: "3px", backgroundColor: l.color }} />
-              <span style={{ fontSize: "11px", color: LC.sub }}>{l.label}</span>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: l.color }} />
+              <span style={{ fontSize: 11, color: T.sub }}>{l.label}</span>
             </div>
           ))}
         </div>
 
         {/* Today's status — fully automatic, no manual check-in */}
-        <div style={{ marginTop: "14px" }}>
+        <div style={{ marginTop: 14 }}>
           {todayDone ? (
             <div style={{
-              textAlign: "center", padding: "12px", borderRadius: "14px",
-              backgroundColor: darkMode ? "#0a1a0a" : "#f0fdf4", border: "1px solid #86efac"
+              textAlign: "center", padding: 12, borderRadius: 12,
+              background: T.successTint,
             }}>
-              <span style={{ fontSize: "13px", color: "#16a34a", fontWeight: "700" }}>
-                <AppIcon e="🎉" /> Day {streak.current} complete! Come back tomorrow
+              <span style={{ fontSize: 13, color: T.successText, fontWeight: 700 }}>
+                Day {streak.current} complete — come back tomorrow
               </span>
             </div>
           ) : (
             <div style={{
-              textAlign: "center", padding: "12px", borderRadius: "14px",
-              backgroundColor: darkMode ? "#1c1c1e" : "#f7f7f8", border: `1px dashed ${LC.border}`
+              textAlign: "center", padding: 12, borderRadius: 12,
+              background: "transparent", border: "1px dashed " + T.border,
             }}>
-              <span style={{ fontSize: "13px", color: LC.sub, fontWeight: "600" }}>
-                No study activity yet today — finish a lesson, exercise, or mock to start your streak <AppIcon e="🔥" />
+              <span style={{ fontSize: 13, color: T.sub, fontWeight: 600 }}>
+                No study activity yet today — finish a lesson, exercise, or mock to start your streak
               </span>
             </div>
           )}
@@ -207,10 +215,12 @@ export default function StreakCard({ darkMode }: Props) {
         {/* Link to study plan if no activity yet */}
         {streak.totalDays === 0 && (
           <Link href="/studyplan" style={{
-            display: "block", marginTop: "10px", textAlign: "center",
-            fontSize: "12px", color: "#ea580c", fontWeight: "600", textDecoration: "none"
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+            marginTop: 12, minHeight: 44,
+            fontSize: 13, color: "#F97316", fontWeight: 700, textDecoration: "none",
           }}>
-            Generate a study plan to get started →
+            Generate a study plan to get started
+            <ChevronRight size={14} />
           </Link>
         )}
       </div>

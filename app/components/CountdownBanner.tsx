@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
-import { C, palette } from "../lib/design";
+import { useState } from "react";
+import { palette } from "../lib/design";
 import { CalendarDays } from "lucide-react";
-import { Rich } from "./AppIcon";
 
 import { useIsoLayoutEffect } from "../lib/theme";
 export default function CountdownBanner({ darkMode = false }: { darkMode?: boolean }) {
@@ -24,46 +23,36 @@ export default function CountdownBanner({ darkMode = false }: { darkMode?: boole
 
   const urgent = days <= 30;
   const soon   = days <= 60;
-  const bg     = urgent ? "#FEE9E9" : soon ? "#FFF3EE" : C.primaryLight;
-  const color  = urgent ? "#C00"    : soon ? "#EA580C" : C.primary;
-  const bgDark = urgent ? "#3A1515" : soon ? "#3A2010" : "#0F1F3A";
+  const tileBg = urgent ? T.dangerTint : soon ? T.warningTint : T.primaryTint;
+  const accent = urgent ? T.dangerText : soon ? "#F7B928" : T.primary;
 
   return (
     <div style={{
       margin: "0 0 16px",
       padding: "14px 16px",
       borderRadius: 16,
-      background: darkMode ? bgDark : bg,
-      border: `1px solid ${darkMode ? "transparent" : color + "30"}`,
+      background: T.surface,
+      border: "1px solid " + T.border,
       display: "flex", alignItems: "center", gap: 12,
     }}>
       <div style={{
-        width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-        background: color + "20",
+        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+        background: tileBg,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
-        <CalendarDays size={20} color={color} />
+        <CalendarDays size={20} color={accent} strokeWidth={1.8} />
       </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, color: darkMode ? "#aaa" : color + "cc", fontWeight: 600, marginBottom: 2 }}>
-          <Rich>{urgent ? "⚠️ Exam very close!" : "Your JAMB Countdown"}</Rich>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, color: urgent ? T.dangerText : T.sub, fontWeight: 600, marginBottom: 2 }}>
+          {urgent ? "Exam very close" : "Your JAMB Countdown"}
         </div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: darkMode ? "#fff" : color, lineHeight: 1 }}>
-          <Rich>{days === 0 ? "Today! 🎯" : `${days} day${days === 1 ? "" : "s"} to go`}</Rich>
+        <div style={{ fontSize: 20, fontWeight: 800, color: T.text, lineHeight: 1.1 }}>
+          {days === 0 ? "Exam day — today" : `${days} day${days === 1 ? "" : "s"} to go`}
         </div>
-        <div style={{ fontSize: 11, color: darkMode ? "#888" : "#888", marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
           Exam date: {new Date(deadline).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}
         </div>
       </div>
-      {days > 0 && (
-        <div style={{
-          textAlign: "center", padding: "6px 10px", borderRadius: 10,
-          background: color + "15",
-        }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color, lineHeight: 1 }}>{days}</div>
-          <div style={{ fontSize: 9, color, fontWeight: 700, marginTop: 2 }}>DAYS</div>
-        </div>
-      )}
     </div>
   );
 }

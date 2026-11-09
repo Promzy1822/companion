@@ -443,7 +443,8 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
     /* Exam focus mode (mock exam): hide app chrome while an exam is running */
     body.exam-focus .top-bar,
     body.exam-focus .bottom-nav,
-    body.exam-focus .side-rail { display: none !important; }
+    body.exam-focus .side-rail,
+    body.exam-focus .install-banner { display: none !important; }
     
 /* Account menu becomes a bottom sheet on phones (redesign step 5) */
 @media (max-width: 767px) {
@@ -468,4 +469,21 @@ html, body { overflow-x: clip; }
 @media (min-width: 1024px) {
   .q-practice:has(> .q-side) > :not(:first-child):not(.q-side) { grid-column: 1; }
   .q-practice:has(> .q-side) > .q-side { grid-row: 2; }
+}
+
+/* Install banner (PWA stage 1): floats above the phone tab bar; a card on laptop */
+.install-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 140;
+}
+@media (min-width: 1024px) {
+  .install-banner {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    width: 368px;
+  }
 }

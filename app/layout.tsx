@@ -4,6 +4,7 @@ import "./globals.css";
 import RouteProgress from "./components/RouteProgress";
 import ThemeSync from "./components/ThemeSync";
 import AppChrome from "./components/AppChrome";
+import InstallBanner from "./components/InstallBanner";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -112,6 +113,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RouteProgress />
         <ThemeSync />
         <AppChrome />
+        <InstallBanner />
         <div className="app-shell">
           {children}
         </div>

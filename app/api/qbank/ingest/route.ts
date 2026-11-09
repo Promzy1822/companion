@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { processQuestion } from "../../../lib/question-pipeline";
+import { createClient } from "../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,6 +35,12 @@ async function getKV() {
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth gate — only logged-in students feed the question bank.
+    // Anyone else gets a quiet 401; the client ignores responses anyway.
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: true }, { status: 401 });
+
     const body = await req.json();
     const { text, subject: hintSubject, source } = body;
 

@@ -35,6 +35,16 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
     try { if (Session.getUser()) router.replace("/"); } catch {}
   }, [router]);
 
+  // /auth/confirm sends failed email links here with ?error=reset_link_invalid
+  useEffect(() => {
+    if (initialMode !== "login") return;
+    try {
+      if (new URLSearchParams(window.location.search).get("error") === "reset_link_invalid") {
+        setError("That link has expired or was already used. Log in, or use Forgot password to get a new one.");
+      }
+    } catch {}
+  }, [initialMode]);
+
   useEffect(() => {
     if (form.institution && form.course && form.institution !== "Other" && form.course !== "Other") {
       const c = getCutoff(form.institution, form.course);

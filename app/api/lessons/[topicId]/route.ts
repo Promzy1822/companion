@@ -18,6 +18,22 @@ interface LessonContent {
   exercises: LessonExercise[];
 }
 
+// Generated content is cached permanently, so it must be structurally
+// sound before it is stored or served — one malformed generation must
+// not poison a topic forever.
+function isValidLesson(c: LessonContent): boolean {
+  if (typeof c.summary !== "string" || c.summary.trim().length < 50) return false;
+  if (!Array.isArray(c.exercises) || c.exercises.length === 0) return false;
+  return c.exercises.every(e =>
+    e &&
+    typeof e.question === "string" && e.question.trim().length > 0 &&
+    Array.isArray(e.options) && e.options.length === 4 &&
+    e.options.every(o => typeof o === "string" && o.trim().length > 0) &&
+    Number.isInteger(e.correctIndex) && e.correctIndex >= 0 && e.correctIndex < 4 &&
+    typeof e.explanation === "string"
+  );
+}
+
 async function generateLessonContent(
   subjectName: string,
   topicName: string,
@@ -135,9 +151,10 @@ export async function GET(
     subject.display_name, topic.topic, topic.subtopics, topic.objectives
   );
 
-  if (!generated) {
+  if (!generated || !isValidLesson(generated)) {
+    console.error("[lessons] Generation unusable:", debugReason || "failed structural validation");
     return NextResponse.json(
-      { error: `DEBUG-LESSON: ${debugReason}` },
+      { error: "Could not generate this lesson right now. Please try again." },
       { status: 502 }
     );
   }

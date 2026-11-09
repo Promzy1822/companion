@@ -67,8 +67,9 @@ export async function POST(req: NextRequest) {
           { status: 429 }
         );
       }
+      console.error("[register] signUp failed:", error.status, error.code, error.message);
       return NextResponse.json(
-        { error: `DEBUG-SIGNUP (status ${error.status}, code ${error.code ?? "none"}): ${error.message}` },
+        { error: "Registration failed. Please try again." },
         { status: 400 }
       );
     }
@@ -78,8 +79,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data.session) {
+      console.error("[register] signUp returned no session — 'Confirm email' may be enabled in Supabase settings.");
       return NextResponse.json(
-        { error: "DEBUG-NOSESSION: signUp succeeded but returned no session — 'Confirm email' is likely still enabled in Supabase settings." },
+        { error: "Registration failed. Please try again." },
         { status: 500 }
       );
     }
@@ -102,7 +104,7 @@ export async function POST(req: NextRequest) {
     if (profileError) {
       console.error("[register] Profile update failed:", profileError.message);
       return NextResponse.json(
-        { error: `DEBUG-PROFILE (${profileError.code ?? "?"}): ${profileError.message} ${profileError.details ?? ""} ${profileError.hint ?? ""}` },
+        { error: "Account created, but saving your details failed. Please log in to continue." },
         { status: 500 }
       );
     }

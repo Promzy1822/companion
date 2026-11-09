@@ -1,34 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildSyllabusSystemPrompt } from "../../lib/syllabus";
+import { rateLimitPeek, rateLimitHit } from "../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime  = "nodejs";
-
-// ── Rate limiter ──────────────────────────────────────────────────────────────
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
-  const now    = Date.now();
-  const window = 60_000;
-  const limit  = 20;
-  const entry  = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + window });
-    return { allowed: true };
-  }
-  if (entry.count >= limit) {
-    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
-  }
-  entry.count++;
-  return { allowed: true };
-}
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetAt) rateLimitMap.delete(ip);
-  }
-}, 5 * 60_000);
 
 // ── Input validation ──────────────────────────────────────────────────────────
 const MAX_IMAGE_BYTES = 5_000_000;
@@ -64,13 +39,14 @@ export async function POST(req: NextRequest) {
             || req.headers.get("x-real-ip")
             || "unknown";
 
-    const rateCheck = checkRateLimit(ip);
-    if (!rateCheck.allowed) {
+    const rl = await rateLimitPeek("chat", ip, 20);
+    if (rl.blocked) {
       return NextResponse.json(
         { error: "Too many requests. Please wait a moment." },
-        { status: 429, headers: { "Retry-After": String(rateCheck.retryAfter) } }
+        { status: 429, headers: { "Retry-After": String(rl.waitSeconds || 60) } }
       );
     }
+    await rateLimitHit("chat", ip, 60);
 
     let body: unknown;
     try { body = await req.json(); }

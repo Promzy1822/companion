@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
 import { validateEmail, normaliseEmail } from "../../../lib/auth";
+import { rateLimitPeek, rateLimitHit } from "../../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const resetLimitMap = new Map<string, { count: number; resetAt: number }>();
-function checkResetLimit(ip: string): boolean {
-  const now = Date.now(); const entry = resetLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) { resetLimitMap.set(ip, { count: 1, resetAt: now + 60_000 }); return true; }
-  if (entry.count >= 3) return false;
-  entry.count++; return true;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (!checkResetLimit(ip))
+    const rl = await rateLimitPeek("reset", ip, 3);
+    if (rl.blocked)
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    await rateLimitHit("reset", ip, 60);
 
     let body: Record<string, unknown>;
     try { body = await req.json(); }

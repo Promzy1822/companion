@@ -73,7 +73,16 @@ export const Session = {
   logout(): void {
     if (typeof window === "undefined") return;
     localStorage.removeItem(ACTIVE_USER_KEY);
+    try { localStorage.removeItem("companion_sync_meta"); } catch {}
     clearCookie();
+    // End the real Supabase session too — without this the user stays
+    // signed in underneath, and sync keeps running as them after
+    // "logout" (and can leak into the next account on a shared device).
+    try {
+      void import("./supabase/client")
+        .then(m => m.createClient().auth.signOut())
+        .catch(() => {});
+    } catch {}
   },
 
   /** Called on app boot — refreshes the cookie if a local session exists */

@@ -7,8 +7,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const subject = (searchParams.get("subject") ?? "").toLowerCase();
   const year = searchParams.get("year");
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "100"), 1000);
-  const offset = parseInt(searchParams.get("offset") ?? "0");
+  const rawLimit = parseInt(searchParams.get("limit") ?? "100");
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 1000) : 100;
+  const rawOffset = parseInt(searchParams.get("offset") ?? "0");
+  const offset = Number.isFinite(rawOffset) ? Math.max(rawOffset, 0) : 0;
 
   if (!subject) {
     return NextResponse.json({ error: "subject is required" }, { status: 400 });
@@ -16,8 +18,9 @@ export async function GET(req: NextRequest) {
 
   try {
     let all = PAST_QUESTIONS.filter((q: any) => q.subject === subject && (!q.has_diagram || q.image));
-    if (year && year !== "All") {
-      all = all.filter((q: any) => q.year === parseInt(year));
+    const yearNum = year ? parseInt(year) : NaN;
+    if (year && year !== "All" && Number.isFinite(yearNum)) {
+      all = all.filter((q: any) => q.year === yearNum);
     }
     all.sort((a: any, b: any) => a.year - b.year || a.num - b.num);
     const total = all.length;

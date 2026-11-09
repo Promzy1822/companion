@@ -167,7 +167,8 @@ export default function Profile() {
           </div>
         </div>
 
-        <div style={{ padding: "16px 14px 0", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div className="profile-cols" style={{ padding: "16px 14px 0", display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div className="profile-main">
 
           {/* Save banner */}
           {saved && (
@@ -234,6 +235,8 @@ export default function Profile() {
               )}
             </div>
           </Card>
+          </div>
+          <div className="profile-side">
 
           {/* Subjects card */}
           <Card darkMode={dark}>
@@ -348,6 +351,7 @@ export default function Profile() {
               Member since {new Date(user.createdAt).toLocaleDateString("en-NG",{month:"long",year:"numeric"})}
             </p>
           )}
+          </div>
         </div>
       </main>
 

@@ -170,7 +170,7 @@ export default function Home() {
             </div>
             <div style={{ flex:1 }}>
               <div style={{ fontWeight:700, color:T.text, fontSize:"15px" }}>Practice</div>
-              <div style={{ fontSize:"12px", color:T.sub, marginTop:"2px" }}>3,333 real past questions · Mock exams · Quick drills</div>
+              <div style={{ fontSize:"12px", color:T.sub, marginTop:"2px" }}>4,060 real past questions · Mock exams · Quick drills</div>
             </div>
             <ChevronRight size={18} color={T.sub} />
           </div>

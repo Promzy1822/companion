@@ -22,7 +22,7 @@ export default function Landing() {
 
   const DOORS = [
     { icon: BookOpen,      color: "#2FBF71", title: "Learn",    desc: "Lessons for every topic in the official JAMB syllabus, written in clear, simple English." },
-    { icon: ClipboardList, color: "#E3B341", title: "Practice", desc: "3,333 real JAMB questions from 2010–2018, timed mock exams, and instant feedback on every answer." },
+    { icon: ClipboardList, color: "#E3B341", title: "Practice", desc: "4,060 real JAMB questions from 2010–2018, timed mock exams, and instant feedback on every answer." },
     { icon: CalendarDays,  color: "#FF6B5E", title: "Plan",     desc: "A day-by-day study plan matched to your exam date, with your syllabus coverage tracked topic by topic." },
     { icon: Bot,           color: T.primary, title: "AI Tutor", desc: "Ask anything, anytime — or send a photo of a question and watch it solved step by step." },
   ];

@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import AppLoader, { PageSkeleton } from "../components/AppLoader";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
 import { ArrowLeft, ChevronLeft, ChevronRight, Check, CheckCircle2, Clock, PartyPopper, ArrowRight, ClipboardList, Trophy, BarChart3, AlertTriangle } from "lucide-react";
 import { NAVBAR_HEIGHT } from "../components/NavbarView";
 import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
@@ -11,24 +9,63 @@ import { useDark } from "../lib/theme";
 import { Sync } from "../lib/sync";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; image?:string; }
-interface Result   { score:number; total:number; bySubject:Record<string,{correct:number;total:number}>; timeTaken:number; }
+interface Section  { id:string; label:string; target:number; start:number; count:number; }
+interface Result   { score:number; total:number; total400:number; max400:number; bySubject:Record<string,{correct:number;total:number;score100:number}>; timeTaken:number; missing:string[]; }
 
+const TOTAL_TIME = 2 * 60 * 60; // the real UTME allowance: 2 hours
+
+const BANK: Record<string,{id:string;label:string}> = {
+  "English Language":      { id:"english",     label:"English Language" },
+  "Mathematics":           { id:"mathematics", label:"Mathematics" },
+  "Physics":               { id:"physics",     label:"Physics" },
+  "Chemistry":             { id:"chemistry",   label:"Chemistry" },
+  "Biology":               { id:"biology",     label:"Biology" },
+  "Government":            { id:"government",  label:"Government" },
+  "Economics":             { id:"economics",   label:"Economics" },
+  "Literature in English": { id:"literature",  label:"Literature in English" },
+};
+
+function readUser(): any {
+  try { return JSON.parse(localStorage.getItem("companion_user") || "{}"); } catch { return {}; }
+}
+
+// The JAMB paper plan: Use of English (60) + up to three other subjects (40 each).
+function buildPlan(): { plan: { id:string; label:string; target:number }[]; missing: string[] } {
+  const user = readUser();
+  const wanted: string[] = Array.isArray(user.subjects) && user.subjects.length
+    ? user.subjects
+    : ["Mathematics", "Physics", "Biology"];
+  const others = wanted.filter(s => s !== "English Language").slice(0, 3);
+  const plan: { id:string; label:string; target:number }[] = [
+    { id: "english", label: "English Language", target: 60 },
+  ];
+  const missing: string[] = [];
+  for (const name of others) {
+    const b = BANK[name];
+    if (b) plan.push({ id: b.id, label: b.label, target: 40 });
+    else missing.push(name);
+  }
+  return { plan, missing };
+}
 
 export default function MockExam() {
   const dark = useDark();
   const [phase,     setPhase]     = useState<"setup"|"exam"|"result">("setup");
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [sections,  setSections]  = useState<Section[]>([]);
   const [current,   setCurrent]   = useState(0);
   const [answers,   setAnswers]   = useState<Record<number,number>>({});
-  const [timeLeft,  setTimeLeft]  = useState(0);
+  const [timeLeft,  setTimeLeft]  = useState(TOTAL_TIME);
   const [result,    setResult]    = useState<Result|null>(null);
   const [generating,setGenerating]= useState(false);
-  const [numQ,      setNumQ]      = useState(10);
+  const [loadError, setLoadError] = useState("");
+  const [planInfo]                = useState(buildPlan);
   const [history,   setHistory]   = useState<{score:number;total:number;jambEquivalent:number;date:string}[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem("mock_history")||"[]"); } catch { return []; }
   });
   const timerRef   = useRef<ReturnType<typeof setInterval>|null>(null);
+  const missingRef = useRef<string[]>([]);
   const submitRef  = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -43,32 +80,25 @@ export default function MockExam() {
 
   const startExam = async () => {
     setGenerating(true);
-    const user = (() => { try { return JSON.parse(localStorage.getItem("companion_user")||"{}"); } catch { return {}; } })();
-    const wanted: string[] = user.subjects || ["Mathematics","English Language","Physics","Chemistry","Biology"];
-    const BANK: Record<string,{id:string;label:string}> = {
-      "English Language":      { id:"english",     label:"English Language" },
-      "Mathematics":           { id:"mathematics", label:"Mathematics" },
-      "Physics":               { id:"physics",     label:"Physics" },
-      "Biology":               { id:"biology",     label:"Biology" },
-      "Government":            { id:"government",  label:"Government" },
-      "Economics":             { id:"economics",   label:"Economics" },
-      "Literature in English": { id:"literature",  label:"Literature in English" },
-    };
-    let bank = wanted.map(s => BANK[s]).filter(Boolean) as {id:string;label:string}[];
-    if (!bank.length) bank = Object.values(BANK);
-    const per = Math.ceil(numQ / bank.length);
-    const picked: Question[] = [];
+    setLoadError("");
+    const { plan, missing } = buildPlan();
+    const exam: Question[] = [];
+    const secs: Section[] = [];
+    const missingNow: string[] = [...missing];
     try {
-      await Promise.all(bank.map(async (b) => {
-        const res  = await fetch(`/api/qbank/questions?subject=${b.id}&limit=1000`);
+      for (const p of plan) {
+        const res  = await fetch(`/api/qbank/questions?subject=${p.id}&limit=1000`);
         const data = await res.json();
         const usable = (data.questions || []).filter((q:any) =>
           q.answer && q.options && q.options.A && q.options.B && q.options.C && q.options.D);
         for (let i = usable.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [usable[i], usable[j]] = [usable[j], usable[i]]; }
-        usable.slice(0, per).forEach((q:any) => {
-          picked.push({
-            id: 0,
-            subject: b.label,
+        const picked = usable.slice(0, p.target);
+        if (!picked.length) { missingNow.push(p.label); continue; }
+        const start = exam.length;
+        picked.forEach((q:any) => {
+          exam.push({
+            id: exam.length + 1,
+            subject: p.label,
             question: q.question,
             options: [q.options.A, q.options.B, q.options.C, q.options.D],
             correct: "ABCD".indexOf(q.answer),
@@ -76,39 +106,60 @@ export default function MockExam() {
             image: q.image || undefined,
           });
         });
-      }));
+        secs.push({ id: p.id, label: p.label, target: p.target, start, count: picked.length });
+      }
     } catch {}
-    for (let i = picked.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [picked[i], picked[j]] = [picked[j], picked[i]]; }
-    const exam = picked.slice(0, numQ).map((q, i) => ({ ...q, id: i + 1 }));
-    if (!exam.length) { setGenerating(false); return; }
+    if (!exam.length) {
+      setGenerating(false);
+      setLoadError("Could not load exam questions. Check your connection and try again.");
+      return;
+    }
+    missingRef.current = missingNow;
     setQuestions(exam);
-    setTimeLeft(exam.length * 90); setAnswers({}); setCurrent(0); setPhase("exam"); setGenerating(false);
+    setSections(secs);
+    setTimeLeft(TOTAL_TIME); setAnswers({}); setCurrent(0); setPhase("exam"); setGenerating(false);
   };
 
   // Always keep submitRef pointing to latest submitExam
   // so the timer interval closure never calls a stale version
   const submitExam = () => {
     if(timerRef.current) clearInterval(timerRef.current);
-    let score=0; const bySubject:Record<string,{correct:number;total:number}>={};
-    questions.forEach((q,i)=>{
-      if(!bySubject[q.subject]) bySubject[q.subject]={correct:0,total:0};
-      bySubject[q.subject].total++;
-      if(answers[i]===q.correct){score++;bySubject[q.subject].correct++;}
-    });
-    const res:Result={score,total:questions.length,bySubject,timeTaken:(questions.length*90)-timeLeft};
+    let score=0; const bySubject:Result["bySubject"]={};
+    for (const s of sections) {
+      let correct=0;
+      for (let i=s.start; i<s.start+s.count; i++) {
+        if (answers[i]===questions[i].correct) correct++;
+      }
+      bySubject[s.label]={ correct, total:s.count, score100: s.count ? Math.round((correct/s.count)*100) : 0 };
+      score+=correct;
+    }
+    const total400 = Object.values(bySubject).reduce((a,d)=>a+d.score100,0);
+    const max400 = sections.length*100;
+    const missing: string[] = missingRef.current;
+    const res:Result={ score, total:questions.length, total400, max400, bySubject, timeTaken: TOTAL_TIME-timeLeft, missing };
     setResult(res); setPhase("result");
-    const jambEq=Math.round((score/questions.length)*400);
-    const newH=[{score,total:questions.length,jambEquivalent:jambEq,date:new Date().toLocaleDateString()},...history].slice(0,10);
+    const newH=[{score,total:questions.length,jambEquivalent:total400,date:new Date().toLocaleDateString()},...history].slice(0,10);
     localStorage.setItem("mock_history",JSON.stringify(newH)); setHistory(newH);
     Sync.push("mock_history");
   };
 
-  submitRef.current = submitExam; // BUG FIX: timer now auto-submits when time runs out
+  submitRef.current = submitExam; // timer auto-submits when time runs out
   const fmt = (s:number) => `${Math.floor(s/60).toString().padStart(2,"0")}:${(s%60).toString().padStart(2,"0")}`;
-  const timePct = questions.length?(timeLeft/(questions.length*90))*100:100;
+  const timePct = (timeLeft/TOTAL_TIME)*100;
   const timerCol = timePct>50?"#31A24C":timePct>25?"#F7B928":"#FA3E3E";
 
   const T = palette(dark);
+
+  const activeSec = (() => {
+    let a = 0;
+    sections.forEach((s,i)=>{ if (current>=s.start) a=i; });
+    return a;
+  })();
+  const activeSection = sections[activeSec];
+  const answeredIn = (s: Section) => {
+    let n=0; for (let i=s.start;i<s.start+s.count;i++) if (answers[i]!==undefined) n++;
+    return n;
+  };
 
   // Keyboard shortcuts during the exam: A-D answer, left/right (or P/N) move between questions
   useEffect(() => {
@@ -145,7 +196,7 @@ export default function MockExam() {
 
   // ── SETUP ──────────────────────────────────────────────────────
   if (phase==="setup") return (
-    <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
+    <div style={{minHeight:"100vh", paddingTop:NAVBAR_HEIGHT,background:T.bg,fontFamily:"var(--font)"}}>
 
       <div className="hero-banner" style={{background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)",padding:"20px 20px 32px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
@@ -166,20 +217,24 @@ export default function MockExam() {
               <ClipboardList size={28} color={T.primary} strokeWidth={1.8} />
             </div>
             <h2 style={{fontSize:"20px",fontWeight:800,color:T.text,margin:"0 0 8px",letterSpacing:"-0.3px"}}>JAMB Mock Exam</h2>
-            <p style={{fontSize:"13px",color:T.sub,margin:0,lineHeight:"1.5"}}>Built from real JAMB past questions in your subjects. Timer runs like real JAMB. Full debrief after.</p>
+            <p style={{fontSize:"13px",color:T.sub,margin:0,lineHeight:"1.5"}}>The full UTME paper, exactly as JAMB sets it: four subjects in sections, one 2-hour sitting, every subject scored out of 100 for a total out of 400.</p>
           </div>
+
           <div style={{marginBottom:"20px"}}>
-            <label style={{fontSize:"12px",fontWeight:700,color:T.sub,display:"block",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Number of Questions</label>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"8px"}}>
-              {[10,20,30,40].map(n=>(
-                <button key={n} onClick={()=>setNumQ(n)} style={{padding:"12px",borderRadius:"10px",border:"none",cursor:"pointer",fontWeight:700,fontSize:"14px",background:numQ===n?T.primary:T.s2,color:numQ===n?"#fff":T.sub,transition:"all 0.2s",minHeight:44}}>
-                  {n}
-                </button>
-              ))}
+            {planInfo.plan.map(p=>(
+              <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${T.border}`}}>
+                <span style={{fontSize:"14px",fontWeight:600,color:T.text}}>{p.label}</span>
+                <span style={{fontSize:"13px",color:T.sub,fontWeight:700}}>{p.target} questions</span>
+              </div>
+            ))}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0"}}>
+              <span style={{fontSize:"14px",fontWeight:700,color:T.text}}>Total</span>
+              <span style={{fontSize:"13px",color:T.text,fontWeight:700}}>{planInfo.plan.reduce((a,p)=>a+p.target,0)} questions · 2 hours</span>
             </div>
-            <p style={{fontSize:"11px",color:T.sub,marginTop:"8px",display:"flex",alignItems:"center",justifyContent:"center",gap:"4px"}}><Clock size={11} strokeWidth={2}/> {Math.round(numQ*1.5)} minutes · {numQ} questions</p>
+            <p style={{fontSize:"11px",color:T.sub,marginTop:"8px",display:"flex",alignItems:"center",gap:"4px"}}><Clock size={11} strokeWidth={2}/> 2 hours for the whole paper, like the real exam. If a subject has no questions in the bank yet, its section is skipped and your total is scored out of what remains — the result says so plainly.</p>
+            {loadError && <p style={{fontSize:"12px",color:T.dangerText,fontWeight:600,marginTop:"10px"}}>{loadError}</p>}
           </div>
-          <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?T.s3:T.primary,color:generating?T.muted:"#fff",fontWeight:700,fontSize:"15px",cursor:generating?"not-allowed":"pointer"}}>
+          <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?T.s3:T.primary,color:"#fff",fontSize:"15px",fontWeight:700,cursor:generating?"not-allowed":"pointer"}}>
             {generating?"Loading questions…":"Start Mock Exam"}
           </button>
         </div>
@@ -223,13 +278,23 @@ export default function MockExam() {
         <div style={{height:"4px",borderRadius:"2px",background:"rgba(255,255,255,0.2)",overflow:"hidden"}}>
           <div style={{height:"100%",width:`${timePct}%`,background:timerCol,transition:"width 1s linear"}} />
         </div>
-        <div className="q-chips" style={{display:"flex",gap:"4px",marginTop:"10px",overflowX:"auto",scrollbarWidth:"none"}}>
-          {questions.map((_,i)=>(
-            <button key={i} onClick={()=>setCurrent(i)} style={{width:36,height:36,borderRadius:"8px",border:"none",background:i===current?"#fff":answers[i]!==undefined?"rgba(255,255,255,0.55)":"rgba(255,255,255,0.15)",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:700,color:i===current?T.primary:"rgba(255,255,255,0.8)",fontFamily:"inherit"}}>
-              {i+1}
+        {/* Subject sections — the paper is grouped by subject, like real JAMB */}
+        <div style={{display:"flex",gap:"6px",marginTop:"10px",overflowX:"auto",scrollbarWidth:"none"}}>
+          {sections.map((s,i)=>(
+            <button key={s.id} onClick={()=>setCurrent(s.start)} style={{flexShrink:0,padding:"7px 12px",minHeight:36,borderRadius:999,border:"none",cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit",background:i===activeSec?"#fff":"rgba(255,255,255,0.15)",color:i===activeSec?T.primaryDark:"#fff"}}>
+              {s.label} · {answeredIn(s)}/{s.count}
             </button>
           ))}
         </div>
+        {activeSection && (
+          <div className="q-chips" style={{display:"flex",gap:"4px",marginTop:"10px",overflowX:"auto",scrollbarWidth:"none"}}>
+            {Array.from({length: activeSection.count}, (_,k)=>{ const i=activeSection.start+k; return (
+              <button key={i} onClick={()=>setCurrent(i)} style={{width:36,height:36,borderRadius:"8px",border:"none",background:i===current?"#fff":answers[i]!==undefined?"rgba(255,255,255,0.55)":"rgba(255,255,255,0.15)",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:700,color:i===current?T.primary:"rgba(255,255,255,0.8)",fontFamily:"inherit"}}>
+                {k+1}
+              </button>
+            );})}
+          </div>
+        )}
       </div>
 
       <div className="page-narrow exam-body" style={{flex:1,padding:"16px",overflowY:"auto"}}>
@@ -276,39 +341,49 @@ export default function MockExam() {
 
   // ── RESULT ─────────────────────────────────────────────────────
   if (phase==="result" && result) {
-    const pct = Math.round((result.score/result.total)*100);
-    const jambEq = Math.round((result.score/result.total)*400);
-    const user = (()=>{ try{return JSON.parse(localStorage.getItem("companion_user")||"{}");} catch{return {};} })();
-    const gap = jambEq - parseInt(user.target||"250");
+    const user = readUser();
+    const gap = result.total400 - parseInt(user.target||"250");
+    const shortSections = sections.filter(s=>s.count<s.target);
 
     return (
-      <div style={{minHeight:"100vh", paddingTop:"56px",background:T.bg,fontFamily:"var(--font)"}}>
+      <div style={{minHeight:"100vh", paddingTop:NAVBAR_HEIGHT,background:T.bg,fontFamily:"var(--font)"}}>
         <div style={{background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)",padding:"28px 20px 44px",textAlign:"center"}}>
           <div style={{width:64,height:64,borderRadius:"18px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
             <Trophy size={30} color="#F97316" strokeWidth={1.8} />
           </div>
-          <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginBottom:"4px"}}>Your Score</div>
-          <div style={{color:"#fff",fontSize:"52px",fontWeight:900,letterSpacing:"-2px"}}>{result.score}/{result.total}</div>
-          <div style={{color:"#F97316",fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{pct}% · JAMB equivalent: {jambEq}</div>
-          <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
-            {gap>=0 ? `${gap} pts above your target!` : `${Math.abs(gap)} pts below your target — keep practising`}
-          </div>
+          <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginBottom:"4px"}}>Your JAMB Score</div>
+          <div style={{color:"#fff",fontSize:"52px",fontWeight:900,letterSpacing:"-2px"}}>{result.total400}<span style={{fontSize:"22px",color:"rgba(255,255,255,0.6)"}}>/{result.max400}</span></div>
+          <div style={{color:"#F97316",fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{result.score}/{result.total} questions correct</div>
+          {result.max400===400 ? (
+            <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
+              {gap>=0 ? `${gap} pts above your target!` : `${Math.abs(gap)} pts below your target — keep practising`}
+            </div>
+          ) : (
+            <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
+              Scored out of {result.max400}, not 400 — {result.missing.length ? `${result.missing.join(", ")} not included (no questions in the bank yet).` : "one subject section was unavailable."}
+            </div>
+          )}
+          {shortSections.length>0 && (
+            <div style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",marginTop:"4px"}}>
+              {shortSections.map(s=>`${s.label} had ${s.count} of ${s.target} questions available`).join(" · ")}
+            </div>
+          )}
         </div>
 
         <div style={{padding:"0 20px",marginTop:"-16px",paddingBottom:`calc(${BOTTOM_NAV_HEIGHT}px + 16px)`}}>
-          {/* Subject breakdown */}
+          {/* Subject breakdown — each subject out of 100, the JAMB way */}
           <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"16px"}}>
               <BarChart3 size={17} color={T.primary} strokeWidth={1.8} />
               <span style={{fontWeight:700,color:T.text,fontSize:"15px"}}>Subject Breakdown</span>
             </div>
             {Object.entries(result.bySubject).map(([s,d])=>{
-              const sp=Math.round((d.correct/d.total)*100);
+              const sp=d.score100;
               return (
                 <div key={s} style={{marginBottom:"12px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",marginBottom:"5px"}}>
                     <span style={{color:T.text,fontWeight:600}}>{s}</span>
-                    <span style={{color:sp>=70?"#31A24C":sp>=50?"#F7B928":"#FA3E3E",fontWeight:700}}>{d.correct}/{d.total}</span>
+                    <span style={{color:sp>=70?"#31A24C":sp>=50?"#F7B928":"#FA3E3E",fontWeight:700}}>{d.correct}/{d.total} · {sp}/100</span>
                   </div>
                   <div style={{height:"6px",borderRadius:"3px",background:T.s3,overflow:"hidden"}}>
                     <div style={{height:"100%",width:`${sp}%`,background:sp>=70?"#31A24C":sp>=50?"#F7B928":"#FA3E3E",transition:"width 0.5s"}} />
@@ -336,7 +411,7 @@ export default function MockExam() {
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-            <button onClick={()=>{setPhase("setup");setResult(null);setQuestions([]);setAnswers({});}} style={{padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
+            <button onClick={()=>{setPhase("setup");setResult(null);setQuestions([]);setSections([]);setAnswers({});}} style={{padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
               Try Again
             </button>
             <Link href="/studyplan" style={{padding:"13px",borderRadius:"12px",border:"none",background:T.primary,color:"#fff",fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>

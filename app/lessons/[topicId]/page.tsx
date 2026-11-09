@@ -241,9 +241,17 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
                 You scored {score}/{exercises.length} on the exercises.
               </p>
             )}
-            <Link href={`/learn/${data.subjectKey}`} style={{
+            <Link href={`/drill/${data.topicId}`} style={{
               display: "block", padding: "13px", borderRadius: R.pill,
               background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14,
+              textDecoration: "none", marginBottom: 10,
+            }}>
+              Drill this topic
+            </Link>
+            <Link href={`/learn/${data.subjectKey}`} style={{
+              display: "block", padding: "13px", borderRadius: R.pill,
+              background: "transparent", color: T.text, fontWeight: 700, fontSize: 14,
+              border: `1.5px solid ${T.border}`,
               textDecoration: "none", marginBottom: 10,
             }}>
               Back to {data.subject} topics

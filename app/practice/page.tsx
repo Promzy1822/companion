@@ -11,6 +11,7 @@ const SUBJECTS = [
   { id: "english",     label: "English Language",      count: 773 },
   { id: "mathematics", label: "Mathematics",           count: 465 },
   { id: "physics",     label: "Physics",               count: 406 },
+  { id: "chemistry",   label: "Chemistry",             count: 727 },
   { id: "biology",     label: "Biology",               count: 424 },
   { id: "government",  label: "Government",            count: 430 },
   { id: "economics",   label: "Economics",             count: 420 },
@@ -21,15 +22,15 @@ const TOTAL = SUBJECTS.reduce((a, s) => a + s.count, 0);
 const CARDS = [
   {
     icon: BookOpen, href: "/questions", title: "Past Questions",
-    sub: `${TOTAL.toLocaleString()} real JAMB questions · 2010–2018 · 7 subjects`,
+    sub: `${TOTAL.toLocaleString()} real JAMB questions · 8 subjects`,
   },
   {
     icon: ClipboardList, href: "/mock", title: "Mock Exam",
-    sub: "Timed mocks built from real past questions in your subjects",
+    sub: "The full JAMB paper: 180 questions in subject sections · 2 hours · scored out of 400",
   },
   {
-    icon: Zap, href: "/questions?mode=practice", title: "Quick Drills",
-    sub: "Instant feedback — see the answer after every question",
+    icon: Zap, href: "/drill", title: "Quick Drills",
+    sub: "Short scored drills by topic — drill a topic right after you study it",
   },
 ];
 

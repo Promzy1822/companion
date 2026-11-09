@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
   CheckCircle, XCircle, RotateCcw,
-  Languages, Sigma, Atom, Dna, Landmark, TrendingUp, BookOpen,
+  Languages, Sigma, Atom, FlaskConical, Dna, Landmark, TrendingUp, BookOpen,
   Bot, Inbox, Trophy, ThumbsUp, ClipboardList,
   type LucideIcon,
 } from "lucide-react";
@@ -29,6 +29,7 @@ const SUBJECTS: { key: string; label: string; Icon: LucideIcon }[] = [
   { key: "english",    label: "English",    Icon: Languages },
   { key: "mathematics", label: "Mathematics", Icon: Sigma },
   { key: "physics",    label: "Physics",    Icon: Atom },
+  { key: "chemistry",  label: "Chemistry",  Icon: FlaskConical },
   { key: "biology",    label: "Biology",    Icon: Dna },
   { key: "government", label: "Government", Icon: Landmark },
   { key: "economics",  label: "Economics",  Icon: TrendingUp },
@@ -36,6 +37,8 @@ const SUBJECTS: { key: string; label: string; Icon: LucideIcon }[] = [
 ];
 
 const YEARS = ["All","2010","2011","2012","2013","2014","2015","2016","2017","2018"];
+const CHEM_YEARS = ["All","1986","1987","1988","1989","1990","1991","1992","1993","1994","1995","1997","1998","1999","2000","2001","2002","2003","2004"];
+const yearsFor = (subj: string) => (subj === "chemistry" ? CHEM_YEARS : YEARS);
 
 function QuestionsContent() {
   const router       = useRouter();
@@ -72,7 +75,7 @@ function QuestionsContent() {
       if (withAns.length === 0) {
         setError(`No questions with answers available for ${yr === "All" ? "this subject" : yr} yet.`);
       } else {
-        setQuestions([...withAns].sort(() => Math.random() - 0.5));
+        setQuestions([...withAns].sort((a, b) => (a.year - b.year) || (a.num - b.num)));
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -203,7 +206,7 @@ function QuestionsContent() {
         {/* ── SUBJECT TABS ── */}
         <div style={{ display:"flex", gap:8, marginBottom:12, overflowX:"auto", scrollbarWidth:"none" }}>
           {SUBJECTS.map(s=>(
-            <button key={s.key} onClick={()=>{ setSubject(s.key); setCurrent(0); }} style={{
+            <button key={s.key} onClick={()=>{ setSubject(s.key); setYear("All"); setCurrent(0); }} style={{
               flex:"0 0 auto", padding:"10px 14px", minHeight:44, display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap", borderRadius:12, cursor:"pointer",
               fontWeight:700, fontSize:13,
               background: subject===s.key ? T.primary : T.surface,
@@ -220,7 +223,7 @@ function QuestionsContent() {
           <div className="q-practice">
             {/* Year filter */}
             <div style={{ display:"flex", gap:6, overflowX:"auto", scrollbarWidth:"none", marginBottom:14 }}>
-              {YEARS.map(y=>(
+              {yearsFor(subject).map(y=>(
                 <button key={y} onClick={()=>setYear(y)} style={{
                   flexShrink:0, padding:"6px 14px", minHeight:40, display:"flex", alignItems:"center", borderRadius:20, border:"none",
                   cursor:"pointer", fontSize:12, fontWeight:600,

@@ -16,9 +16,11 @@ function subscribeDark(cb: () => void) {
  * just always gets the same answer.
  */
 export function useDark(): boolean {
+  // Dark-only, enforced at this read point too: even a stale document
+  // that never stamped data-dark="true" renders dark.
   return useSyncExternalStore(
     subscribeDark,
-    () => document.documentElement.getAttribute("data-dark") === "true",
+    () => true,
     () => true,
   );
 }

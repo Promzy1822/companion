@@ -12,6 +12,7 @@ import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { Session } from "../lib/session";
+import { Sync } from "../lib/sync";
 import { createClient } from "../lib/supabase/client";
 
 interface UserData {
@@ -83,6 +84,7 @@ export default function Profile() {
     if (!user) return;
     const updated = { ...user, ...form };
     localStorage.setItem("companion_user", JSON.stringify(updated));
+    void Sync.pushProfile({ name: updated.name, institution: updated.institution, course: updated.course, subjects: updated.subjects, target: updated.target, deadline: updated.deadline, selfRating: updated.selfRating });
     setUser(updated); setEditing(false); setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };

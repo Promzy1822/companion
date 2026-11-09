@@ -8,6 +8,7 @@ import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 import { useDark } from "../lib/theme";
+import { Sync } from "../lib/sync";
 import { AppIcon, Rich } from "../components/AppIcon";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; image?:string; }
@@ -100,6 +101,7 @@ export default function MockExam() {
     const jambEq=Math.round((score/questions.length)*400);
     const newH=[{score,total:questions.length,jambEquivalent:jambEq,date:new Date().toLocaleDateString()},...history].slice(0,10);
     localStorage.setItem("mock_history",JSON.stringify(newH)); setHistory(newH);
+    Sync.push("mock_history");
   };
 
   submitRef.current = submitExam; // BUG FIX: timer now auto-submits when time runs out

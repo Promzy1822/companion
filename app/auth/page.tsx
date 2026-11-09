@@ -7,6 +7,7 @@ import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../l
 import { validateEmail, validatePassword, normaliseEmail } from "../lib/auth";
 import { C } from "../lib/design";
 import { Session } from "../lib/session";
+import { Sync } from "../lib/sync";
 import { AppIcon, Rich } from "../components/AppIcon";
 
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
@@ -69,6 +70,7 @@ export default function Auth() {
         return;
       }
       Session.start(data.user);
+      void Sync.hydrate();
       router.replace("/");
     } catch {
       setError("Network error. Please check your connection.");
@@ -140,6 +142,7 @@ export default function Auth() {
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
       // Account created — start session immediately
       Session.start(data.user);
+      void Sync.hydrate();
       router.replace("/");
     } catch {
       setError("Network error. Please try again.");

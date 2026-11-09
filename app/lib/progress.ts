@@ -1,6 +1,8 @@
 // Centralized progress tracking — single source of truth for all study activity
 // Any action (practice, lesson, mock, plan) flows through here
 
+import { Sync } from "./sync";
+
 export interface StudyActivity {
   date: string;    // YYYY-MM-DD in WAT (UTC+1)
   type: 'practice' | 'lesson' | 'plan' | 'mock' | 'ai';
@@ -69,6 +71,7 @@ export const Progress = {
       Object.entries(s.activityLog).filter(([d]) => d >= cutoff)
     );
     localStorage.setItem(STREAK_KEY, JSON.stringify({ ...s, activityLog: trimmed }));
+    Sync.push("streak");
   },
 
   /** Call this for ANY study activity — practice, lesson, mock, plan task, AI chat */
@@ -96,6 +99,7 @@ export const Progress = {
     }
 
     Progress.saveStreak(s);
+    Sync.logActivity({ date: today, type, ...details });
     return s;
   },
 
@@ -139,6 +143,7 @@ export const Progress = {
     try {
       localStorage.setItem('companion_syllabus_progress', JSON.stringify([...set]));
     } catch {}
+    Sync.push("syllabus_progress");
     if (done && record) Progress.recordActivity('lesson', { topicId });
   },
 
@@ -161,6 +166,7 @@ export const Progress = {
     stats[subject].total++;
     if (correct) stats[subject].correct++;
     localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    Sync.push("practice_stats");
     Progress.recordActivity('practice', { subject, correct: correct ? 1 : 0, total: 1 });
   },
 

@@ -1,7 +1,10 @@
 "use client";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import NavbarView from "./NavbarView";
 import BottomNavView from "./BottomNavView";
+import { Session } from "../lib/session";
+import { Sync } from "../lib/sync";
 
 /**
  * The one and only top bar + bottom tabs / side rail. Lives in the root layout and is
@@ -21,6 +24,18 @@ function matches(pathname: string, prefixes: string[]): boolean {
 
 export default function AppChrome() {
   const pathname = usePathname() ?? "";
+
+  // Returning session: pull the account's synced study state once per
+  // browser session (login/register hydrate immediately after sign-in).
+  useEffect(() => {
+    try {
+      if (!Session.getUser()) return;
+      if (sessionStorage.getItem("companion_hydrated")) return;
+      sessionStorage.setItem("companion_hydrated", "1");
+      void Sync.hydrate();
+    } catch {}
+  }, []);
+
   if (matches(pathname, HIDE_ALL)) return null;
   return (
     <>

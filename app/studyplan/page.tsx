@@ -9,6 +9,7 @@ import {
   BedDouble, BrainCircuit, ChevronRight, ArrowLeft, ListChecks,
 } from "lucide-react";
 import { Progress, todayWAT } from "../lib/progress";
+import { Sync } from "../lib/sync";
 import { buildScheduleTopics, JAMB_TOPICS } from "../lib/jamb-topics";
 import { palette } from "../lib/design";
 import CoverageView from "../components/CoverageView";
@@ -78,6 +79,12 @@ export default function StudyPlan() {
       }
     } catch {}
   }, []);
+
+  // Keep the plan backed up to the account (debounced inside Sync)
+  useEffect(() => {
+    if (!mounted || !generated) return;
+    Sync.push("plan");
+  }, [plan, mounted, generated]);
 
   const markDone = (wi: number, di: number) => {
     const updated = plan.map((w, a) =>

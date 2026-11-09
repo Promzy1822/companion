@@ -455,3 +455,17 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
     width: auto !important;
   }
 }
+
+/* Layout guards: no page may widen past the screen (a too-wide row once
+   forced the browser to widen Past Questions and shift it sideways).
+   overflow-x: clip is used because, unlike hidden, it never breaks
+   position: sticky headers. */
+html, body { overflow-x: clip; }
+@media (max-width: 1023px) {
+  .q-practice { display: block; }
+  .q-side { display: none !important; }
+}
+@media (min-width: 1024px) {
+  .q-practice:has(> .q-side) > :not(:first-child):not(.q-side) { grid-column: 1; }
+  .q-practice:has(> .q-side) > .q-side { grid-row: 2; }
+}

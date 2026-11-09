@@ -217,10 +217,10 @@ function QuestionsContent() {
       <div style={{ padding:"14px 14px 0" }}>
 
         {/* ── SUBJECT TABS ── */}
-        <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+        <div style={{ display:"flex", gap:8, marginBottom:12, overflowX:"auto", scrollbarWidth:"none" }}>
           {SUBJECTS.map(s=>(
             <button key={s.key} onClick={()=>{ setSubject(s.key); setCurrent(0); }} style={{
-              flex:1, padding:"10px 8px", borderRadius:12, cursor:"pointer",
+              flex:"0 0 auto", padding:"10px 14px", whiteSpace:"nowrap", borderRadius:12, cursor:"pointer",
               fontWeight:700, fontSize:13,
               background: subject===s.key ? C.primary : T.surface,
               color:      subject===s.key ? "#fff" : T.sub,

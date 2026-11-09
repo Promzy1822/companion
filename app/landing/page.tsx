@@ -42,25 +42,25 @@ export default function Landing() {
       {/* ── NAV ── */}
       <nav style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: T.surface,
-        borderBottom: `1px solid ${T.border}`,
+        background: "#1F1156",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 20px", height: "56px",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
           <img src="/icon-192.png" alt="Companion" width={28} height={28} style={{ borderRadius: "8px", display: "block" }} />
-          <span style={{ fontWeight: 800, fontSize: "17px", color: T.text, letterSpacing: "-0.3px" }}>companion</span>
+          <span style={{ fontWeight: 800, fontSize: "17px", color: "#fff", letterSpacing: "-0.3px" }}>companion</span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/auth" style={{
             borderRadius: "50px", padding: "8px 16px",
             fontSize: "13px", fontWeight: 700, textDecoration: "none",
-            border: `1.5px solid ${T.primary}`, color: T.primary, background: "transparent",
+            border: "1.5px solid rgba(255,255,255,0.45)", color: "#fff", background: "transparent",
           }}>
             Log In
           </Link>
           <Link href="/auth" style={{
-            background: T.primary, color: "#fff",
+            background: "#F97316", color: "#fff",
             borderRadius: "50px", padding: "8px 16px",
             fontSize: "13px", fontWeight: 700, textDecoration: "none",
           }}>
@@ -71,45 +71,71 @@ export default function Landing() {
 
       {/* ── HERO ── */}
       <div style={{
-        background: dark
-          ? `linear-gradient(160deg, ${T.primarySoft} 0%, ${T.bg} 100%)`
-          : "linear-gradient(160deg, #F5F7FF 0%, #E8F1FF 60%, #EFF2FF 100%)",
+        background: "linear-gradient(165deg, #2A1B6B 0%, #1F1156 55%, #150D38 100%)",
         padding: "56px 24px 64px", textAlign: "center",
         position: "relative", overflow: "hidden",
       }}>
-        <div style={{ position:"absolute", top:"-40px", right:"-40px", width:220, height:220, borderRadius:"50%", background:"rgba(79,70,229,0.08)" }} />
-        <div style={{ position:"absolute", bottom:"0", left:"-60px", width:180, height:180, borderRadius:"50%", background:"rgba(79,70,229,0.06)" }} />
+        <div style={{ position:"absolute", top:"-40px", right:"-40px", width:220, height:220, borderRadius:"50%", background:"rgba(249,115,22,0.13)" }} />
+        <div style={{ position:"absolute", bottom:"0", left:"-60px", width:180, height:180, borderRadius:"50%", background:"rgba(255,255,255,0.05)" }} />
         <div style={{ position: "relative" }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: "6px",
-            background: T.surface, border: `1px solid ${T.border}`,
+            background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.16)",
             borderRadius: "50px", padding: "5px 14px", marginBottom: "24px",
             boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
           }}>
             <div style={{ width:6, height:6, borderRadius:"50%", background:"#31A24C", animation:"pulse 2s infinite" }} />
-            <span style={{ fontSize:"12px", fontWeight:600, color:T.sub }}>Built for Nigerian JAMB students</span>
+            <span style={{ fontSize:"12px", fontWeight:600, color:"#D8DBFF" }}>Built for Nigerian JAMB students</span>
           </div>
           <div style={{ margin: "0 auto 20px", display: "inline-block" }}>
             <img src="/icon-192.png" alt="Companion" width={80} height={80}
-              style={{ borderRadius: "22px", boxShadow: "0 8px 28px rgba(79,70,229,0.25)", display: "block" }} />
+              style={{ borderRadius: "22px", boxShadow: "0 8px 28px rgba(0,0,0,0.4)", display: "block" }} />
           </div>
-          <h1 style={{ fontSize: "36px", fontWeight: 900, lineHeight: 1.15, color: T.text, margin: "0 0 16px", letterSpacing: "-1px" }}>
+          <h1 style={{ fontSize: "40px", fontWeight: 900, lineHeight: 1.12, color: "#fff", margin: "0 0 16px", letterSpacing: "-1px" }}>
             Pass JAMB with<br />
-            <span style={{ color: T.primary }}>AI-Powered</span> Study Support
+            <span style={{ color: "#F97316" }}>AI-Powered</span> Study Support
           </h1>
-          <p style={{ fontSize: "16px", color: T.sub, lineHeight: 1.6, margin: "0 0 32px" }}>
+          <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.78)", lineHeight: 1.6, margin: "0 auto 32px", maxWidth: "520px" }}>
             Learn smarter, practice daily, and get instant answers from your AI tutor. Built specifically for Nigerian students.
           </p>
           <Link href="/auth" style={{
             display: "inline-flex", alignItems: "center", gap: "8px",
-            background: T.primary, color: "#fff",
+            background: "#F97316", color: "#fff",
             borderRadius: "50px", padding: "16px 32px",
             fontWeight: 800, fontSize: "16px", textDecoration: "none",
-            boxShadow: "0 6px 24px rgba(79,70,229,0.35)",
+            boxShadow: "0 6px 24px rgba(249,115,22,0.4)",
           }}>
             Get Started Free <ArrowRight size={18} strokeWidth={2.2} />
           </Link>
-          <p style={{ marginTop: "12px", fontSize: "12px", color: T.muted }}>No credit card &nbsp;·&nbsp; Takes 2 minutes</p>
+          <p style={{ marginTop: "12px", fontSize: "12px", color: "rgba(255,255,255,0.55)" }}>No credit card &nbsp;·&nbsp; Takes 2 minutes</p>
+          <div style={{ margin: "38px auto 0", width: "272px", maxWidth: "86vw", background: "#0E1018", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "34px", padding: "12px 12px 14px", boxShadow: "0 24px 60px rgba(0,0,0,0.45)", textAlign: "left" }}>
+            <div style={{ width: "84px", height: "5px", borderRadius: "3px", background: "rgba(255,255,255,0.18)", margin: "2px auto 14px" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
+              <div>
+                <div style={{ fontSize: "11px", color: "#9AA0B5" }}>Good morning</div>
+                <div style={{ fontSize: "15px", fontWeight: 800, color: "#fff" }}>Adaeze</div>
+              </div>
+              <img src="/icon-192.png" alt="" width={30} height={30} style={{ borderRadius: "9px", display: "block" }} />
+            </div>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", background: "#161925", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", padding: "12px", marginBottom: "10px" }}>
+              <div style={{ width: "46px", height: "46px", borderRadius: "50%", border: "5px solid #F97316", borderTopColor: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800, color: "#fff", flexShrink: 0 }}>72%</div>
+              <div>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: "#fff" }}>Exam readiness</div>
+                <div style={{ fontSize: "11px", color: "#9AA0B5", lineHeight: 1.45 }}>Target 300 · 41 days to JAMB</div>
+              </div>
+            </div>
+            {[{ s: "Physics", t: "Waves and Optics", done: true }, { s: "Chemistry", t: "Organic Chemistry", done: false }, { s: "Biology", t: "Genetics", done: false }].map((r, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "9px", background: "#161925", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px", padding: "10px 12px", marginBottom: "8px" }}>
+                <div style={{ width: "18px", height: "18px", borderRadius: "50%", background: r.done ? "#31A24C" : "transparent", border: r.done ? "none" : "2px solid rgba(255,255,255,0.25)", flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#fff" }}>{r.s}</div>
+                  <div style={{ fontSize: "11px", color: "#9AA0B5" }}>{r.t}</div>
+                </div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: "#F97316" }}>{r.done ? "DONE" : "TODAY"}</div>
+              </div>
+            ))}
+            <div style={{ background: "#F97316", borderRadius: "12px", padding: "11px", textAlign: "center", fontSize: "12px", fontWeight: 800, color: "#fff", marginTop: "2px" }}>Continue Practice</div>
+          </div>
         </div>
         <div style={{
           display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
@@ -118,7 +144,7 @@ export default function Landing() {
         }}>
           {[{n:"3,333",l:"Past Questions"},{n:"8",l:"Subjects"},{n:"24/7",l:"AI Help"},{n:"Free",l:"Always"}].map((s,i)=>(
             <div key={i} style={{ padding:"16px 8px", textAlign:"center", background:T.surface }}>
-              <div style={{ fontSize:"18px", fontWeight:900, color:T.primary }}>{s.n}</div>
+              <div style={{ fontSize:"19px", fontWeight:900, color:"#F97316" }}>{s.n}</div>
               <div style={{ fontSize:"11px", color:T.sub, marginTop:"2px" }}>{s.l}</div>
             </div>
           ))}
@@ -168,7 +194,7 @@ export default function Landing() {
       </div>
 
       {/* ── CTA ── */}
-      <div style={{ padding:"56px 24px", background:`linear-gradient(135deg, ${T.primary}, ${T.primaryDark})`, textAlign:"center" }}>
+      <div style={{ padding:"56px 24px", background:"linear-gradient(135deg, #1F1156, #4F46E5)", textAlign:"center" }}>
         <img src="/icon-192.png" alt="Companion" width={60} height={60}
           style={{ borderRadius:"18px", margin:"0 auto 20px", display:"block", boxShadow:"0 8px 24px rgba(0,0,0,0.25)" }} />
         <h2 style={{ color:"#fff", fontSize:"26px", fontWeight:800, margin:"0 0 10px", letterSpacing:"-0.5px" }}>Ready to ace JAMB?</h2>
@@ -177,7 +203,7 @@ export default function Landing() {
         </p>
         <Link href="/auth" style={{
           display:"inline-flex", alignItems:"center", gap:"8px",
-          background:"#fff", color:T.primary,
+          background:"#F97316", color:"#fff",
           borderRadius:"50px", padding:"16px 32px",
           fontWeight:800, fontSize:"16px", textDecoration:"none",
           boxShadow:"0 6px 24px rgba(0,0,0,0.2)", marginBottom:"14px",

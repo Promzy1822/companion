@@ -1,29 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
 import { validateEmail, normaliseEmail } from "../../../lib/auth";
+import { rateLimitPeek, rateLimitHit, rateLimitClear } from "../../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(email: string): { allowed: boolean; waitSeconds?: number } {
-  const now = Date.now();
-  const entry = loginAttempts.get(email);
-  const MAX = 5;
-  const WINDOW = 15 * 60 * 1000;
-  if (!entry || now > entry.resetAt) return { allowed: true };
-  if (entry.count >= MAX) return { allowed: false, waitSeconds: Math.ceil((entry.resetAt - now) / 1000) };
-  return { allowed: true };
-}
-
-function recordFail(email: string) {
-  const now = Date.now();
-  const WINDOW = 15 * 60 * 1000;
-  const entry = loginAttempts.get(email);
-  if (!entry || now > entry.resetAt) loginAttempts.set(email, { count: 1, resetAt: now + WINDOW });
-  else entry.count++;
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,9 +21,9 @@ export async function POST(req: NextRequest) {
 
     const normEmail = normaliseEmail(email);
 
-    const rateCheck = checkRateLimit(normEmail);
-    if (!rateCheck.allowed) {
-      const mins = Math.ceil((rateCheck.waitSeconds ?? 900) / 60);
+    const rateCheck = await rateLimitPeek("login", normEmail, 5);
+    if (rateCheck.blocked) {
+      const mins = Math.ceil((rateCheck.waitSeconds || 900) / 60);
       return NextResponse.json(
         { error: `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? "" : "s"}.` },
         { status: 429 }
@@ -57,7 +38,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (error || !data.user) {
-      recordFail(normEmail);
+      await rateLimitHit("login", normEmail, 900);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
@@ -75,7 +56,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    loginAttempts.delete(normEmail);
+    await rateLimitClear("login", normEmail);
 
     return NextResponse.json({
       success: true,

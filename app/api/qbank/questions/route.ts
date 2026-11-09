@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    let all = PAST_QUESTIONS.filter((q: any) => q.subject === subject && !q.has_diagram);
+    let all = PAST_QUESTIONS.filter((q: any) => q.subject === subject && (!q.has_diagram || q.image));
     if (year && year !== "All") {
       all = all.filter((q: any) => q.year === parseInt(year));
     }

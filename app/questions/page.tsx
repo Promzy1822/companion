@@ -20,6 +20,7 @@ interface Question {
   options:     { A: string; B: string; C: string; D: string };
   answer:      string | null;
   has_diagram: boolean;
+  image?: string | null;
 }
 
 const SUBJECTS = [
@@ -377,6 +378,11 @@ function QuestionsContent() {
                 </div>
 
                 {/* Question text */}
+                {q.image && (
+                  <div style={{ marginBottom:12, textAlign:"center" }}>
+                    <img src={"/" + q.image} alt="Question diagram" style={{ maxWidth:"100%", borderRadius:12, border:`1px solid ${T.border}`, background:"#fff" }} />
+                  </div>
+                )}
                 <div style={{
                   background:T.surface, borderRadius:16, padding:"18px 16px",
                   border:`1px solid ${T.border}`, marginBottom:12,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
+import { createClient } from "../../../lib/supabase/server";
 import { getAllTopics } from "../../../lib/syllabus";
 import { getLessonVideo } from "../../../lib/lesson-videos";
 
@@ -16,10 +16,6 @@ export interface LessonExercise {
 interface LessonContent {
   summary:   string;
   exercises: LessonExercise[];
-}
-
-function cacheKey(topicId: string) {
-  return `lesson:content:${topicId}`;
 }
 
 async function generateLessonContent(
@@ -118,7 +114,13 @@ export async function GET(
   const videoId = getLessonVideo(topicId);
 
   try {
-    const cached = await kv.get<LessonContent>(cacheKey(topicId));
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("lesson_cache")
+      .select("content")
+      .eq("topic_id", topicId)
+      .single();
+    const cached = (data?.content ?? null) as LessonContent | null;
     if (cached) {
       return NextResponse.json({
         topicId, subjectKey, subject: subject.display_name, topicName: topic.topic,
@@ -126,7 +128,7 @@ export async function GET(
       });
     }
   } catch (err) {
-    console.error("[lessons] KV read failed:", err instanceof Error ? err.message : err);
+    console.error("[lessons] Cache read failed:", err instanceof Error ? err.message : err);
   }
 
   const { content: generated, debugReason } = await generateLessonContent(
@@ -141,9 +143,12 @@ export async function GET(
   }
 
   try {
-    await kv.set(cacheKey(topicId), generated);
+    const supabase = createClient();
+    await supabase
+      .from("lesson_cache")
+      .upsert({ topic_id: topicId, content: generated });
   } catch (err) {
-    console.error("[lessons] KV write failed:", err instanceof Error ? err.message : err);
+    console.error("[lessons] Cache write failed:", err instanceof Error ? err.message : err);
   }
 
   return NextResponse.json({

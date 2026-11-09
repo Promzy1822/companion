@@ -117,6 +117,31 @@ export const Progress = {
     return ids;
   },
 
+  // ── Syllabus topic completion (permanent store) ───────────────────
+  // The single source of truth for "topic studied": the Coverage view,
+  // lesson completion and Learn all read/write here. (The activity log
+  // above is trimmed to 90 days, so it cannot be the permanent record.)
+
+  getSyllabusProgress(): Set<string> {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem('companion_syllabus_progress');
+      return new Set<string>(raw ? JSON.parse(raw) : []);
+    } catch {
+      return new Set();
+    }
+  },
+
+  setTopicDone(topicId: string, done: boolean, record: boolean = true): void {
+    if (typeof window === 'undefined') return;
+    const set = Progress.getSyllabusProgress();
+    if (done) set.add(topicId); else set.delete(topicId);
+    try {
+      localStorage.setItem('companion_syllabus_progress', JSON.stringify([...set]));
+    } catch {}
+    if (done && record) Progress.recordActivity('lesson', { topicId });
+  },
+
   // ── Practice stats ──────────────────────────────────────────────
 
   getPracticeStats(): Record<string, { correct: number; total: number }> {

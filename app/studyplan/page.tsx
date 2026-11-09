@@ -1,16 +1,17 @@
 "use client";
 import { generateSyllabusAlignedPlan } from "../lib/syllabus";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import AppLoader, { PageSkeleton } from "../components/AppLoader";
 import Link from "next/link";
 import {
   CalendarDays, Target, BookOpen, Clock, CheckCircle,
   RefreshCw, MapPin, CalendarRange, LayoutGrid,
-  BedDouble, BrainCircuit, ChevronRight, ArrowLeft,
+  BedDouble, BrainCircuit, ChevronRight, ArrowLeft, ListChecks,
 } from "lucide-react";
 import { Progress, todayWAT } from "../lib/progress";
 import { buildScheduleTopics, JAMB_TOPICS } from "../lib/jamb-topics";
 import { palette } from "../lib/design";
+import CoverageView from "../components/CoverageView";
 
 
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
@@ -21,7 +22,7 @@ interface User {
 }
 interface DayPlan {
   day: number; date: string; subject: string; topic: string;
-  subtopic: string; hours: number; done: boolean;
+  subtopic: string; topicId?: string; hours: number; done: boolean;
   type: "study" | "practice" | "rest";
 }
 interface WeekPlan { week: number; focus: string; goal: string; days: DayPlan[]; }
@@ -55,7 +56,7 @@ export default function StudyPlan() {
   const [generated, setGenerated] = useState(false);
   const dark = useDark();
   const [activeW,   setActiveW]   = useState(0);
-  const [view,      setView]      = useState<"today" | "week" | "overview">("today");
+  const [view,      setView]      = useState<"today" | "week" | "overview" | "coverage">("today");
   const [mounted,   setMounted]   = useState(false);
   const [confirmRegen, setConfirmRegen] = useState(false);
 
@@ -64,6 +65,8 @@ export default function StudyPlan() {
     try {
       const u = localStorage.getItem("companion_user");
       if (u) setUser(JSON.parse(u));
+      const v = new URLSearchParams(window.location.search).get("view");
+      if (v === "coverage") setView("coverage");
       const saved = localStorage.getItem("companion_study_plan_v2");
       if (saved) {
         const p: WeekPlan[] = JSON.parse(saved);
@@ -87,107 +90,62 @@ export default function StudyPlan() {
     localStorage.setItem("companion_study_plan_v2", JSON.stringify(updated));
     const day = updated[wi].days[di];
     Progress.recordActivity("plan", { subject: day.subject, topicId: day.topic });
+    if (day.topicId) Progress.setTopicDone(day.topicId, true, false);
   };
 
   const generatePlan = async () => {
     if (!user) return;
     setLoading(true);
-    const dl    = daysLeft(user.deadline);
-    const weeks = Math.min(14, Math.max(2, Math.ceil(dl / 7)));
-    const subs  = user.subjects?.length ? user.subjects : ["English Language", "Mathematics"];
-    const weak  = Progress.getWeakSubjects(subs);
-
-    const prompt = `You are an expert JAMB study coach creating a personalised study plan.
-
-STUDENT: ${user.name} | Target: ${user.target}/400 | Institution: ${user.institution}
-Course: ${user.course} | Subjects: ${subs.join(", ")}
-Days to exam: ${dl} | Prep level: ${["","Not ready","Just started","Good progress","Almost ready"][parseInt(user.selfRating)||2]}
-Weak subjects: ${weak.length ? weak.join(", ") : "None detected yet"}
-
-AVAILABLE JAMB TOPICS (use ONLY these exact names — never write "Core Topic 1" or "Topic 2"):
-${subs.map(s => `${s}: ${(JAMB_TOPICS[s] || []).map(t => t.topic).join(", ")}`).join("\n")}
-
-Generate exactly ${weeks} weeks. Return ONLY a valid JSON array, no other text:
-[{
-  "week": 1,
-  "focus": "Foundation & Orientation",
-  "goal": "Establish strong base in core areas",
-  "days": [
-    {"day":1,"subject":"Mathematics","topic":"Number & Numeration","subtopic":"Surds & Indices","hours":2,"type":"study"},
-    {"day":2,"subject":"English Language","topic":"Comprehension Passages","subtopic":"Vocabulary in Context","hours":2,"type":"study"},
-    {"day":3,"subject":"Physics","topic":"Kinematics & Dynamics","subtopic":"SUVAT Equations","hours":2,"type":"study"},
-    {"day":4,"subject":"Chemistry","topic":"Atomic Structure & Bonding","subtopic":"Electronic Configuration","hours":2,"type":"study"},
-    {"day":5,"subject":"ALL","topic":"Practice & Past Questions","subtopic":"Mixed Subjects","hours":2,"type":"practice"},
-    {"day":6,"subject":"Mathematics","topic":"Polynomials & Equations","subtopic":"Quadratic Equations","hours":2,"type":"study"},
-    {"day":7,"subject":"REST","topic":"Rest Day","subtopic":"Relax and recharge","hours":0,"type":"rest"}
-  ]
-}]
-
-RULES:
-- Use ONLY topic names from the list above
-- Give weak subjects extra coverage in early weeks
-- Progress: foundation weeks 1-2, medium weeks 3-5, advanced weeks 6+
-- Final 2 weeks: past questions and revision only
-- Each week has exactly 7 days with 1 rest day
-- Return ONLY the JSON array, nothing else`;
-
     try {
-      const res  = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt }),
-      });
-      const data = await res.json();
-      const match = (data.reply || "").match(/\[[\s\S]*\]/);
+      const dl    = daysLeft(user.deadline);
+      const weeks = Math.min(14, Math.max(2, Math.ceil(dl / 7)));
+      const subs  = user.subjects?.length ? user.subjects : ["English Language", "Mathematics"];
+      const weak  = Progress.getWeakSubjects(subs);
 
-      if (match) {
-        const start = new Date(Date.now() + 3600000);
-        let off = 0;
-        const parsed: WeekPlan[] = JSON.parse(match[0]).map((w: WeekPlan) => ({
-          ...w,
-          days: w.days.map((d: DayPlan) => {
-            const dt = new Date(start);
-            dt.setDate(start.getDate() + off++);
-            return { ...d, date: dt.toISOString().slice(0, 10), done: false };
-          }),
-        }));
-        setPlan(parsed);
-        localStorage.setItem("companion_study_plan_v2", JSON.stringify(parsed));
-        setGenerated(true);
-        setView("today");
-      } else {
-        throw new Error("no json");
-      }
-    } catch {
-      // Fallback: real JAMB topics from library
-      const start     = new Date(Date.now() + 3600000);
+      // Carry completed days over a regeneration (matched by subject + topic)
+      const doneKeys = new Set<string>();
+      try {
+        (JSON.parse(localStorage.getItem("companion_plan_carry") || "[]") as string[])
+          .forEach(k => doneKeys.add(k));
+      } catch {}
+      plan.flatMap(w => w.days).forEach(d => { if (d.done) doneKeys.add(`${d.subject}|${d.topic}`); });
+
       const syllabusItems = generateSyllabusAlignedPlan(subs, weeks, weak);
+      const base = todayWAT();
+      const dateAt = (n: number) => {
+        const d = new Date(base + "T00:00:00Z");
+        d.setUTCDate(d.getUTCDate() + n);
+        return d.toISOString().slice(0, 10);
+      };
       let ti = 0, off = 0;
-      const fb: WeekPlan[] = Array.from({ length: weeks }, (_, wi) => ({
+      const built: WeekPlan[] = Array.from({ length: weeks }, (_, wi) => ({
         week: wi + 1,
         focus: focusName(wi + 1, weeks),
         goal: `Cover all ${subs.length} subjects for week ${wi + 1}`,
         days: Array.from({ length: 7 }, (_, di) => {
-          const dt = new Date(start);
-          dt.setDate(start.getDate() + off++);
           const isRest = di === 6;
           const isPrac = di === 4;
           const t = !isRest && !isPrac ? syllabusItems[ti++] : null;
+          const subject  = isRest ? "REST" : isPrac ? "ALL" : (t?.subject || subs[0]);
+          const topic    = isRest ? "Rest Day" : isPrac ? "Practice & Past Questions" : (t?.topic || "Revision");
           return {
             day:      di + 1,
-            date:     dt.toISOString().slice(0, 10),
-            subject:  isRest ? "REST" : isPrac ? "ALL" : (t?.subject || subs[0]),
-            topic:    isRest ? "Rest Day" : isPrac ? "Practice & Past Questions" : (t?.topic || "Revision"),
+            date:     dateAt(off++),
+            subject,
+            topic,
             subtopic: isRest ? "Relax" : isPrac ? "Mixed Subjects" : (t?.subtopic || "Review notes"),
+            topicId:  t?.topicId || "",
             hours:    isRest ? 0 : 2,
-            done:     false,
+            done:     doneKeys.has(`${subject}|${topic}`),
             type:     (isRest ? "rest" : isPrac ? "practice" : "study") as "study" | "practice" | "rest",
           };
         }),
       }));
-      setPlan(fb);
-      localStorage.setItem("companion_study_plan_v2", JSON.stringify(fb));
+      setPlan(built);
+      localStorage.setItem("companion_study_plan_v2", JSON.stringify(built));
+      localStorage.removeItem("companion_plan_carry");
       setGenerated(true);
+      setView("today");
     } finally {
       setLoading(false);
     }
@@ -223,7 +181,7 @@ RULES:
           </Link>
           <div style={{ flex: 1 }}>
             <div style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>My Study Plan</div>
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12 }}>Real JAMB topics · AI-personalised</div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12 }}>Real JAMB topics · Built from the official syllabus</div>
           </div>
           {generated && (
             <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "#FFF8DB", fontWeight: 700 }}>
@@ -255,7 +213,7 @@ RULES:
               Generate Your Study Plan
             </h2>
             <p style={{ fontSize: 14, color: T.sub, margin: "0 0 22px", lineHeight: 1.6 }}>
-              AI will build a day-by-day plan using real JAMB topics, tailored to your subjects, target score and exam date.
+              We build a day-by-day plan from the official JAMB syllabus — real topics, tailored to your subjects, target score and exam date.
             </p>
 
             {user && (
@@ -273,24 +231,30 @@ RULES:
               </div>
             )}
 
-            <button
-              onClick={generatePlan}
-              disabled={loading}
-              style={{
-                width: "100%", padding: 14, borderRadius: 12, border: "none",
-                background: loading ? T.s3 : "linear-gradient(135deg,#4F46E5,#3730A3)",
-                color: loading ? T.muted : "#fff",
-                fontWeight: 700, fontSize: 15,
-                cursor: loading ? "not-allowed" : "pointer",
-                boxShadow: loading ? "none" : "0 4px 14px rgba(79,70,229,0.35)",
-                transition: "all 0.2s",
-              }}
-            >
-              {loading ? "Building your plan…" : "Generate My Plan"}
-            </button>
+            {!user ? (
+              <Link href="/auth" style={{ display: "block", width: "100%", padding: 14, borderRadius: 12, background: "linear-gradient(135deg,#4F46E5,#3730A3)", color: "#fff", fontWeight: 700, fontSize: 15, textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+                Log in to generate your plan
+              </Link>
+            ) : (
+              <button
+                onClick={generatePlan}
+                disabled={loading}
+                style={{
+                  width: "100%", padding: 14, borderRadius: 12, border: "none",
+                  background: loading ? T.s3 : "linear-gradient(135deg,#4F46E5,#3730A3)",
+                  color: loading ? T.muted : "#fff",
+                  fontWeight: 700, fontSize: 15,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  boxShadow: loading ? "none" : "0 4px 14px rgba(79,70,229,0.35)",
+                  transition: "all 0.2s",
+                }}
+              >
+                {loading ? "Building your plan…" : "Generate My Plan"}
+              </button>
+            )}
             {loading && (
               <p style={{ fontSize: 12, color: T.sub, marginTop: 10 }}>
-                This takes about 15–20 seconds…
+                Building from the official syllabus…
               </p>
             )}
           </div>
@@ -303,7 +267,8 @@ RULES:
                 { v: "today",    label: "Today",    Icon: MapPin        },
                 { v: "week",     label: "Week",     Icon: CalendarRange },
                 { v: "overview", label: "Overview", Icon: LayoutGrid    },
-              ] as { v: "today"|"week"|"overview"; label: string; Icon: React.ElementType }[]).map(tab => (
+                { v: "coverage", label: "Coverage", Icon: ListChecks    },
+              ] as { v: "today"|"week"|"overview"|"coverage"; label: string; Icon: React.ElementType }[]).map(tab => (
                 <button
                   key={tab.v}
                   onClick={() => setView(tab.v)}
@@ -563,18 +528,28 @@ RULES:
               </div>
             )}
 
+            {/* ── COVERAGE (the merged Syllabus) ── */}
+            {view === "coverage" && (
+              <Suspense fallback={<div style={{ minHeight: 200 }} />}>
+                <CoverageView />
+              </Suspense>
+            )}
+
             {/* Regenerate */}
             <button
               onClick={() => {
-                if (!confirm("Regenerate plan? Your current progress will be lost.")) return;
+                if (!confirmRegen) { setConfirmRegen(true); return; }
+                const doneKeys = plan.flatMap(w => w.days).filter(d => d.done).map(d => `${d.subject}|${d.topic}`);
+                try { localStorage.setItem("companion_plan_carry", JSON.stringify(doneKeys)); } catch {}
+                setConfirmRegen(false);
                 setGenerated(false);
                 setPlan([]);
                 localStorage.removeItem("companion_study_plan_v2");
               }}
-              style={{ width: "100%", marginTop: 14, padding: 13, borderRadius: 12, border: `1.5px solid ${T.border}`, background: "transparent", color: T.sub, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+              style={{ width: "100%", marginTop: 14, padding: 13, borderRadius: 12, border: `1.5px solid ${confirmRegen ? "#FA3E3E" : T.border}`, background: "transparent", color: confirmRegen ? "#FA3E3E" : T.sub, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
             >
               <RefreshCw size={14} strokeWidth={2} />
-              Regenerate Plan
+              {confirmRegen ? "Tap again to confirm — completed days are kept" : "Regenerate Plan"}
             </button>
           </div>
         )}

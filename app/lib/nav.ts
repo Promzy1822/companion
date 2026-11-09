@@ -1,5 +1,5 @@
 import {
-  Home, BookOpen, Bot, Target, CalendarDays, ListChecks, User,
+  Home, BookOpen, Bot, Target, CalendarDays, User,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,9 +20,8 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: CalendarDays,label: "Plan",     href: "/studyplan",           match: ["/studyplan", "/syllabus"] },
 ];
 
-/** Secondary destinations (rail + avatar menu only) until they are absorbed: Syllabus into Plan (step 3), Profile into the account sheet (step 5). */
+/** Secondary destinations (rail + avatar menu only): Profile, until the account sheet absorbs it in step 5. (Syllabus was absorbed into Plan as Coverage in step 3.) */
 export const NAV_SECONDARY: NavItem[] = [
-  { icon: ListChecks, label: "Syllabus", href: "/syllabus", match: ["/syllabus"] },
   { icon: User,       label: "Profile",  href: "/profile",  match: ["/profile"] },
 ];
 

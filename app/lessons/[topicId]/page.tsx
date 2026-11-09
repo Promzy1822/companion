@@ -62,7 +62,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   }, [topicId]);
 
   if (loading) {
-    return <div style={{ minHeight: "100vh", background: "#F4F5FA" }} />;
+    return <div style={{ minHeight: "100vh", background: palette(dark).bg }} />;
   }
 
   const T = palette(dark);
@@ -95,18 +95,23 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
     setAnswers(a => [...a, i === currentQ.correctIndex]);
   };
 
+  const completeLesson = () => {
+    Progress.recordActivity("lesson", {
+      topicId: data.topicId,
+      subject: data.subject,
+      correct: answers.filter(Boolean).length,
+      total: exercises.length,
+    });
+    Progress.setTopicDone(data.topicId, true, false);
+    setStage("done");
+  };
+
   const nextQuestion = () => {
     if (qIndex + 1 < exercises.length) {
       setQIndex(q => q + 1);
       setSelected(null);
     } else {
-      Progress.recordActivity("lesson", {
-        topicId: data.topicId,
-        subject: data.subject,
-        correct: answers.filter(Boolean).length,
-        total: exercises.length,
-      });
-      setStage("done");
+      completeLesson();
     }
   };
 
@@ -171,7 +176,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
             <p style={{ fontSize: 14, lineHeight: 1.7, color: T.text, whiteSpace: "pre-wrap" }}>
               {data.summary}
             </p>
-            <button onClick={() => setStage("quiz")} style={{
+            <button onClick={() => exercises.length > 0 ? setStage("quiz") : completeLesson()} style={{
               width: "100%", padding: "13px", borderRadius: R.pill, border: "none",
               background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16,
             }}>

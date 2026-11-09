@@ -13,9 +13,12 @@ import { Progress } from "../../lib/progress";
 export default function LearnSubjectPage({ params }: { params: { subject: string } }) {
   const { subject } = params;
   const dark = useDark();
-  const [completed] = useState<Set<string>>(() =>
-    typeof window !== "undefined" ? Progress.getCompletedTopics() : new Set()
-  );
+  const [completed] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set<string>();
+    const all = Progress.getCompletedTopics();
+    Progress.getSyllabusProgress().forEach(id => all.add(id));
+    return all;
+  });
 
   const T = palette(dark);
   const subjectInfo = getSubjectSyllabus(subject);

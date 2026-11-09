@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle2, XCircle, PlayCircle } from "lucide-react";
 import Navbar, { NAVBAR_HEIGHT } from "../../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../../components/BottomNav";
 import { C, palette, R, S } from "../../lib/design";
+import { useDark } from "../../lib/theme";
 import { Progress } from "../../lib/progress";
 
 interface Exercise {
@@ -29,7 +30,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const { topicId } = params;
   const router = useRouter();
 
-  const [dark]                = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const dark = useDark();
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
   const [data, setData]       = useState<LessonData | null>(null);

@@ -13,7 +13,7 @@ import { buildScheduleTopics, JAMB_TOPICS } from "../lib/jamb-topics";
 import { palette } from "../lib/design";
 
 
-import { useIsoLayoutEffect } from "../lib/theme";
+import { useDark, useIsoLayoutEffect } from "../lib/theme";
 interface User {
   name: string; target: string; institution: string;
   course: string; subjects: string[]; deadline: string;
@@ -53,7 +53,7 @@ export default function StudyPlan() {
   const [plan,      setPlan]      = useState<WeekPlan[]>([]);
   const [loading,   setLoading]   = useState(false);
   const [generated, setGenerated] = useState(false);
-  const [dark,      setDark]      = useState(false);
+  const dark = useDark();
   const [activeW,   setActiveW]   = useState(0);
   const [view,      setView]      = useState<"today" | "week" | "overview">("today");
   const [mounted,   setMounted]   = useState(false);
@@ -61,7 +61,6 @@ export default function StudyPlan() {
 
   useIsoLayoutEffect(() => {
     setMounted(true);
-    setDark(localStorage.getItem("darkMode") === "true");
     try {
       const u = localStorage.getItem("companion_user");
       if (u) setUser(JSON.parse(u));

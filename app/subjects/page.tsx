@@ -7,6 +7,7 @@ import { ArrowLeft, Star } from "lucide-react";
 import Navbar, { NAVBAR_HEIGHT } from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
+import { useDark } from "../lib/theme";
 import { Rich } from "../components/AppIcon";
 
 const SUBJECTS = [
@@ -26,7 +27,7 @@ function SubjectsContent() {
   const searchParams = useSearchParams();
   const mode   = searchParams.get("mode") || "learn";
   const router = useRouter();
-  const [dark,  setDark] = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const dark = useDark();
   const [mySubjects] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -73,7 +74,7 @@ function SubjectsContent() {
 
   return (
     <div style={{ minHeight:"100vh", paddingTop:"56px", background:T.bg, fontFamily:"var(--font)" }}>
-      <Navbar darkMode={dark} onToggleDark={()=>{const n=!dark;setDark(n);localStorage.setItem("darkMode",String(n));}} />
+      <Navbar darkMode={dark} />
 
       <div className="hero-banner" style={{ background: dark?"linear-gradient(135deg,#1F2050,#4F46E5)":"linear-gradient(135deg,#4F46E5,#3730A3)", padding:"20px 20px 32px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>

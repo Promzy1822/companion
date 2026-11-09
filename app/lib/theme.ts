@@ -21,16 +21,10 @@ export function resolveDark(mode: ThemeMode): boolean {
   return mode === "dark" || (mode === "system" && systemPrefersDark());
 }
 
-/** Saves the mode, applies it to the page and keeps the legacy "darkMode" key in sync (every page reads it). */
+/** Saves the mode and applies it to the page. "themeMode" is the only theme key. */
 export function setThemeMode(mode: ThemeMode): void {
+  try { localStorage.setItem("themeMode", mode); } catch {}
   const dark = resolveDark(mode);
-  const w = window as unknown as { __themeApplying?: boolean };
-  w.__themeApplying = true;
-  try {
-    localStorage.setItem("themeMode", mode);
-    localStorage.setItem("darkMode", String(dark));
-  } catch {}
-  w.__themeApplying = false;
   const d = document.documentElement;
   d.setAttribute("data-dark", String(dark));
   d.style.colorScheme = dark ? "dark" : "light";

@@ -5,7 +5,10 @@ import { getThemeMode, setThemeMode } from "../lib/theme";
 /**
  * Mounted once in the root layout.
  *  1. Reveals the app only after it has hydrated (so no unthemed page is ever visible).
- *  2. In "System default" mode, follows the device when it switches between light and dark.
+ *  2. In "System default" mode, follows the device live when it switches between
+ *     light and dark: setThemeMode flips data-dark and every useDark() surface
+ *     recolours in place. No reload (the reload only existed because pages held
+ *     stale local theme snapshots; they all read useDark() now).
  */
 export default function ThemeSync() {
   useEffect(() => {
@@ -17,11 +20,7 @@ export default function ThemeSync() {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
       if (getThemeMode() !== "system") return;
-      const wasDark = document.documentElement.getAttribute("data-dark") === "true";
-      if (mq.matches !== wasDark) {
-        setThemeMode("system");
-        window.location.reload(); // every page recolours consistently
-      }
+      setThemeMode("system");
     };
     mq.addEventListener("change", onChange);
 

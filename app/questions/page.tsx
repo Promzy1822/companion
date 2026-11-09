@@ -10,7 +10,7 @@ import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
 import { AppIcon, Rich } from "../components/AppIcon";
 
-import { useIsoLayoutEffect } from "../lib/theme";
+import { useDark, useIsoLayoutEffect } from "../lib/theme";
 interface Question {
   id:          string;
   subject:     string;
@@ -58,7 +58,7 @@ function QuestionsContent() {
   const initSubject  = searchParams.get("subject") || "biology";
   const initMode     = searchParams.get("mode")    || "practice";
 
-  const [dark,      setDark]      = useState(false);
+  const dark = useDark();
   const [subject,   setSubject]   = useState(initSubject);
   const [mode,      setMode]      = useState<"learn"|"practice">(initMode as "learn"|"practice");
   const [year,      setYear]      = useState("All");
@@ -70,10 +70,6 @@ function QuestionsContent() {
   const [error,     setError]     = useState("");
   const [score,     setScore]     = useState({ correct: 0, total: 0 });
   const [answered,  setAnswered]  = useState<Record<number, string>>({});
-
-  useIsoLayoutEffect(() => {
-    setDark(localStorage.getItem("darkMode") === "true");
-  }, []);
 
   const loadQuestions = useCallback(async (subj: string, yr: string) => {
     setLoading(true);

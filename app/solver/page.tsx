@@ -12,7 +12,7 @@ import { Progress } from "../lib/progress";
 import { palette } from "../lib/design";
 import { Rich, stripEmoji } from "../components/AppIcon";
 
-import { useIsoLayoutEffect } from "../lib/theme";
+import { useDark, useIsoLayoutEffect } from "../lib/theme";
 const SUBJECTS = [
   "English Language","Mathematics","Physics","Chemistry","Biology",
   "Government","Economics","Literature in English","Geography","CRS","Commerce",
@@ -71,7 +71,7 @@ function relativeTime(ts: number): string {
 function SolverContent() {
   const params = useSearchParams();
 
-  const [dark,     setDark]     = useState(false);
+  const dark = useDark();
   const [subject,  setSubject]  = useState(params.get("subject") || "");
   const [year,     setYear]     = useState("");
   const [q,        setQ]        = useState(params.get("question") || "");
@@ -85,7 +85,6 @@ function SolverContent() {
 
   useIsoLayoutEffect(() => {
     setMounted(true);
-    setDark(localStorage.getItem("darkMode") === "true");
     setHistory(loadHistory());
   }, []);
 

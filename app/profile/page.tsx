@@ -10,6 +10,7 @@ import {
 import Navbar,    { NAVBAR_HEIGHT }     from "../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../components/BottomNav";
 import { C, palette } from "../lib/design";
+import { setThemeMode, useDark } from "../lib/theme";
 import { Session } from "../lib/session";
 import { createClient } from "../lib/supabase/client";
 import { AppIcon } from "../components/AppIcon";
@@ -48,7 +49,7 @@ export default function Profile() {
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   });
-  const [dark,      setDark]      = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const dark = useDark();
   const [editing,   setEditing]   = useState(false);
   const [form,      setForm]      = useState<Partial<UserData>>(() => user || {});
   const [saved,     setSaved]     = useState(false);
@@ -64,15 +65,10 @@ export default function Profile() {
   const router = useRouter();
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-dark", String(dark));
     if (!user) { router.replace("/landing"); }
   }, [router]);
 
-  const toggleDark = () => {
-    const n = !dark; setDark(n);
-    localStorage.setItem("darkMode", String(n));
-    document.documentElement.setAttribute("data-dark", String(n));
-  };
+  const toggleDark = () => setThemeMode(dark ? "light" : "dark");
 
   const saveProfile = () => {
     if (!user) return;

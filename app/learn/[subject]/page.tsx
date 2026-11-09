@@ -5,13 +5,14 @@ import { ArrowLeft, CheckCircle2, PlayCircle } from "lucide-react";
 import Navbar, { NAVBAR_HEIGHT } from "../../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../../components/BottomNav";
 import { C, palette, R, S } from "../../lib/design";
+import { useDark } from "../../lib/theme";
 import { getTopics, getSubjectSyllabus } from "../../lib/syllabus";
 import { getLessonVideo } from "../../lib/lesson-videos";
 import { Progress } from "../../lib/progress";
 
 export default function LearnSubjectPage({ params }: { params: { subject: string } }) {
   const { subject } = params;
-  const [dark] = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const dark = useDark();
   const [completed] = useState<Set<string>>(() =>
     typeof window !== "undefined" ? Progress.getCompletedTopics() : new Set()
   );

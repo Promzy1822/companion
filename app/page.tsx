@@ -11,6 +11,7 @@ import StreakCard from "./components/StreakCard";
 import CountdownBanner from "./components/CountdownBanner";
 import { Session } from "./lib/session";
 import { C, D, palette } from "./lib/design";
+import { useDark } from "./lib/theme";
 import { RefreshCw, Calculator, Newspaper, ChevronDown, ChevronUp } from "lucide-react";
 import { AppIcon } from "./components/AppIcon";
 
@@ -45,7 +46,7 @@ const FALLBACK: NewsItem[] = [
 ];
 
 export default function Home() {
-  const [darkMode,   setDarkMode]   = useState(() => typeof window !== "undefined" && localStorage.getItem("darkMode") === "true");
+  const darkMode = useDark();
   const [user,       setUser]       = useState<User|null>(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -74,17 +75,9 @@ export default function Home() {
 
   useEffect(() => {
     Session.sync();
-    document.documentElement.setAttribute("data-dark", String(darkMode));
     if (!user) { router.replace("/landing"); return; }
     fetchNews();
   }, [router]);
-
-  const toggleDark = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    localStorage.setItem("darkMode", String(next));
-    document.documentElement.setAttribute("data-dark", String(next));
-  };
 
   const calcAggregate = () => {
     setCalcErr(""); setResult(null);
@@ -120,7 +113,7 @@ export default function Home() {
 
   return (
     <>
-      <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
+      <Navbar darkMode={darkMode} />
       <div style={{
         minHeight:"100vh", background:T.bg,
         paddingTop:NAVBAR_HEIGHT+"px",

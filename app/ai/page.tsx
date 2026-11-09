@@ -10,7 +10,7 @@ import { C, palette } from "../lib/design";
 import { Rich, stripEmoji } from "../components/AppIcon";
 import ThemeMenu from "../components/ThemeMenu";
 import BottomNav from "../components/BottomNav";
-import { useDark, useIsoLayoutEffect } from "../lib/theme";
+import { setThemeMode, useDark, useIsoLayoutEffect } from "../lib/theme";
 
 interface Message {
   role:    "user" | "assistant";
@@ -31,7 +31,6 @@ const WELCOME: Message = {
   content: "Hello! I'm **Companion AI**.\n\nI can help you:\n- Solve past questions with step-by-step explanations\n- Explain difficult JAMB topics clearly\n- Analyse photos of questions or textbook pages\n- Build study plans and give exam tips\n\nYou can type a question or attach a photo of a question. What would you like to work on?",
 };
 
-const noop = () => {};
 
 /** One chat bubble. Memoised, so typing in the box never re-renders (or re-parses) the conversation. */
 const MessageBubble = React.memo(function MessageBubble({ m, dark }: { m: Message; dark: boolean }) {
@@ -217,7 +216,7 @@ export default function AIChat() {
             Online · JAMB expert
           </div>
         </div>
-        <ThemeMenu darkMode={dark} onToggleDark={noop} />
+        <ThemeMenu darkMode={dark} onToggleDark={() => setThemeMode(dark ? "light" : "dark")} />
         <button
           aria-label="New chat"
           onClick={() => { setMessages([WELCOME]); setInput(""); setAttachment(null); }}
@@ -264,10 +263,10 @@ export default function AIChat() {
           </div>
 
           {fileError && (
-            <div style={{ marginBottom: 8, padding: "10px 14px", background: "#FEE2E2", border: "1px solid #FECACA", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontSize: 13, color: "#D0021B", fontWeight: 500 }}>{fileError}</span>
+            <div style={{ marginBottom: 8, padding: "10px 14px", background: T.dangerTint, border: "1px solid " + T.danger + "44", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 13, color: T.danger, fontWeight: 500 }}>{fileError}</span>
               <button onClick={() => setFileError("")} aria-label="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
-                <X size={14} color="#D0021B" strokeWidth={2} />
+                <X size={14} color={T.danger} strokeWidth={2} />
               </button>
             </div>
           )}

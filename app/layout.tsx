@@ -35,8 +35,7 @@ export const viewport: Viewport = {
 /*
  * Runs in <head>, before anything is painted:
  *  - works out the theme (System / Light / Dark) and sets data-dark + color-scheme
- *  - keeps the old "darkMode" key in sync, so every existing page keeps working
- *  - any old code that writes "darkMode" directly is treated as an explicit Light/Dark choice
+ *  - migrates the legacy "darkMode" key into "themeMode" once, then removes it
  *  - marks the app as "booting" so un-themed server HTML is never visible
  */
 const THEME_BOOT = `
@@ -52,17 +51,7 @@ const THEME_BOOT = `
     }
     var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    var orig = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (k, v) {
-      orig.call(this, k, v);
-      if (this === window.localStorage && k === 'darkMode' && !window.__themeApplying) {
-        orig.call(this, 'themeMode', v === 'true' ? 'dark' : 'light');
-      }
-    };
-
-    window.__themeApplying = true;
-    ls.setItem('darkMode', String(dark));
-    window.__themeApplying = false;
+    ls.removeItem('darkMode');
 
     d.setAttribute('data-dark', dark ? 'true' : 'false');
     d.style.colorScheme = dark ? 'dark' : 'light';
@@ -79,29 +68,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
         <meta name="color-scheme" content="light dark" />
-        <link rel="manifest"         href="/manifest.json" />
         <link rel="icon"             href="/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
-        <meta name="apple-mobile-web-app-capable"          content="yes" />
-        <meta name="apple-mobile-web-app-title"            content="Companion" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable"                content="yes" />
-        <meta name="theme-color"                           content="#4F46E5" />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
 
         {/* Cold-start splash. Stays until the app has hydrated, then is removed from the DOM for good. */}
         <div id="companion-splash">
-          <div style={{
-            width: 88, height: 88, borderRadius: 24,
-            background: "#EA580C",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            marginBottom: 20,
-            boxShadow: "0 8px 32px rgba(234,88,12,0.22)",
-          }}>
-            <img src="/icon-192.png" alt="Companion" width={60} height={60}
-              style={{ borderRadius: 12 }} />
-          </div>
+          <img src="/icon-192.png" alt="Companion" width={88} height={88}
+            style={{ borderRadius: 24, display: "block", marginBottom: 20, boxShadow: "0 8px 32px rgba(31,17,86,0.30)" }} />
           <div style={{
             fontWeight: 800, fontSize: 22, color: "var(--text)",
             marginBottom: 4, letterSpacing: "-0.5px",
@@ -119,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
             border: "3px solid var(--surface-3)",
-            borderTopColor: "#EA580C",
+            borderTopColor: "var(--primary)",
             animation: "companionSpin 0.8s linear infinite",
           }} />
         </div>

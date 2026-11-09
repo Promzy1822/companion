@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Monitor, Sun, Moon, Check, type LucideIcon } from "lucide-react";
 import { C, palette } from "../lib/design";
-import { getThemeMode, resolveDark, setThemeMode, useIsoLayoutEffect, type ThemeMode } from "../lib/theme";
+import { getThemeMode, setThemeMode, useIsoLayoutEffect, type ThemeMode } from "../lib/theme";
 
 const OPTIONS: { mode: ThemeMode; label: string; hint: string; icon: LucideIcon }[] = [
   { mode: "system", label: "System default", hint: "Matches your device",  icon: Monitor },
@@ -47,8 +47,7 @@ export default function ThemeMenu({ darkMode, onToggleDark }: { darkMode: boolea
   };
 
   const choose = (m: ThemeMode) => {
-    if (resolveDark(m) !== darkMode) onToggleDark(); // the page flips its own colours first
-    setThemeMode(m);                                  // then remember the mode ("System" must win over the page's explicit write)
+    setThemeMode(m); // the one theme write — every surface reads useDark() and follows live
     setMode(m);
     setOpen(false);
   };
@@ -97,15 +96,15 @@ export default function ThemeMenu({ darkMode, onToggleDark }: { darkMode: boolea
                   width: "100%", display: "flex", alignItems: "center", gap: 12,
                   padding: "10px 12px", border: "none", borderRadius: 10, cursor: "pointer",
                   textAlign: "left", fontFamily: "inherit",
-                  background: active ? (darkMode ? "#1F2050" : C.primaryLight) : "transparent",
+                  background: active ? T.primaryTint : "transparent",
                 }}
               >
-                <Icon size={18} strokeWidth={1.8} color={active ? C.primary : T.sub} />
+                <Icon size={18} strokeWidth={1.8} color={active ? T.primary : T.sub} />
                 <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: active ? C.primary : T.text }}>{o.label}</span>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: active ? T.primary : T.text }}>{o.label}</span>
                   <span style={{ display: "block", fontSize: 11, color: T.sub, marginTop: 1 }}>{o.hint}</span>
                 </span>
-                {active && <Check size={16} strokeWidth={2.4} color={C.primary} />}
+                {active && <Check size={16} strokeWidth={2.4} color={T.primary} />}
               </button>
             );
           })}

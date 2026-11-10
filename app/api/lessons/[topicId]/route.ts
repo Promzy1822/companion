@@ -2,26 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
 import { getAllTopics } from "../../../lib/syllabus";
 import { getLessonVideo } from "../../../lib/lesson-videos";
+import {
+  GOLDEN_LESSONS, sanitizeLessonV2,
+  type LessonContentV2, type LessonExercise,
+} from "../../../lib/lesson-v2";
 
 export const dynamic = "force-dynamic";
 export const runtime  = "nodejs";
 
-export interface LessonExercise {
-  question:     string;
-  options:      string[];
-  correctIndex: number;
-  explanation:  string;
-}
+export type { LessonExercise };
 
-interface LessonContent {
+interface LessonContentV1 {
   summary:   string;
   exercises: LessonExercise[];
 }
 
+type AnyLesson = LessonContentV1 | LessonContentV2;
+
 // Generated content is cached permanently, so it must be structurally
 // sound before it is stored or served — one malformed generation must
 // not poison a topic forever.
-function isValidLesson(c: LessonContent): boolean {
+function isValidLesson(c: LessonContentV1): boolean {
   if (typeof c.summary !== "string" || c.summary.trim().length < 50) return false;
   if (!Array.isArray(c.exercises) || c.exercises.length === 0) return false;
   return c.exercises.every(e =>
@@ -34,15 +35,98 @@ function isValidLesson(c: LessonContent): boolean {
   );
 }
 
+const MODELS = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"];
+
+async function callGroq(prompt: string, maxTokens: number): Promise<{ text: string | null; debugReason: string }> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return { text: null, debugReason: "GROQ_API_KEY not set" };
+  let lastErr = "";
+  for (const model of MODELS) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages:    [{ role: "user", content: prompt }],
+          max_tokens:  maxTokens,
+          temperature: 0.4,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { text: data?.choices?.[0]?.message?.content ?? "", debugReason: "" };
+      }
+      lastErr = `Groq HTTP ${res.status} (${model}): ${(await res.text()).slice(0, 300)}`;
+      console.error("[lessons] Groq error:", lastErr);
+    } catch (err) {
+      lastErr = err instanceof Error ? err.message : String(err);
+      console.error("[lessons] Groq fetch failed:", lastErr);
+    }
+  }
+  return { text: null, debugReason: lastErr || "Groq request failed" };
+}
+
+function parseJsonObject(text: string): unknown | null {
+  const cleaned = text.replace(/```json|```/g, "").trim();
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try { return JSON.parse(match[0]); } catch { return null; }
+}
+
+/* ── Lesson v2 generation: text-first blocks + interactions ─────── */
+async function generateLessonV2(
+  subjectName: string, topicName: string, subtopics: string[], objectives: string[]
+): Promise<{ content: LessonContentV2 | null; debugReason: string }> {
+  const prompt = `You are an expert JAMB (Nigerian UTME) tutor writing a self-contained, text-first lesson with embedded interactions.
+
+Subject: ${subjectName}
+Topic: ${topicName}
+Key subtopics: ${subtopics.slice(0, 10).join("; ")}
+Learning objectives: ${objectives.slice(0, 8).join("; ")}
+
+FACT FENCE (strict): use ONLY facts supported by the subtopics and objectives above. Do not invent dates, names, figures or events. Write in clear Nigerian English with everyday local examples.
+
+Return ONLY a raw JSON object, no markdown, no backticks:
+{
+  "version": 2,
+  "blocks": [
+    { "kind": "section", "heading": "A clear heading", "paragraphs": ["short paragraph", "short paragraph"] }
+  ],
+  "exercises": [
+    {"question": "JAMB-style question", "options": ["A","B","C","D"], "correctIndex": 0, "explanation": "why, 1-2 sentences"}
+  ]
+}
+
+BLOCK RULES:
+- 2 or 3 "section" blocks. Each: 2-3 paragraphs of 60-110 words, covering the subtopics in order.
+- Between/after sections you may add AT MOST 3 interaction blocks, chosen by the content's shape:
+  * "story" — ONLY when the topic is a sequence of events or decisions (history, processes, developments). Shape: {"kind":"story","steps":[{"label":"1922","title":"...","body":"2-3 sentences","gained":"one line","missing":"one line"}],"closingPattern":"one line"}. 3-5 steps. At most ONE step may carry a "decision": {"question":"...","options":["...","..."],"correctIndex":0,"reveal":"what actually happened, 1-2 sentences"}.
+  * "predict" — ONLY for a counterintuitive result. Shape: {"kind":"predict","question":"...","options":["...","...","..."],"correctIndex":0,"feedbackRight":"...","feedbackWrong":"..."}.
+  * "worked-example" — REQUIRED when the topic is calculation-based. Shape: {"kind":"worked-example","problem":"...","steps":["step 1","step 2"],"answer":"final answer with a sanity note"}.
+  * "do-you-know" — at most ONE, and it must restate one of the objectives in a memorable way. Shape: {"kind":"do-you-know","text":"Do you know? ..."}.
+- NEVER emit a "simulator" block.
+- Exactly 5 exercises, JAMB style, each with 4 options and an explanation.`;
+
+  const { text, debugReason } = await callGroq(prompt, 3500);
+  if (!text) return { content: null, debugReason };
+  const parsed = parseJsonObject(text) as LessonContentV2 | null;
+  if (!parsed) return { content: null, debugReason: "v2: no parseable JSON in model output" };
+  const clean = sanitizeLessonV2(parsed);
+  if (!clean) return { content: null, debugReason: "v2: failed structural validation" };
+  return { content: clean, debugReason: "" };
+}
+
+/* ── Lesson v1 generation (legacy summary format, kept as fallback) */
 async function generateLessonContent(
   subjectName: string,
   topicName: string,
   subtopics: string[],
   objectives: string[]
-): Promise<{ content: LessonContent | null; debugReason: string }> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return { content: null, debugReason: "GROQ_API_KEY not set" };
-
+): Promise<{ content: LessonContentV1 | null; debugReason: string }> {
   const prompt = `You are an expert JAMB (Nigerian UTME) tutor writing a self-contained lesson.
 
 Subject: ${subjectName}
@@ -64,64 +148,13 @@ Return ONLY a raw JSON object, no markdown, no backticks, no explanation outside
   ]
 }`;
 
-  try {
-    // qwen3.6-27b retired 2026-09-14 — see /api/chat. Lessons are
-    // text-only, so gpt-oss-120b works as a fallback here too.
-    const lessonModels = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"];
-    let res: Response | null = null;
-    let lastErr = "";
-    for (const model of lessonModels) {
-      res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method:  "POST",
-        headers: {
-          "Content-Type":  "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages:    [{ role: "user", content: prompt }],
-          max_tokens:  2048,
-          temperature: 0.4,
-        }),
-      });
-      if (res.ok) break;
-      lastErr = `Groq HTTP ${res.status} (${model}): ${(await res.text()).slice(0, 300)}`;
-      console.error("[lessons] Groq error:", lastErr);
-    }
-
-    if (!res || !res.ok) {
-      return { content: null, debugReason: lastErr || "Groq request failed" };
-    }
-
-    const data    = await res.json();
-    const text    = data?.choices?.[0]?.message?.content ?? "{}";
-    const cleaned = text.replace(/```json|```/g, "").trim();
-    const match   = cleaned.match(/\{[\s\S]*\}/);
-    if (!match) {
-      return { content: null, debugReason: `No JSON found in model output. Raw (first 300 chars): ${text.slice(0, 300)}` };
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(match[0]);
-    } catch (parseErr) {
-      const pMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
-      return { content: null, debugReason: `JSON.parse failed (${pMsg}). Matched text (first 300 chars): ${match[0].slice(0, 300)}` };
-    }
-
-    if (typeof parsed.summary !== "string" || !Array.isArray(parsed.exercises)) {
-      return {
-        content: null,
-        debugReason: `Unexpected shape — summary type: ${typeof parsed.summary}, exercises: ${Array.isArray(parsed.exercises) ? "array len " + parsed.exercises.length : typeof parsed.exercises}`,
-      };
-    }
-
-    return { content: { summary: parsed.summary, exercises: parsed.exercises }, debugReason: "" };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[lessons] Fatal generating content:", msg);
-    return { content: null, debugReason: `Fatal exception: ${msg.slice(0, 300)}` };
+  const { text, debugReason } = await callGroq(prompt, 2048);
+  if (!text) return { content: null, debugReason };
+  const parsed = parseJsonObject(text) as LessonContentV1 | null;
+  if (!parsed || typeof parsed.summary !== "string" || !Array.isArray(parsed.exercises)) {
+    return { content: null, debugReason: "v1: unexpected shape in model output" };
   }
+  return { content: { summary: parsed.summary, exercises: parsed.exercises }, debugReason: "" };
 }
 
 export async function GET(
@@ -136,6 +169,26 @@ export async function GET(
   }
   const { subjectKey, subject, topic } = found;
   const videoId = getLessonVideo(topicId);
+  const base = {
+    topicId, subjectKey, subject: subject.display_name, topicName: topic.topic,
+    videoId, objectives: topic.objectives.slice(0, 3),
+  };
+
+  const cachePut = async (content: AnyLesson) => {
+    try {
+      const supabase = createClient();
+      await supabase.from("lesson_cache").upsert({ topic_id: topicId, content });
+    } catch (err) {
+      console.error("[lessons] Cache write failed:", err instanceof Error ? err.message : err);
+    }
+  };
+
+  // Hand-authored golden lessons ship exactly as approved.
+  const golden = GOLDEN_LESSONS[topicId];
+  if (golden) {
+    void cachePut(golden);
+    return NextResponse.json({ ...base, ...golden });
+  }
 
   try {
     const supabase = createClient();
@@ -144,16 +197,25 @@ export async function GET(
       .select("content")
       .eq("topic_id", topicId)
       .single();
-    const cached = (data?.content ?? null) as LessonContent | null;
+    const cached = (data?.content ?? null) as AnyLesson | null;
     if (cached) {
-      return NextResponse.json({
-        topicId, subjectKey, subject: subject.display_name, topicName: topic.topic,
-        videoId, ...cached,
-      });
+      const ok = (cached as LessonContentV2).version === 2
+        ? sanitizeLessonV2(cached as LessonContentV2) !== null
+        : isValidLesson(cached as LessonContentV1);
+      if (ok) return NextResponse.json({ ...base, ...cached });
+      console.error("[lessons] Cached content failed validation, regenerating:", topicId);
     }
   } catch (err) {
     console.error("[lessons] Cache read failed:", err instanceof Error ? err.message : err);
   }
+
+  // Prefer v2; fall back to the legacy format so a lesson never breaks.
+  const v2 = await generateLessonV2(subject.display_name, topic.topic, topic.subtopics, topic.objectives);
+  if (v2.content) {
+    await cachePut(v2.content);
+    return NextResponse.json({ ...base, ...v2.content });
+  }
+  console.error("[lessons] v2 generation unusable, falling back:", v2.debugReason);
 
   const { content: generated, debugReason } = await generateLessonContent(
     subject.display_name, topic.topic, topic.subtopics, topic.objectives
@@ -167,17 +229,6 @@ export async function GET(
     );
   }
 
-  try {
-    const supabase = createClient();
-    await supabase
-      .from("lesson_cache")
-      .upsert({ topic_id: topicId, content: generated });
-  } catch (err) {
-    console.error("[lessons] Cache write failed:", err instanceof Error ? err.message : err);
-  }
-
-  return NextResponse.json({
-    topicId, subjectKey, subject: subject.display_name, topicName: topic.topic,
-    videoId, ...generated,
-  });
+  await cachePut(generated);
+  return NextResponse.json({ ...base, ...generated });
 }

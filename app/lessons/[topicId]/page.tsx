@@ -2,12 +2,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, XCircle, PlayCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, PlayCircle, Target } from "lucide-react";
 import Navbar, { NAVBAR_HEIGHT } from "../../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../../components/BottomNav";
+import { LessonBlockView } from "../../components/lesson/players";
 import { C, palette, R, S } from "../../lib/design";
 import { useDark } from "../../lib/theme";
 import { Progress } from "../../lib/progress";
+import type { LessonBlock } from "../../lib/lesson-v2";
 
 interface Exercise {
   question: string;
@@ -22,9 +24,14 @@ interface LessonData {
   subject: string;
   topicName: string;
   videoId: string | null;
-  summary: string;
+  objectives?: string[];
+  version?: number;
+  blocks?: LessonBlock[];
+  summary?: string;
   exercises: Exercise[];
 }
+
+type Stage = "video" | "summary" | "learn" | "quiz" | "done";
 
 export default function LessonPage({ params }: { params: { topicId: string } }) {
   const { topicId } = params;
@@ -35,7 +42,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const [error, setError]     = useState("");
   const [data, setData]       = useState<LessonData | null>(null);
 
-  const [stage, setStage]       = useState<"video" | "summary" | "quiz" | "done">("video");
+  const [stage, setStage]       = useState<Stage>("video");
   const [qIndex, setQIndex]     = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers]   = useState<boolean[]>([]);
@@ -51,7 +58,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         if (cancelled) return;
         if (!res.ok) { setError(body.error || "Could not load this lesson."); return; }
         setData(body);
-        setStage(body.videoId ? "video" : "summary");
+        setStage(body.version === 2 ? "learn" : (body.videoId ? "video" : "summary"));
       } catch {
         if (!cancelled) setError("Network error. Please try again.");
       } finally {
@@ -88,6 +95,9 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const exercises = data.exercises || [];
   const currentQ  = exercises[qIndex];
   const score     = answers.filter(Boolean).length;
+  const isV2      = data.version === 2 && Array.isArray(data.blocks);
+  const segments: Stage[] = isV2 ? ["learn", "quiz"] : ["video", "summary", "quiz"];
+  const stageOrder: Stage[] = ["video", "summary", "learn", "quiz", "done"];
 
   const selectAnswer = (i: number) => {
     if (selected !== null) return;
@@ -115,6 +125,8 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
     }
   };
 
+  const startQuiz = () => exercises.length > 0 ? setStage("quiz") : completeLesson();
+
   return (
     <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily:"var(--font)" }}>
       <Navbar darkMode={dark} />
@@ -137,8 +149,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         </div>
 
         <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-          {(["video", "summary", "quiz"] as const).map(s => {
-            const stageOrder = ["video", "summary", "quiz", "done"];
+          {segments.map(s => {
             const filled = stageOrder.indexOf(stage) >= stageOrder.indexOf(s);
             return (
               <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: filled ? C.accent : T.s3 }} />
@@ -146,7 +157,29 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
           })}
         </div>
 
-        {stage === "video" && (
+        {isV2 && stage === "learn" && (
+          <>
+            {data.objectives && data.objectives.length > 0 && (
+              <div style={{ background: T.primaryTint, border: `1px solid ${T.primary}`, borderRadius: R.xl2, padding: "16px 18px", marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.primaryText, textTransform: "uppercase", letterSpacing: 1, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <Target size={13} /> In this lesson
+                </div>
+                {data.objectives.map((o, i) => (
+                  <p key={i} style={{ fontSize: 13, color: T.text, margin: i === data.objectives!.length - 1 ? 0 : "0 0 4px", lineHeight: 1.55 }}>· {o}</p>
+                ))}
+              </div>
+            )}
+            {(data.blocks ?? []).map((b, i) => <LessonBlockView key={i} block={b} T={T} />)}
+            <button onClick={startQuiz} style={{
+              width: "100%", padding: "13px", borderRadius: R.pill, border: "none",
+              background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
+            }}>
+              {exercises.length > 0 ? `Start exercises (${exercises.length}) →` : "Finish lesson →"}
+            </button>
+          </>
+        )}
+
+        {!isV2 && stage === "video" && (
           <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
             {data.videoId ? (
               <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, borderRadius: R.lg, overflow: "hidden", marginBottom: 14 }}>
@@ -170,13 +203,13 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
           </div>
         )}
 
-        {stage === "summary" && (
+        {!isV2 && stage === "summary" && (
           <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
             <h2 style={{ fontSize: 15, fontWeight: 800, color: T.text, marginBottom: 10 }}>Key points</h2>
             <p style={{ fontSize: 14, lineHeight: 1.7, color: T.text, whiteSpace: "pre-wrap" }}>
               {data.summary}
             </p>
-            <button onClick={() => exercises.length > 0 ? setStage("quiz") : completeLesson()} style={{
+            <button onClick={startQuiz} style={{
               width: "100%", padding: "13px", borderRadius: R.pill, border: "none",
               background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16,
             }}>

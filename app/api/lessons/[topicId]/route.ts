@@ -89,6 +89,7 @@ Key subtopics: ${subtopics.slice(0, 10).join("; ")}
 Learning objectives: ${objectives.slice(0, 8).join("; ")}
 
 FACT FENCE (strict): use ONLY facts supported by the subtopics and objectives above. Do not invent dates, names, figures or events. Write in clear Nigerian English with everyday local examples.
+PLAIN MATHS (strict): write all mathematics in plain text — e.g. x^2, sqrt(3400), V = 50 j, (a)/(b), x × y. NEVER use LaTeX: no backslash commands, no \( \) brackets, no $ signs.
 
 Return ONLY a raw JSON object, no markdown, no backticks:
 {
@@ -134,7 +135,7 @@ Topic: ${topicName}
 Key subtopics: ${subtopics.slice(0, 10).join("; ")}
 Learning objectives: ${objectives.slice(0, 8).join("; ")}
 
-Write a clear, exam-focused lesson for a JAMB candidate studying this topic for the first time.
+Write a clear, exam-focused lesson for a JAMB candidate studying this topic for the first time. Write all mathematics in plain text (x^2, sqrt(3400)) — never LaTeX or backslash commands.
 
 Return ONLY a raw JSON object, no markdown, no backticks, no explanation outside the JSON:
 {
@@ -199,10 +200,14 @@ export async function GET(
       .single();
     const cached = (data?.content ?? null) as AnyLesson | null;
     if (cached) {
-      const ok = (cached as LessonContentV2).version === 2
-        ? sanitizeLessonV2(cached as LessonContentV2) !== null
-        : isValidLesson(cached as LessonContentV1);
-      if (ok) return NextResponse.json({ ...base, ...cached });
+      if ((cached as LessonContentV2).version === 2) {
+        // Serve the sanitized copy — this also cleans LaTeX gibberish
+        // out of lessons cached before the plain-maths rule existed.
+        const clean = sanitizeLessonV2(cached as LessonContentV2);
+        if (clean) return NextResponse.json({ ...base, ...clean });
+      } else if (isValidLesson(cached as LessonContentV1)) {
+        return NextResponse.json({ ...base, ...cached });
+      }
       console.error("[lessons] Cached content failed validation, regenerating:", topicId);
     }
   } catch (err) {

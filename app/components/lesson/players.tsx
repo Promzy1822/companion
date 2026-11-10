@@ -70,9 +70,9 @@ function WorkedExample({ block, T }: { block: Extract<Block, { kind: "worked-exa
   return (
     <div style={{ ...card(T), background: T.s2 }}>
       <div style={eyebrow(T.primaryText)}><Calculator size={13} /> Worked example</div>
-      <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: "0 0 10px", lineHeight: 1.6 }}>{block.problem}</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: "0 0 10px", lineHeight: 1.6, overflowWrap: "break-word" }}>{block.problem}</p>
       {block.steps.map((s, i) => (
-        <p key={i} style={{ fontSize: 13.5, color: T.sub, margin: "0 0 6px", lineHeight: 1.6 }}>{s}</p>
+        <p key={i} style={{ fontSize: 13.5, color: T.sub, margin: "0 0 6px", lineHeight: 1.6, overflowWrap: "break-word" }}>{s}</p>
       ))}
       <p style={{ fontSize: 14, fontWeight: 700, color: T.successText, margin: "8px 0 0", lineHeight: 1.6 }}>{block.answer}</p>
     </div>
@@ -267,7 +267,7 @@ export function LessonBlockView({ block, T }: { block: Block; T: T }) {
         <div style={card(T)}>
           <h2 style={{ fontSize: 16, fontWeight: 800, color: T.text, margin: "0 0 10px", lineHeight: 1.35 }}>{block.heading}</h2>
           {block.paragraphs.map((p, i) => (
-            <p key={i} style={{ fontSize: 14, lineHeight: 1.7, color: T.text, margin: i === block.paragraphs.length - 1 ? 0 : "0 0 10px" }}>{p}</p>
+            <p key={i} style={{ fontSize: 14, lineHeight: 1.7, color: T.text, overflowWrap: "break-word", margin: i === block.paragraphs.length - 1 ? 0 : "0 0 10px" }}>{p}</p>
           ))}
         </div>
       );

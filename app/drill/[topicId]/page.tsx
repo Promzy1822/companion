@@ -53,7 +53,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
       setLoading(true);
       setError("");
       try {
-        const res  = await fetch(`/api/lessons/${topicId}`);
+        const res  = await fetch(`/api/drills/${topicId}`);
         const body = await res.json();
         if (cancelled) return;
         if (!res.ok) { setError(body.error || "Could not load this drill."); return; }
@@ -151,7 +151,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
         {order.length === 0 && (
           <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, textAlign: "center" }}>
             <p style={{ fontSize: 14, color: T.sub, marginBottom: 16, lineHeight: 1.6 }}>
-              No drill questions for this topic yet. Read the lesson first — its exercises become your drill.
+              No drill questions for this topic yet — drills are built from past questions and a fresh practice set, separate from the lesson's own check.
             </p>
             <Link href={`/lessons/${data.topicId}`} style={{ display: "inline-block", padding: "12px 22px", borderRadius: R.pill, background: T.primary, color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
               Open the lesson

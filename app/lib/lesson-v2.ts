@@ -92,8 +92,9 @@ function validBlock(b: LessonBlock): boolean {
 
 /** Drop invalid blocks (e.g. an unregistered simulator) instead of
  *  failing the whole lesson; fail only if the skeleton is unusable. */
-export function sanitizeLessonV2(c: LessonContentV2): LessonContentV2 | null {
-  if (!c || c.version !== 2 || !Array.isArray(c.blocks)) return null;
+export function sanitizeLessonV2(raw: LessonContentV2): LessonContentV2 | null {
+  if (!raw || raw.version !== 2 || !Array.isArray(raw.blocks)) return null;
+  const c = cleanStrings(raw) as LessonContentV2;
   const blocks = c.blocks.filter(validBlock);
   const sections = blocks.filter(b => b.kind === "section");
   if (sections.length < 1 || blocks.length < 2) return null;
@@ -103,6 +104,50 @@ export function sanitizeLessonV2(c: LessonContentV2): LessonContentV2 | null {
   if (!Array.isArray(c.exercises) || c.exercises.length < 3) return null;
   if (!c.exercises.every(validExercise)) return null;
   return { version: 2, blocks, exercises: c.exercises };
+}
+
+/** The generator sometimes emits raw LaTeX (\vec, \sqrt{...}, \( \)),
+ *  which renders as gibberish in the app's plain-text lesson view.
+ *  Convert the common fragments to readable plain maths. */
+export function cleanMathText(s: string): string {
+  if (typeof s !== "string" || !s.includes("\\")) return s;
+  return s
+    .replace(/\\\(|\\\)|\\\[|\\\]/g, "")
+    .replace(/\$\$?/g, "")
+    .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "($1)/($2)")
+    .replace(/\\sqrt\{([^{}]+)\}/g, "sqrt($1)")
+    .replace(/\\vec\s*\{?([A-Za-z])\}?/g, "$1")
+    .replace(/\\hat\s*\{?([A-Za-z])\}?/g, "$1")
+    .replace(/_\{([^{}]+)\}/g, "$1")
+    .replace(/\^\{([^{}]+)\}/g, "^$1")
+    .replace(/\\times/g, "×")
+    .replace(/\\approx/g, "≈")
+    .replace(/\\cdot/g, "·")
+    .replace(/\\div/g, "÷")
+    .replace(/\\,/g, " ")
+    .replace(/\\;/g, " ")
+    .replace(/\\ /g, " ")
+    .replace(/\\(?:left|right)/g, "")
+    .replace(/\\[a-zA-Z]+/g, "")
+    .replace(/[{}]/g, "")
+    .replace(/\s{2,}/g, " ");
+}
+
+function cleanStrings(v: unknown, key = ""): unknown {
+  if (typeof v === "string") return key === "kind" || key === "simKind" ? v : cleanMathText(v);
+  if (Array.isArray(v)) return v.map(x => cleanStrings(x, key));
+  if (v && typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(v)) out[k] = cleanStrings(val, k);
+    return out;
+  }
+  return v;
+}
+
+/** True when every exercise is structurally sound (shared by the
+ *  lessons and drills routes). */
+export function validExercises(list: unknown): list is LessonExercise[] {
+  return Array.isArray(list) && list.length > 0 && list.every(e => validExercise(e as LessonExercise));
 }
 
 export const GOLDEN_LESSONS: Record<string, LessonContentV2> = {

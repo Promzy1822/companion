@@ -47,7 +47,6 @@ export default function Subjects() {
   const T = palette(dark);
   const isMine = (s: typeof SUBJECTS[0]) => mySubjects.includes(s.id);
   const mine  = SUBJECTS.filter(isMine);
-  const other = SUBJECTS.filter(s => !isMine(s));
 
   const SubjectCard = (s: typeof SUBJECTS[0], mine: boolean) => (
     <Link key={s.id} href={`/learn/${s.id}`} style={{ textDecoration: "none" }}>
@@ -95,17 +94,6 @@ export default function Subjects() {
             </div>
             <div className="subject-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "24px" }}>
               {mine.map(s => SubjectCard(s, true))}
-            </div>
-          </>
-        )}
-
-        {other.length > 0 && (
-          <>
-            <div style={{ fontSize: "11px", color: T.sub, fontWeight: 700, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "1px" }}>
-              Other Subjects
-            </div>
-            <div className="subject-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              {other.map(s => SubjectCard(s, false))}
             </div>
           </>
         )}

@@ -40,13 +40,34 @@ const YEARS = ["All","2010","2011","2012","2013","2014","2015","2016","2017","20
 const CHEM_YEARS = ["All","1986","1987","1988","1989","1990","1991","1992","1993","1994","1995","1997","1998","1999","2000","2001","2002","2003","2004"];
 const yearsFor = (subj: string) => (subj === "chemistry" ? CHEM_YEARS : YEARS);
 
+/** Signup stores display names; these pages route on keys. */
+const DISPLAY_TO_KEY: Record<string, string> = {
+  "English Language": "english",
+  "Mathematics": "mathematics",
+  "Physics": "physics",
+  "Chemistry": "chemistry",
+  "Biology": "biology",
+  "Government": "government",
+  "Economics": "economics",
+  "Literature in English": "literature",
+};
+
 function QuestionsContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const initSubject  = searchParams.get("subject") || "biology";
+  const [myKeys] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const u = JSON.parse(localStorage.getItem("companion_user") || "{}");
+      const subs: string[] = u.subjects || [];
+      return subs.map(s => DISPLAY_TO_KEY[s]).filter(Boolean);
+    } catch { return []; }
+  });
+  const visibleSubjects = myKeys.length ? SUBJECTS.filter(s => myKeys.includes(s.key)) : SUBJECTS;
 
   const dark = useDark();
-  const [subject,   setSubject]   = useState(initSubject);
+  const [subject,   setSubject]   = useState(() => (myKeys.length && !myKeys.includes(initSubject) ? myKeys[0] : initSubject));
   const subjectRowRef = useRef<HTMLDivElement>(null);
   // Keep the selected subject tab visible: centre it in the tab row
   // whenever the subject changes (including first load).
@@ -215,7 +236,7 @@ function QuestionsContent() {
 
         {/* ── SUBJECT TABS ── */}
         <div ref={subjectRowRef} style={{ display:"flex", gap:8, marginBottom:12, overflowX:"auto", scrollbarWidth:"none", scrollPaddingLeft:20 }}>
-          {SUBJECTS.map(s=>(
+          {visibleSubjects.map(s=>(
             <button key={s.key} data-subject={s.key} onClick={()=>{ setSubject(s.key); setYear("All"); setCurrent(0); }} style={{
               flex:"0 0 auto", padding:"10px 14px", minHeight:44, display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap", borderRadius:12, cursor:"pointer",
               fontWeight:700, fontSize:13,

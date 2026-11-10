@@ -24,6 +24,18 @@ const SUBJECTS: { id: string; name: string; Icon: LucideIcon }[] = [
   { id: "literature",  name: "Literature in English", Icon: BookOpen },
 ];
 
+/** Signup stores display names; these pages route on keys. */
+const DISPLAY_TO_KEY: Record<string, string> = {
+  "English Language": "english",
+  "Mathematics": "mathematics",
+  "Physics": "physics",
+  "Chemistry": "chemistry",
+  "Biology": "biology",
+  "Government": "government",
+  "Economics": "economics",
+  "Literature in English": "literature",
+};
+
 export default function DrillPicker() {
   const dark = useDark();
   const T = palette(dark);
@@ -35,6 +47,15 @@ export default function DrillPicker() {
     return all;
   });
 
+  const [myKeys] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const u = JSON.parse(localStorage.getItem("companion_user") || "{}");
+      const subs: string[] = u.subjects || [];
+      return subs.map(s => DISPLAY_TO_KEY[s]).filter(Boolean);
+    } catch { return []; }
+  });
+  const visibleSubjects = myKeys.length ? SUBJECTS.filter(s => myKeys.includes(s.id)) : SUBJECTS;
   const topics = subject ? getTopics(subject) : [];
   const active = SUBJECTS.find(s => s.id === subject);
 
@@ -57,7 +78,7 @@ export default function DrillPicker() {
 
         {!subject && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {SUBJECTS.map(s => {
+            {visibleSubjects.map(s => {
               const color = subjectColor(s.id);
               const count = getTopics(s.id).length;
               return (

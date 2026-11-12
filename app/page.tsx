@@ -6,6 +6,7 @@ import Link from "next/link";
 import { NAVBAR_HEIGHT } from "./components/NavbarView";
 import { BOTTOM_NAV_HEIGHT } from "./components/BottomNavView";
 import StreakCard from "./components/StreakCard";
+import { FlameGreeting } from "./components/Flame";
 import CountdownBanner from "./components/CountdownBanner";
 import { Session } from "./lib/session";
 import { C, D, palette } from "./lib/design";
@@ -103,6 +104,9 @@ export default function Home() {
         <div style={{ color:"rgba(255,255,255,0.7)", fontSize:"13px", marginTop:"4px" }}>
           Target <span style={{ color:"#F97316", fontWeight:700 }}>{user?.target} pts</span>
           {user?.institution ? " · "+user.institution : ""}
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <FlameGreeting topic={user?.subjects?.[0]} />
         </div>
       </div>
 

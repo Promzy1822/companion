@@ -7,6 +7,8 @@ import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
 import { palette } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { Sync } from "../lib/sync";
+import { Flame } from "../components/Flame";
+import { mockResultFlame, readFlameStage } from "../lib/flame";
 
 interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; image?:string; }
 interface Section  { id:string; label:string; target:number; start:number; count:number; }
@@ -343,6 +345,8 @@ export default function MockExam() {
   if (phase==="result" && result) {
     const user = readUser();
     const gap = result.total400 - parseInt(user.target||"250");
+    const bestBefore = history.length > 1 ? Math.max(...history.slice(1).map(h => h.jambEquivalent)) : null;
+    const flameRes = mockResultFlame(result.total400, bestBefore);
     const shortSections = sections.filter(s=>s.count<s.target);
 
     return (
@@ -354,6 +358,9 @@ export default function MockExam() {
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginBottom:"4px"}}>Your JAMB Score</div>
           <div style={{color:"#fff",fontSize:"52px",fontWeight:900,letterSpacing:"-2px"}}>{result.total400}<span style={{fontSize:"22px",color:"rgba(255,255,255,0.6)"}}>/{result.max400}</span></div>
           <div style={{color:"#F97316",fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{result.score}/{result.total} questions correct</div>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+            <Flame stage={readFlameStage()} heat={50} mood={flameRes.mood} speech={flameRes.speech} size={88} />
+          </div>
           {result.max400===400 ? (
             <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
               {gap>=0 ? `${gap} pts above your target!` : `${Math.abs(gap)} pts below your target — keep practising`}

@@ -6,11 +6,13 @@ import {
   ArrowLeft, ChevronLeft, ChevronRight,
   CheckCircle, XCircle, RotateCcw,
   Languages, Sigma, Atom, FlaskConical, Dna, Landmark, TrendingUp, BookOpen,
-  Bot, Inbox, Trophy, ThumbsUp, ClipboardList,
+  Bot, Inbox, ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
 import { palette } from "../lib/design";
+import { Flame, FlameHeatMeter } from "../components/Flame";
+import { applyAnswer, completionFlame, readFlameStage, HEAT_START } from "../lib/flame";
 
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
 interface Question {
@@ -88,6 +90,8 @@ function QuestionsContent() {
   const [error,     setError]     = useState("");
   const [score,     setScore]     = useState({ correct: 0, total: 0 });
   const [answered,  setAnswered]  = useState<Record<number, string>>({});
+  const [heat, setHeat]       = useState(HEAT_START);
+  const [inRow, setInRow]     = useState(0);
 
   const loadQuestions = useCallback(async (subj: string, yr: string) => {
     setLoading(true);
@@ -97,6 +101,8 @@ function QuestionsContent() {
     setRevealed(false);
     setAnswered({});
     setScore({ correct: 0, total: 0 });
+    setHeat(HEAT_START);
+    setInRow(0);
     try {
       const yrParam = yr !== "All" ? `&year=${yr}` : "";
       const res  = await fetch(`/api/qbank/questions?subject=${subj}&limit=1000${yrParam}`);
@@ -133,6 +139,9 @@ function QuestionsContent() {
       correct: prev.correct + (opt === q.answer ? 1 : 0),
       total:   prev.total + 1,
     }));
+    const next = applyAnswer(heat, inRow, opt === q.answer);
+    setHeat(next.heat);
+    setInRow(next.inRow);
   };
 
   const goTo = (idx: number) => {
@@ -362,6 +371,13 @@ function QuestionsContent() {
                   {q.question}
                 </div>
 
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                  <Flame stage={readFlameStage()} heat={heat} mood={heat >= 75 ? "celebrating" : heat < 25 ? "sleepy" : "happy"} size={44} />
+                  <div style={{ flex: 1 }}>
+                    <FlameHeatMeter heat={heat} />
+                  </div>
+                </div>
+
                 {/* Options */}
                 <div style={{ display:"flex", flexDirection:"column", gap:9, marginBottom:14 }}>
                   {(["A","B","C","D"] as const).map(opt=>(
@@ -479,12 +495,8 @@ function QuestionsContent() {
                     marginTop:14, padding:"24px 20px", borderRadius:16, textAlign:"center",
                     background:T.surface, border:`1px solid ${T.border}`,
                   }}>
-                    <div style={{ marginBottom:10, display:"flex", justifyContent:"center" }}>
-                      {scorePct>=70
-                        ? <Trophy size={40} color="#E3B341" strokeWidth={1.5}/>
-                        : scorePct>=50
-                          ? <ThumbsUp size={40} color={T.primary} strokeWidth={1.5}/>
-                          : <BookOpen size={40} color={T.primary} strokeWidth={1.5}/>}
+                    <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}>
+                      <Flame stage={readFlameStage()} heat={heat} mood={completionFlame(score.correct, totalDone).mood} speech={completionFlame(score.correct, totalDone).speech} size={88} />
                     </div>
                     <div style={{ fontWeight:800, fontSize:17, color:T.text, marginBottom:6 }}>
                       Session Complete!

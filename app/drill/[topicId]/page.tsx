@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, Zap, BookOpen, LayoutGrid } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, BookOpen, LayoutGrid } from "lucide-react";
 import { NAVBAR_HEIGHT } from "../../components/NavbarView";
 import { BOTTOM_NAV_HEIGHT } from "../../components/BottomNavView";
 import { palette, R } from "../../lib/design";
 import { useDark } from "../../lib/theme";
 import { Progress } from "../../lib/progress";
+import { Flame, FlameHeatMeter } from "../../components/Flame";
+import { applyAnswer, completionFlame, readFlameStage, HEAT_START } from "../../lib/flame";
 
 interface Exercise {
   question: string;
@@ -45,6 +47,8 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [done, setDone]       = useState(false);
+  const [heat, setHeat]       = useState(HEAT_START);
+  const [inRow, setInRow]     = useState(0);
   const recordedRef           = useRef(false);
 
   useEffect(() => {
@@ -70,11 +74,16 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
 
   const currentQ = order[qIndex];
   const score = answers.filter(Boolean).length;
+  const drillFlame = completionFlame(score, order.length);
 
   const selectAnswer = (i: number) => {
     if (selected !== null || !currentQ) return;
     setSelected(i);
-    setAnswers(a => [...a, i === currentQ.correctIndex]);
+    const correct = i === currentQ.correctIndex;
+    setAnswers(a => [...a, correct]);
+    const next = applyAnswer(heat, inRow, correct);
+    setHeat(next.heat);
+    setInRow(next.inRow);
   };
 
   const finish = (finalAnswers: boolean[]) => {
@@ -105,6 +114,8 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
     setSelected(null);
     setAnswers([]);
     setDone(false);
+    setHeat(HEAT_START);
+    setInRow(0);
     recordedRef.current = false;
   };
 
@@ -169,6 +180,12 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
                 Score {score}/{answers.length}
               </div>
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <Flame stage={readFlameStage()} heat={heat} mood={heat >= 75 ? "celebrating" : heat < 25 ? "sleepy" : "happy"} size={44} />
+              <div style={{ flex: 1 }}>
+                <FlameHeatMeter heat={heat} />
+              </div>
+            </div>
             <div style={{ height: 4, borderRadius: 2, background: T.s3, overflow: "hidden", marginBottom: 14 }}>
               <div style={{ height: "100%", width: `${Math.round(((qIndex) / order.length) * 100)}%`, background: T.accent, transition: "width 0.3s" }} />
             </div>
@@ -212,7 +229,9 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
 
         {done && (
           <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, textAlign: "center" }}>
-            <Zap size={36} color={T.accent} style={{ marginBottom: 10 }} />
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+              <Flame stage={readFlameStage()} heat={heat} mood={drillFlame.mood} speech={drillFlame.speech} size={88} />
+            </div>
             <h2 style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 4 }}>Drill complete</h2>
             <p style={{ fontSize: 14, color: T.sub, marginBottom: 18 }}>
               You scored {score}/{order.length} on {data.topicName}.

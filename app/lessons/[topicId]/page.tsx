@@ -9,6 +9,8 @@ import { LessonBlockView } from "../../components/lesson/players";
 import { C, palette, R, S } from "../../lib/design";
 import { useDark } from "../../lib/theme";
 import { Progress } from "../../lib/progress";
+import { Flame, FlameHeatMeter } from "../../components/Flame";
+import { applyAnswer, completionFlame, readFlameStage, HEAT_START } from "../../lib/flame";
 import type { LessonBlock } from "../../lib/lesson-v2";
 
 interface Exercise {
@@ -46,6 +48,8 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const [qIndex, setQIndex]     = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers]   = useState<boolean[]>([]);
+  const [heat, setHeat]       = useState(HEAT_START);
+  const [inRow, setInRow]     = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +63,8 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         if (!res.ok) { setError(body.error || "Could not load this lesson."); return; }
         setData(body);
         setStage(body.version === 2 ? "learn" : (body.videoId ? "video" : "summary"));
+        setHeat(HEAT_START);
+        setInRow(0);
       } catch {
         if (!cancelled) setError("Network error. Please try again.");
       } finally {
@@ -102,7 +108,11 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const selectAnswer = (i: number) => {
     if (selected !== null) return;
     setSelected(i);
-    setAnswers(a => [...a, i === currentQ.correctIndex]);
+    const correct = i === currentQ.correctIndex;
+    setAnswers(a => [...a, correct]);
+    const next = applyAnswer(heat, inRow, correct);
+    setHeat(next.heat);
+    setInRow(next.inRow);
   };
 
   const completeLesson = () => {
@@ -223,6 +233,12 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
             <div style={{ fontSize: 12, color: T.sub, fontWeight: 600, marginBottom: 8 }}>
               Question {qIndex + 1} of {exercises.length}
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <Flame stage={readFlameStage()} heat={heat} mood={heat >= 75 ? "celebrating" : heat < 25 ? "sleepy" : "happy"} size={44} />
+              <div style={{ flex: 1 }}>
+                <FlameHeatMeter heat={heat} />
+              </div>
+            </div>
             <p style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 14 }}>
               {currentQ.question}
             </p>
@@ -267,7 +283,9 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
 
         {stage === "done" && (
           <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14, textAlign: "center" }}>
-            <CheckCircle2 size={40} color={C.success} style={{ marginBottom: 10 }} />
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+              <Flame stage={readFlameStage()} heat={heat} mood={completionFlame(score, exercises.length).mood} speech={completionFlame(score, exercises.length).speech} size={88} />
+            </div>
             <h2 style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 4 }}>Lesson complete!</h2>
             {exercises.length > 0 && (
               <p style={{ fontSize: 14, color: T.sub, marginBottom: 18 }}>

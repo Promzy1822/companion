@@ -21,10 +21,37 @@ const ICONS: Record<string, LucideIcon> = {
   economics: TrendingUp, literature: BookOpen,
 };
 
+/** Signup stores display names; this component routes on keys. One explicit map — no string surgery. */
+const DISPLAY_TO_KEY: Record<string, string> = {
+  "English Language": "english",
+  "Mathematics": "mathematics",
+  "Physics": "physics",
+  "Chemistry": "chemistry",
+  "Biology": "biology",
+  "Government": "government",
+  "Economics": "economics",
+  "Literature in English": "literature",
+};
+
 export default function CoverageView() {
 
   const searchParams = useSearchParams();
-  const initSubject  = searchParams.get("subject") || "mathematics";
+  const [myKeys] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const u = JSON.parse(localStorage.getItem("companion_user") || "{}");
+      const subs: string[] = u.subjects || [];
+      return subs.map(s => DISPLAY_TO_KEY[s]).filter(Boolean);
+    } catch { return []; }
+  });
+  // Visible subjects: the student's own selection, or all 8 when nothing stored.
+  const visibleEntries = myKeys.length
+    ? Object.entries(JAMB_SYLLABUS).filter(([key]) => myKeys.includes(key))
+    : Object.entries(JAMB_SYLLABUS);
+  const initSubject  = (() => {
+    const s = searchParams.get("subject") || "mathematics";
+    return (myKeys.length && !myKeys.includes(s)) ? myKeys[0] : s;
+  })();
 
   const dark = useDark();
   const [activeSubject, setActiveSubject] = useState(initSubject);
@@ -40,13 +67,13 @@ export default function CoverageView() {
 
   useEffect(() => {
     if (searchQuery.length >= 2) {
-      setSearchResults(searchSyllabus(searchQuery));
+      setSearchResults(searchSyllabus(searchQuery).filter(r => !myKeys.length || myKeys.includes(r.subjectKey)));
       setView("search");
     } else if (searchQuery.length === 0) {
       setView("topics");
       setSearchResults([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, myKeys]);
 
   const toggleStudied = (id: string) => {
     Progress.setTopicDone(id, !studied.has(id), false);
@@ -59,8 +86,11 @@ export default function CoverageView() {
   const done     = topics.filter(t => studied.has(t.id)).length;
   const pct      = topics.length ? Math.round((done / topics.length) * 100) : 0;
 
-  // Overall progress
-  const allTopicIds  = Object.values(JAMB_SYLLABUS).flatMap(s => s.topics.map(t => t.id));
+  // Overall progress — over the student's visible subjects only
+  const allTopicIds  = visibleEntries.flatMap(([, s]) => s.topics.map(t => t.id));
+  const visibleTopicCount = visibleEntries.reduce((n, [, s]) => n + s.topics.length, 0);
+  const visibleSubtopicCount = visibleEntries.reduce((n, [, s]) => n + s.topics.reduce((m, t) => m + t.subtopics.length, 0), 0);
+  const visibleObjectiveCount = visibleEntries.reduce((n, [, s]) => n + s.topics.reduce((m, t) => m + t.objectives.length, 0), 0);
   const totalDone    = allTopicIds.filter(id => studied.has(id)).length;
   const overallPct   = Math.round((totalDone / allTopicIds.length) * 100);
 
@@ -73,7 +103,7 @@ export default function CoverageView() {
           <div style={{ flex:1 }}>
             <div style={{ color:"#fff", fontWeight:800, fontSize:17 }}>Syllabus Coverage</div>
             <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11 }}>
-              <Rich>{SYLLABUS_STATS.totalTopics}</Rich> topics · <Rich>{SYLLABUS_STATS.totalSubtopics}</Rich> subtopics · Official 2025 edition
+              <Rich>{visibleTopicCount}</Rich> topics · <Rich>{visibleSubtopicCount}</Rich> subtopics · Official 2025 edition
             </div>
           </div>
           <div style={{ textAlign:"right" }}>
@@ -101,7 +131,7 @@ export default function CoverageView() {
         {/* Subject tabs */}
         {view === "topics" && (
           <div style={{ display:"flex", gap:6, overflowX:"auto", scrollbarWidth:"none", paddingBottom:1 }}>
-            {Object.entries(JAMB_SYLLABUS).map(([key, s]) => {
+            {visibleEntries.map(([key, s]) => {
               const subDone = s.topics.filter(t => studied.has(t.id)).length;
               const subPct  = Math.round((subDone / s.topics.length) * 100);
               return (
@@ -268,11 +298,11 @@ export default function CoverageView() {
                             <div style={{ fontSize:11, color:T.sub, lineHeight:1.5 }}>
                               <strong style={{ color:T.primary }}>Related topics:</strong>{" "}
                               {topic.cross_subject_links.map((lid, i) => {
-                                const found = Object.values(JAMB_SYLLABUS).flatMap(s => s.topics).find(t => t.id === lid);
+                                const found = visibleEntries.flatMap(([, s]) => s.topics).find(t => t.id === lid);
                                 return found ? (
                                   <span key={lid}>
                                     {i > 0 && ", "}
-                                    <button onClick={()=>{ const s = Object.entries(JAMB_SYLLABUS).find(([,sv]) => sv.topics.some(t=>t.id===lid)); if(s){ setActiveSubject(s[0]); setExpandedTopic(lid); }}} style={{ background:"none", border:"none", color:T.primary, cursor:"pointer", fontSize:11, fontWeight:600, padding:0 }}>
+                                    <button onClick={()=>{ const s = visibleEntries.find(([,sv]) => sv.topics.some(t=>t.id===lid)); if(s){ setActiveSubject(s[0]); setExpandedTopic(lid); }}} style={{ background:"none", border:"none", color:T.primary, cursor:"pointer", fontSize:11, fontWeight:600, padding:0 }}>
                                       <Rich>{found.topic}</Rich>
                                     </button>
                                   </span>
@@ -307,7 +337,7 @@ export default function CoverageView() {
             {/* Source note */}
             <div style={{ margin:"14px 0", padding:"12px 14px", borderRadius:12, background:T.s2, border:`1px solid ${T.border}` }}>
               <div style={{ fontSize:11, color:T.sub, lineHeight:1.6 }}>
-                <strong style={{ color:T.text }}>Source:</strong> <Rich>{SYLLABUS_STATS.source}</Rich> · <Rich>{SYLLABUS_STATS.totalSubjects}</Rich> subjects · <Rich>{SYLLABUS_STATS.totalTopics}</Rich> topics · <Rich>{SYLLABUS_STATS.totalSubtopics}</Rich> subtopics · <Rich>{SYLLABUS_STATS.totalObjectives}</Rich> learning objectives. All Companion lessons, mock exams, and study plans are aligned to this syllabus.
+                <strong style={{ color:T.text }}>Source:</strong> <Rich>{SYLLABUS_STATS.source}</Rich> · <Rich>{visibleEntries.length}</Rich> subjects · <Rich>{visibleTopicCount}</Rich> topics · <Rich>{visibleSubtopicCount}</Rich> subtopics · <Rich>{visibleObjectiveCount}</Rich> learning objectives. All Companion lessons, mock exams, and study plans are aligned to this syllabus.
               </div>
             </div>
           </div>

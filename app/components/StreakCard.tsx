@@ -67,14 +67,14 @@ export default function StreakCard({ darkMode: _darkMode }: Props) {
         <div>
           <div style={{ color: T.text, fontSize: TY.xl, fontWeight: FW.bold, lineHeight: 1.1 }}>
             {streak.current}
-            <span style={{ fontSize: TY.sm, color: T.sub, fontWeight: FW.medium }}> days</span>
+            <span style={{ fontSize: TY.sm, color: T.sub, fontWeight: FW.medium }}> day{streak.current === 1 ? "" : "s"}</span>
           </div>
           <div style={{ color: T.sub, fontSize: TY.xs, marginTop: 2 }}>Current streak</div>
         </div>
         <div>
           <div style={{ color: T.text, fontSize: TY.xl, fontWeight: FW.bold, lineHeight: 1.1 }}>
             {streak.longest}
-            <span style={{ fontSize: TY.sm, color: T.sub, fontWeight: FW.medium }}> days</span>
+            <span style={{ fontSize: TY.sm, color: T.sub, fontWeight: FW.medium }}> day{streak.longest === 1 ? "" : "s"}</span>
           </div>
           <div style={{ color: T.sub, fontSize: TY.xs, marginTop: 2 }}>Best</div>
         </div>

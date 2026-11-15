@@ -399,7 +399,7 @@ export function FlameGreeting({ topic, size = 84, showSpeech = true }: { topic?:
         dimmed={state.dimmed}
       />
       <div style={{ fontSize: 11, color: T.sub, marginTop: 6, textAlign: "center" }}>
-        Flame · {STAGE_LABEL[state.stage]} stage
+        {STAGE_LABEL[state.stage]}
       </div>
       {next ? (
         <div style={{ fontSize: 11, color: T.muted, marginTop: 2, textAlign: "center" }}>

@@ -10,7 +10,7 @@ import { Session } from "./lib/session";
 import { palette, TY, LH, FW, SP, R } from "./lib/design";
 import { getTopics } from "./lib/syllabus";
 import { Progress, todayWAT } from "./lib/progress";
-import { Bot, CalendarDays, ChevronRight, Calculator, Crosshair, Target } from "lucide-react";
+import { Bot, CalendarDays, ChevronRight, Crosshair, Target } from "lucide-react";
 
 // Home rebuild (Home v2 sample, structural): one hero, then .home-cols.
 // Main column: Up next, Today's Plan, Countdown. Side column: quick links,
@@ -368,19 +368,6 @@ export default function Home() {
           {/* Streak — compact stat, no calendar */}
           <StreakCard />
 
-          {/* Score Calculator moved out of Home (now on the Practice hub) */}
-          <Link href="/practice" style={{ textDecoration: "none", display: "block" }}>
-            <div style={{ ...card, padding: SP[4], display: "flex", alignItems: "center", gap: SP[3] }}>
-              <div style={tile(T.primaryTint)}>
-                <Calculator size={20} color={T.primary} strokeWidth={1.8} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: FW.bold, color: T.text, fontSize: TY.base }}>Score Calculator</div>
-                <div style={{ fontSize: TY.xs, color: T.sub, marginTop: 2 }}>Moved to Practice</div>
-              </div>
-              <ChevronRight size={18} color={T.sub} />
-            </div>
-          </Link>
 
         </div>
       </div>

@@ -30,10 +30,42 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
     name:"", email:"", password:"", institution:"", course:"",
     subjects:[] as string[], target:"260", deadline:"", selfRating:"2",
   });
+  const [wizardTarget, setWizardTarget] = useState(false);
 
   useEffect(() => {
     try { if (Session.getUser()) router.replace("/"); } catch {}
   }, [router]);
+
+  // Landing wizard prefill — the guided-steps wizard on /landing saves the
+  // student's answers to localStorage and routes here; apply them once so
+  // signup never re-asks. The key is removed after reading so a stale
+  // wizard run never prefills a later signup.
+  useEffect(() => {
+    if (initialMode !== "signup") return;
+    try {
+      const raw = localStorage.getItem("companion_wizard_answers");
+      if (!raw) return;
+      localStorage.removeItem("companion_wizard_answers");
+      const w = JSON.parse(raw);
+      const patch: { subjects?: string[]; target?: string; deadline?: string } = {};
+      if (Array.isArray(w.subjects)) {
+        const subs = w.subjects.filter((s: unknown) => typeof s === "string" && ALL_SUBJECTS.includes(s)).slice(0, 3);
+        if (subs.length === 3) patch.subjects = subs;
+      }
+      if (typeof w.target === "string" && /^\d+$/.test(w.target)) {
+        const t = parseInt(w.target, 10);
+        if (t >= 180 && t <= 400) patch.target = String(t);
+      }
+      if (typeof w.deadline === "string" && /^\d{4}-\d{2}-\d{2}$/.test(w.deadline)) {
+        const d = new Date(w.deadline + "T00:00:00");
+        if (!isNaN(d.getTime()) && d.getTime() > Date.now()) patch.deadline = w.deadline;
+      }
+      if (Object.keys(patch).length === 0) return;
+      setForm((p) => ({ ...p, ...patch }));
+      if (patch.target) setWizardTarget(true);
+      setInfo("Your plan is filled in — subjects, target score and exam date came from the steps you just finished. Change anything you like.");
+    } catch {}
+  }, [initialMode]);
 
   // /auth/confirm sends failed email links here with ?error=reset_link_invalid
   useEffect(() => {
@@ -49,9 +81,9 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
     if (form.institution && form.course && form.institution !== "Other" && form.course !== "Other") {
       const c = getCutoff(form.institution, form.course);
       setRec({ text: getSmartRecommendation(form.institution, form.course), minJamb: c.minJamb, recJamb: c.recommendedJamb, competition: c.competition });
-      update("target", String(c.recommendedJamb));
+      if (!wizardTarget) update("target", String(c.recommendedJamb));
     } else setRec(null);
-  }, [form.institution, form.course]);
+  }, [form.institution, form.course, wizardTarget]);
 
   const update = (k: string, v: string|string[]) => setForm(p => ({...p, [k]: v}));
 
@@ -287,6 +319,7 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
                   <div key={s} style={{ flex:1, height:"4px", borderRadius:"2px", background:s<=step?"#6366F1":"#2A2F45", transition:"background 0.3s" }}/>
                 ))}
               </div>
+              {info && <div style={{ ...infoBox, marginBottom:"16px" }}><CheckCircle size={15} strokeWidth={2} style={{ flexShrink:0, marginTop:"1px" }} /><span>{info}</span></div>}
 
               {step === 1 && (
                 <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>

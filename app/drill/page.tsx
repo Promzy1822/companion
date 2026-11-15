@@ -38,7 +38,7 @@ const DISPLAY_TO_KEY: Record<string, string> = {
 
 export default function DrillPicker() {
   const dark = useDark();
-  const T = palette(dark);
+  const T = palette();
   const [subject, setSubject] = useState<string | null>(null);
   const [completed] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set<string>();

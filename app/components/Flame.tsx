@@ -18,13 +18,13 @@
 import { useEffect, useId, useState } from "react";
 import { palette, R } from "../lib/design";
 import type { FlameStage, FlameMood, FlameState, HeatBand } from "../lib/flame";
-import { getFlameState, heatBand, homeFlame } from "../lib/flame";
+import { STAGE_LABEL, getFlameState, heatBand, homeFlame, homeHeat, nextStageProgress } from "../lib/flame";
 
 const HEAT_LABEL: Record<HeatBand, string> = {
   cold: "Cold",
   warm: "Warm",
   hot: "Hot",
-  blazing: "Blazing",
+  blazing: "White-hot",
 };
 
 const STAGE_SCALE: Record<FlameStage, number> = {
@@ -74,7 +74,7 @@ const KEYFRAMES = `
 @keyframes flameBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 @keyframes flameBounce { 0%,100% { transform: translateY(0) scale(1,1); } 30% { transform: translateY(-14px) scale(0.96,1.05); } 60% { transform: translateY(0) scale(1.04,0.94); } }
 @keyframes flameSway { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-3px) rotate(2deg); } }
-@keyframes flameTremble { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-1.5px); } 75% { transform: translateX(1.5px); } }
+@keyframes flameTremble { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
 @keyframes flameFlicker { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.05); } }
 @keyframes flameTwinkle { 0%,100% { opacity: 0.25; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.15); } }
 @keyframes flameBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.08); } }
@@ -86,14 +86,15 @@ const KEYFRAMES = `
 function motionFor(mood: FlameMood, band: HeatBand): string {
   if (band === "blazing" || mood === "celebrating") return "flameBounce 0.9s ease-in-out infinite";
   if (mood === "sleepy") return "flameSway 3.6s ease-in-out infinite";
-  if (mood === "worried") return "flameTremble 0.4s linear infinite";
+  if (mood === "worried") return "flameTremble 1.2s linear infinite";
   if (mood === "thinking") return "flameBob 3s ease-in-out infinite";
   if (mood === "encouraging") return "flameBob 2.8s ease-in-out infinite";
   return "flameBob 2.4s ease-in-out infinite";
 }
 
 function Eyes({ mood, band }: { mood: FlameMood; band: HeatBand }) {
-  const face = "#1F1156";
+  // F3: indigo is invisible on the dark red-brown cold body — use pale gold.
+  const face = band === "cold" ? "#FDE68A" : "#1F1156";
   // Cold always droops into sleepy eyes, whatever the mood.
   if (band === "cold" || mood === "sleepy") {
     return (
@@ -136,7 +137,8 @@ function Eyes({ mood, band }: { mood: FlameMood; band: HeatBand }) {
 }
 
 function Mouth({ mood, band }: { mood: FlameMood; band: HeatBand }) {
-  const face = "#1F1156";
+  // F3: indigo is invisible on the dark red-brown cold body — use pale gold.
+  const face = band === "cold" ? "#FDE68A" : "#1F1156";
   if (band === "cold" || mood === "sleepy") {
     return <circle cx={60} cy={110} r={2.5} fill={face} />;
   }
@@ -191,21 +193,25 @@ export function Flame({
   speech,
   dimmed = false,
 }: FlameProps) {
-  const T = palette(true);
+  const T = palette();
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const band = heatBand(heat);
   const [top, mid, bottom] = BODY_COLORS[band];
-  const scale = STAGE_SCALE[stage] * HEAT_SCALE[band] * (dimmed ? 0.85 : 1);
-  const showArms = mood === "celebrating" || stage === "flame" || stage === "blazing";
+  // F5: growth is expressed through glow/colour/sparkles, not layout size.
+  const scale = Math.min(1.15, Math.max(0.8, STAGE_SCALE[stage] * HEAT_SCALE[band] * (dimmed ? 0.85 : 1)));
+  // F4: arms always shown — anatomy must not depend on stage.
+  const showArms = true;
   const showSparkles = band === "blazing" || mood === "celebrating";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <style>{KEYFRAMES}</style>
       {speech ? (
-        <div style={{ marginBottom: 10, maxWidth: 280, textAlign: "center" }}>
+        <div style={{ marginBottom: 10, maxWidth: 280, textAlign: "center", position: "relative" }}>
           <div
             style={{
+              position: "relative",
+              zIndex: 1,
               background: T.surface,
               border: `1px solid ${T.border}`,
               borderRadius: R.lg,
@@ -220,13 +226,16 @@ export function Flame({
           </div>
           <div
             style={{
+              position: "absolute",
+              left: "50%",
+              bottom: -6,
               width: 12,
               height: 12,
+              marginLeft: -6,
               background: T.surface,
-              borderRight: `1px solid ${T.border}`,
-              borderBottom: `1px solid ${T.border}`,
+              border: `1px solid ${T.border}`,
               transform: "rotate(45deg)",
-              margin: "-7px auto 0",
+              zIndex: 0,
             }}
           />
         </div>
@@ -245,7 +254,7 @@ export function Flame({
         <div
           className="flame-anim"
           style={{
-            animation: `flameFlicker ${FLICKER_SECONDS[band]} ease-in-out infinite`,
+            animation: band === "blazing" ? "none" : `flameFlicker ${FLICKER_SECONDS[band]} ease-in-out infinite`,
             transformOrigin: "50% 100%",
             lineHeight: 0,
           }}
@@ -317,7 +326,7 @@ export function Flame({
 
 /** Compact heat meter for quiz / drill question screens. */
 export function FlameHeatMeter({ heat }: { heat: number }) {
-  const T = palette(true);
+  const T = palette();
   const band = heatBand(heat);
   return (
     <div style={{ width: "100%" }}>
@@ -349,11 +358,13 @@ export function FlameHeatMeter({ heat }: { heat: number }) {
             height: "100%",
             width: `${Math.max(0, Math.min(100, heat))}%`,
             borderRadius: R.pill,
-            background:
-              "linear-gradient(90deg,#991B1B,#F97316,#FDE68A,#FFFFFF)",
+            background: BODY_COLORS[band][1],
             transition: "width 0.45s ease",
           }}
         />
+      </div>
+      <div style={{ fontSize: 12, color: T.sub, marginTop: 6, lineHeight: 1.5 }}>
+        Correct answers heat Flame up (+20). Wrong answers cool it down (−25).
       </div>
     </div>
   );
@@ -364,8 +375,11 @@ export function FlameHeatMeter({ heat }: { heat: number }) {
  * picks mood + speech for the time of day, and renders Flame.
  * Renders nothing until mounted (avoids a hydration mismatch, like StreakCard).
  * `topic` (e.g. the student's first subject) feeds the midday nudge.
+ * `size` is the mascot base size (default 84); `showSpeech={false}` hides
+ * the speech bubble (e.g. where Home wants the mascot without copy).
  */
-export function FlameGreeting({ topic }: { topic?: string }) {
+export function FlameGreeting({ topic, size = 84, showSpeech = true }: { topic?: string; size?: number; showSpeech?: boolean }) {
+  const T = palette();
   const [state, setState] = useState<FlameState | null>(null);
   useEffect(() => {
     setState(getFlameState());
@@ -373,14 +387,25 @@ export function FlameGreeting({ topic }: { topic?: string }) {
   if (!state) return null;
   const hour = new Date().getHours();
   const { mood, speech } = homeFlame(state, hour, topic);
+  const next = nextStageProgress(state);
   return (
-    <Flame
-      stage={state.stage}
-      heat={50}
-      mood={mood}
-      speech={speech}
-      size={84}
-      dimmed={state.dimmed}
-    />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <Flame
+        stage={state.stage}
+        heat={homeHeat(state)}
+        mood={mood}
+        speech={showSpeech ? speech : undefined}
+        size={size}
+        dimmed={state.dimmed}
+      />
+      <div style={{ fontSize: 11, color: T.sub, marginTop: 6, textAlign: "center" }}>
+        Flame · {STAGE_LABEL[state.stage]} stage
+      </div>
+      {next ? (
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2, textAlign: "center" }}>
+          {next}
+        </div>
+      ) : null}
+    </div>
   );
 }

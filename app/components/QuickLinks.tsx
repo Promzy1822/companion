@@ -3,10 +3,10 @@ import Link from "next/link";
 import {
   Bot, BookOpen, PenTool, ClipboardList, Lightbulb, CalendarDays,
 } from "lucide-react";
-import { C, palette } from "../lib/design";
+import { D, palette } from "../lib/design";
 
 const LINKS = [
-  { icon: Bot,           label: "Ask AI",     sub: "24/7 tutor",     href: "/ai",                  color: C.primary,  bg: "#EEF2FF" },
+  { icon: Bot,           label: "Ask AI",     sub: "24/7 tutor",     href: "/ai",                  color: D.primary,  bg: "#EEF2FF" },
   { icon: BookOpen,      label: "Learn",      sub: "Video lessons",  href: "/subjects",  color: "#0D8050",  bg: "#E6F4EA" },
   { icon: PenTool,       label: "Practice",   sub: "Past questions", href: "/practice",color: "#7B3FBE", bg: "#F3E8FF" },
   { icon: ClipboardList, label: "Mock Exam",  sub: "Timed test",     href: "/mock",                 color: "#C75B21",  bg: "#FFF0E6" },
@@ -15,7 +15,7 @@ const LINKS = [
 ];
 
 export default function QuickLinks({ darkMode = false }: { darkMode?: boolean }) {
-  const T = palette(darkMode);
+  const T = palette();
 
   return (
     <div style={{

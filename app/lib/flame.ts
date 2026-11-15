@@ -6,7 +6,7 @@
 // No new tables, no new API routes, no new dependencies.
 //
 // Two independent dimensions (exactly as in the approved sample):
-//   - STAGE is long-term growth: Ember -> Spark -> Flame -> Blazing.
+//   - STAGE is long-term growth: Ember -> Spark -> Flame -> Inferno.
 //     It moves over days, from streak + mock history. A broken streak drops
 //     exactly one stage; no study for 2 days dims the flame.
 //   - HEAT is the live session state: 0-100, starts at 40 (Warm) in a quiz.
@@ -31,7 +31,7 @@ export const STAGE_LABEL: Record<FlameStage, string> = {
   ember: "Ember",
   spark: "Spark",
   flame: "Flame",
-  blazing: "Blazing Flame",
+  blazing: "Inferno",
 };
 
 // Stage unlock rules — exactly as approved in the sample.
@@ -46,11 +46,11 @@ export const STAGE_SPEECH: Record<FlameStage, string> = {
   ember: "Just lit. Feed me a little study every day.",
   spark: "Growing nicely. Three days in a row!",
   flame: "A full week — look how tall I've grown!",
-  blazing: "Blazing! Fourteen days and 300+ — you're unstoppable.",
+  blazing: "Inferno! Fourteen days and 300+ — that's the hardest combination in the app.",
 };
 
 export const HEAT_SPEECH: Record<HeatBand, string> = {
-  cold: "I'm going out… get one right!",
+  cold: "One right answer relights me — try the next one.",
   warm: "Nice and steady. Keep going.",
   hot: "Yes! I'm roaring now!",
   blazing: "White-hot! Nothing can stop us!",
@@ -59,7 +59,7 @@ export const HEAT_SPEECH: Record<HeatBand, string> = {
 export const MOOD_SPEECH: Record<FlameMood, string> = {
   happy: "Ready when you are.",
   celebrating: "That's the one! You smashed it.",
-  sleepy: "No study today yet… I'll wait.",
+  sleepy: "A quick drill brings me back.",
   worried: "Your streak ends tonight. One quick drill saves it.",
   thinking: "Hmm… which topic next?",
   encouraging: "That section was rough. One more drill and it's yours.",
@@ -89,7 +89,7 @@ export function applyAnswer(
 }
 
 export function celebrateSpeech(score: number, total: number): string {
-  return `${score}/${total} — that's the one! You smashed it.`;
+  return `${score}/${total} — nice work, that's your best yet.`;
 }
 
 export function worriedSpeech(streak: number): string {
@@ -244,6 +244,65 @@ export function getFlameState(data?: FlameData): FlameState {
   return { ...d, stage, dimmed };
 }
 
+/**
+ * Home heat, derived from real data — never a hardcoded constant.
+ *
+ * Today's correct-answer rate, from the streak activity log:
+ * Progress.recordActivity logs { correct, total } per practice answer
+ * (recordAnswer logs one entry per answered question), so summing today's
+ * entries gives today's correct/total. Mapped 0-100.
+ *
+ * When there is no answer data today, the fallback is the stage band —
+ * long-term growth, not a live session — so the Home flame's warmth
+ * reflects growth: ember 30, spark 45, flame 65, blazing 85.
+ */
+const STAGE_HEAT: Record<FlameStage, number> = {
+  ember: 30,
+  spark: 45,
+  flame: 65,
+  blazing: 85,
+};
+
+export function homeHeat(state: FlameState): number {
+  try {
+    const s = Progress.getStreak();
+    const today = todayWAT();
+    const acts = s.activityLog?.[today] ?? [];
+    let correct = 0;
+    let total = 0;
+    for (const a of acts) {
+      if (typeof a.correct === "number" && typeof a.total === "number") {
+        correct += a.correct;
+        total += a.total;
+      }
+    }
+    if (total > 0) return Math.round((correct / total) * 100);
+  } catch {}
+  return STAGE_HEAT[state.stage];
+}
+
+/**
+ * One-line "what's next" for the Home caption, derived from STAGE_RULE.
+ * Returns null at the top stage (Inferno).
+ */
+export function nextStageProgress(state: FlameState): string | null {
+  if (state.stage === "blazing") return null;
+  if (state.stage === "ember") {
+    const n = Math.max(1, 3 - state.streak);
+    return `${n} more day${n === 1 ? "" : "s"} to Spark`;
+  }
+  if (state.stage === "spark") {
+    const n = Math.max(1, 7 - state.streak);
+    return `${n} more day${n === 1 ? "" : "s"} to Flame`;
+  }
+  // stage === "flame": Inferno needs a 14+ day streak AND best mock 300+.
+  if (state.streak < 14) {
+    const n = 14 - state.streak;
+    return `${n} more day${n === 1 ? "" : "s"} to Inferno`;
+  }
+  return "Best mock 300+ needed for Inferno";
+}
+
 export interface HomeFlame {
   mood: FlameMood;
   speech: string;
@@ -258,6 +317,14 @@ export function homeFlame(
   hour: number,
   topic?: string
 ): HomeFlame {
+  if (state.dimmed) {
+    // Flame has gone grey after 2+ days away — say why, not just that it is sad.
+    const n = state.daysSinceStudy ?? 2;
+    return {
+      mood: "sleepy",
+      speech: `I miss you — ${n} days away dims my flame. One drill relights me.`,
+    };
+  }
   if (!state.studiedToday && state.streak >= 3 && hour >= 17) {
     // Evening, streak alive but no study today — streak-save warning.
     return { mood: "worried", speech: worriedSpeech(state.streak) };
@@ -273,7 +340,7 @@ export function homeFlame(
     // Midday, idle — gentle nudge towards one drill.
     return {
       mood: "thinking",
-      speech: `You've got 20 minutes free. One drill on ${topic}?`,
+      speech: `Got a few minutes? One drill on ${topic} would help most.`,
     };
   }
   if (!state.studiedToday) {

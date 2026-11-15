@@ -20,7 +20,7 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
     return all;
   });
 
-  const T = palette(dark);
+  const T = palette();
   const subjectInfo = getSubjectSyllabus(subject);
   const topics = getTopics(subject);
   const doneCount = topics.filter(t => completed.has(t.id)).length;

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor:   "#4F46E5",
+  themeColor:   "#1F1156",
   width:        "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -194,7 +194,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           #companion-splash {
             position: fixed;
             inset: 0;
-            z-index: 99999;
+            z-index: 500;
             background: #1F1156;
             display: flex;
             flex-direction: column;

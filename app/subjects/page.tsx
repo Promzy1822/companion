@@ -44,7 +44,7 @@ export default function Subjects() {
     } catch { return []; }
   });
 
-  const T = palette(dark);
+  const T = palette();
   const isMine = (s: typeof SUBJECTS[0]) => mySubjects.includes(s.id);
   const mine  = SUBJECTS.filter(isMine);
 

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, Check, CheckCircle2, Clock, PartyPopper, ArrowRight, ClipboardList, Trophy, BarChart3, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Check, CheckCircle2, Clock, PartyPopper, ArrowRight, ClipboardList, Trophy, BarChart3, AlertTriangle, XCircle } from "lucide-react";
 import { NAVBAR_HEIGHT } from "../components/NavbarView";
 import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
 import { palette } from "../lib/design";
@@ -150,7 +150,7 @@ export default function MockExam() {
   const timePct = (timeLeft/TOTAL_TIME)*100;
   const timerCol = timePct>50?"#31A24C":timePct>25?"#F7B928":"#FA3E3E";
 
-  const T = palette(dark);
+  const T = palette();
 
   const activeSec = (() => {
     let a = 0;
@@ -344,7 +344,8 @@ export default function MockExam() {
   // ── RESULT ─────────────────────────────────────────────────────
   if (phase==="result" && result) {
     const user = readUser();
-    const gap = result.total400 - parseInt(user.target||"250");
+    const targetNum = parseInt(user.target||"250");
+    const gap = result.total400 - targetNum;
     const bestBefore = history.length > 1 ? Math.max(...history.slice(1).map(h => h.jambEquivalent)) : null;
     const flameRes = mockResultFlame(result.total400, bestBefore);
     const shortSections = sections.filter(s=>s.count<s.target);
@@ -355,21 +356,19 @@ export default function MockExam() {
           <div style={{width:64,height:64,borderRadius:"18px",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
             <Trophy size={30} color="#F97316" strokeWidth={1.8} />
           </div>
-          <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginBottom:"4px"}}>Your JAMB Score</div>
+          <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginBottom:"4px"}}>Mock score (out of 400)</div>
+          {result.max400<400 && (
+            <div style={{display:"inline-block",background:"rgba(247,185,40,0.15)",color:"#F7B928",fontSize:"13px",fontWeight:700,padding:"8px 12px",borderRadius:"8px",marginBottom:"10px"}}>Scored out of {result.max400} — {result.missing.join(", ")} not included</div>
+          )}
           <div style={{color:"#fff",fontSize:"52px",fontWeight:900,letterSpacing:"-2px"}}>{result.total400}<span style={{fontSize:"22px",color:"rgba(255,255,255,0.6)"}}>/{result.max400}</span></div>
+          <div style={{color:"rgba(255,255,255,0.85)",fontSize:"14px",marginTop:"4px"}}>Each subject scored out of 100, then added up.</div>
           <div style={{color:"#F97316",fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{result.score}/{result.total} questions correct</div>
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
             <Flame stage={readFlameStage()} heat={50} mood={flameRes.mood} speech={flameRes.speech} size={88} />
           </div>
-          {result.max400===400 ? (
-            <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
-              {gap>=0 ? `${gap} pts above your target!` : `${Math.abs(gap)} pts below your target — keep practising`}
-            </div>
-          ) : (
-            <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
-              Scored out of {result.max400}, not 400 — {result.missing.length ? `${result.missing.join(", ")} not included (no questions in the bank yet).` : "one subject section was unavailable."}
-            </div>
-          )}
+          <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
+            Target {targetNum} · {gap>=0 ? `${gap} pts above target` : `${Math.abs(gap)} pts below target`}
+          </div>
           {shortSections.length>0 && (
             <div style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",marginTop:"4px"}}>
               {shortSections.map(s=>`${s.label} had ${s.count} of ${s.target} questions available`).join(" · ")}
@@ -410,8 +409,9 @@ export default function MockExam() {
               <div key={i} style={{padding:"12px",borderRadius:"12px",background:T.dangerTint,border:`1px solid ${T.danger}33`,marginBottom:"10px"}}>
                 <div style={{fontSize:"11px",color:"#FA3E3E",fontWeight:700,marginBottom:"4px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{q.subject}</div>
                 <div style={{fontSize:"13px",color:T.text,fontWeight:600,marginBottom:"6px"}}>{q.question}</div>
-                <div style={{fontSize:"12px",color:"#2FBF71",fontWeight:600,display:"flex",alignItems:"center",gap:"5px"}}><CheckCircle2 size={13} color="#2FBF71" strokeWidth={2.5}/> {q.options[q.correct]}</div>
-                <div style={{fontSize:"12px",color:T.sub,marginTop:"4px"}}>{q.explanation}</div>
+                <div style={{fontSize:"12px",color:"#FF6B5E",fontWeight:600,display:"flex",alignItems:"center",gap:"5px"}}><XCircle size={14} color="#FF6B5E" strokeWidth={2.5}/> {answers[i]!==undefined ? `Your answer: ${"ABCD"[answers[i]]} — ${q.options[answers[i]]}` : "Your answer: — Not answered"}</div>
+                <div style={{fontSize:"12px",color:"#2FBF71",fontWeight:600,display:"flex",alignItems:"center",gap:"5px"}}><CheckCircle2 size={14} color="#2FBF71" strokeWidth={2.5}/> Correct answer: {"ABCD"[q.correct]} — {q.options[q.correct]}</div>
+                <div style={{fontSize:"11px",color:T.muted,marginTop:"6px"}}>{q.explanation.replace("Question ", "Q")}</div>
               </div>
             ))}
             {result.score===result.total && <div style={{textAlign:"center",padding:"20px",color:"#2FBF71",fontWeight:700,fontSize:"15px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><PartyPopper size={16} strokeWidth={2}/> Perfect score! No mistakes!</div>}

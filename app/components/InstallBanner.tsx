@@ -53,7 +53,7 @@ function setPrompt(value: unknown): void {
 export default function InstallBanner() {
   const pathname = usePathname() ?? "";
   const dark = useDark();
-  const T = palette(dark);
+  const T = palette();
   const [mode, setMode] = useState<Mode>("none");
   const [ready, setReady] = useState(false);
   const [showSteps, setShowSteps] = useState(false);

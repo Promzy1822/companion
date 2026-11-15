@@ -37,7 +37,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
   const { topicId } = params;
   const router = useRouter();
   const dark = useDark();
-  const T = palette(dark);
+  const T = palette();
 
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
@@ -160,7 +160,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
         </div>
 
         {order.length === 0 && (
-          <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, textAlign: "center" }}>
+          <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, textAlign: "center" }}>
             <p style={{ fontSize: 14, color: T.sub, marginBottom: 16, lineHeight: 1.6 }}>
               No drill questions for this topic yet — drills are built from past questions and a fresh practice set, separate from the lesson's own check.
             </p>
@@ -171,7 +171,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
         )}
 
         {order.length > 0 && !done && currentQ && (
-          <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}` }}>
+          <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 12, color: T.sub, fontWeight: 600 }}>
                 Question {qIndex + 1} of {order.length}
@@ -228,7 +228,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
         )}
 
         {done && (
-          <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, textAlign: "center" }}>
+          <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
               <Flame stage={readFlameStage()} heat={heat} mood={drillFlame.mood} speech={drillFlame.speech} size={88} />
             </div>

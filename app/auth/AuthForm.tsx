@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertTriangle, BookOpen, ClipboardList, CalendarDays, Bot } from "lucide-react";
-import { getCutoff, getSmartRecommendation, getAdmissionProbability } from "../lib/cutoffs";
+import { getCutoff, getSmartRecommendation } from "../lib/cutoffs";
 import { validateEmail, validatePassword, normaliseEmail } from "../lib/auth";
-import { C } from "../lib/design";
+import { D } from "../lib/design";
 import { Session } from "../lib/session";
 import { Sync } from "../lib/sync";
 import { Rich } from "../components/AppIcon";
@@ -13,7 +13,7 @@ import { Rich } from "../components/AppIcon";
 const INSTITUTIONS = ["University of Lagos","University of Ibadan","OAU Ile-Ife","UNILORIN","UNIBEN","ABU Zaria","University of Nigeria Nsukka","LASU","UNIPORT","FUTO","FUNAAB","Other"];
 const COURSES      = ["Medicine & Surgery","Law","Engineering","Computer Science","Pharmacy","Accounting","Mass Communication","Economics","Agriculture","Education","Architecture","Nursing","Other"];
 const ALL_SUBJECTS = ["Mathematics","Physics","Chemistry","Biology","Government","Economics","Literature in English"];
-const COMP_COLOR: Record<string,string> = { "Very High":"#FA3E3E","High":"#EA580C","Moderate":C.primary,"Low":"#31A24C" };
+const COMP_COLOR: Record<string,string> = { "Very High":"#FA3E3E","High":"#EA580C","Moderate":D.primaryDark,"Low":"#31A24C" };
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -193,8 +193,6 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
     }
   };
 
-  const prob = rec && form.institution !== "Other" && form.course !== "Other"
-    ? getAdmissionProbability(parseInt(form.target), getCutoff(form.institution, form.course)) : null;
 
   const inp: React.CSSProperties = {
     width:"100%", padding:"13px 16px", borderRadius:"12px",
@@ -344,24 +342,14 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
                         <div style={{ fontSize:"13px", color:"#C9CDDD", lineHeight:1.5 }}><Rich>{rec.text}</Rich></div>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", padding:"10px 14px" }}>
-                        {[{label:"Minimum",val:rec.minJamb,color:"#FF8A8A"},{label:"Recommended",val:rec.recJamb,color:"#2FBF71"}].map((s,i)=>(
+                        {[{label:"Typical minimum (2024/25)",val:rec.minJamb,color:"#FF8A8A"},{label:"Competitive target (2024/25)",val:rec.recJamb,color:"#2FBF71"}].map((s,i)=>(
                           <div key={i} style={{ padding:"10px", borderRadius:"9px", background:"#0E1018", textAlign:"center", border:`1px solid ${s.color}33` }}>
                             <div style={{ fontSize:"11px", color:"#9AA0B5", marginBottom:"3px" }}><Rich>{s.label}</Rich></div>
                             <div style={{ fontSize:"22px", fontWeight:900, color:s.color }}><Rich>{s.val}</Rich></div>
                           </div>
                         ))}
                       </div>
-                      {prob && (
-                        <div style={{ padding:"10px 14px", borderTop:"1px solid #2A2F45" }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"6px" }}>
-                            <span style={{ fontSize:"12px", color:"#9AA0B5", fontWeight:600 }}>Admission chance at <Rich>{form.target}</Rich></span>
-                            <span style={{ fontSize:"12px", fontWeight:700, color:prob.color }}><Rich>{prob.label}</Rich></span>
-                          </div>
-                          <div style={{ height:"7px", borderRadius:"4px", background:"#2A2F45", overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${prob.percent}%`, background:prob.color, transition:"width 0.5s" }}/>
-                          </div>
-                        </div>
-                      )}
+                      <div style={{ padding:"10px 14px", borderTop:"1px solid #2A2F45", fontSize:"12px", color:"#9AA0B5", lineHeight:1.5 }}>Guide only, from 2024/25 cutoffs. Admission also depends on Post-UTME, O-levels and quota — check the university's site.</div>
                     </div>
                   )}
                 </div>

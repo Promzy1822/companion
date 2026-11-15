@@ -118,7 +118,7 @@ export default function Landing() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const dark = useDark();
-  const T = palette(dark);
+  const T = palette();
 
   const [step, setStep] = useState<Step>("welcome");
   const [picked, setPicked] = useState<string[]>([]);

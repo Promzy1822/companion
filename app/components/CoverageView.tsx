@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { palette } from "../lib/design";
-import { JAMB_SYLLABUS, SYLLABUS_STATS, searchSyllabus } from "../lib/syllabus";
+import { JAMB_SYLLABUS, searchSyllabus } from "../lib/syllabus";
 import { Progress } from "../lib/progress";
 import { Rich } from "../components/AppIcon";
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
@@ -80,7 +80,7 @@ export default function CoverageView() {
     setStudied(Progress.getSyllabusProgress());
   };
 
-  const T        = palette(dark);
+  const T        = palette();
   const syllabus = JAMB_SYLLABUS[activeSubject];
   const topics   = syllabus?.topics ?? [];
   const done     = topics.filter(t => studied.has(t.id)).length;
@@ -90,7 +90,6 @@ export default function CoverageView() {
   const allTopicIds  = visibleEntries.flatMap(([, s]) => s.topics.map(t => t.id));
   const visibleTopicCount = visibleEntries.reduce((n, [, s]) => n + s.topics.length, 0);
   const visibleSubtopicCount = visibleEntries.reduce((n, [, s]) => n + s.topics.reduce((m, t) => m + t.subtopics.length, 0), 0);
-  const visibleObjectiveCount = visibleEntries.reduce((n, [, s]) => n + s.topics.reduce((m, t) => m + t.objectives.length, 0), 0);
   const totalDone    = allTopicIds.filter(id => studied.has(id)).length;
   const overallPct   = Math.round((totalDone / allTopicIds.length) * 100);
 
@@ -337,7 +336,7 @@ export default function CoverageView() {
             {/* Source note */}
             <div style={{ margin:"14px 0", padding:"12px 14px", borderRadius:12, background:T.s2, border:`1px solid ${T.border}` }}>
               <div style={{ fontSize:11, color:T.sub, lineHeight:1.6 }}>
-                <strong style={{ color:T.text }}>Source:</strong> <Rich>{SYLLABUS_STATS.source}</Rich> · <Rich>{visibleEntries.length}</Rich> subjects · <Rich>{visibleTopicCount}</Rich> topics · <Rich>{visibleSubtopicCount}</Rich> subtopics · <Rich>{visibleObjectiveCount}</Rich> learning objectives. All Companion lessons, mock exams, and study plans are aligned to this syllabus.
+                <strong style={{ color:T.text }}>Source:</strong> Official JAMB syllabus, 2025 edition.
               </div>
             </div>
           </div>

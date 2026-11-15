@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle2, XCircle, PlayCircle, Target } from "lucide-rea
 import Navbar, { NAVBAR_HEIGHT } from "../../components/Navbar";
 import BottomNav, { BOTTOM_NAV_HEIGHT } from "../../components/BottomNav";
 import { LessonBlockView } from "../../components/lesson/players";
-import { C, palette, R, S } from "../../lib/design";
+import { palette, R, S } from "../../lib/design";
 import { useDark } from "../../lib/theme";
 import { Progress } from "../../lib/progress";
 import { Flame, FlameHeatMeter } from "../../components/Flame";
@@ -75,10 +75,10 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   }, [topicId]);
 
   if (loading) {
-    return <div style={{ minHeight: "100vh", background: palette(dark).bg }} />;
+    return <div style={{ minHeight: "100vh", background: palette().bg }} />;
   }
 
-  const T = palette(dark);
+  const T = palette();
 
   if (error || !data) {
     return (
@@ -90,7 +90,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
           </p>
           <button onClick={() => router.back()} style={{
             padding: "10px 20px", borderRadius: R.pill, border: "none",
-            background: C.primary, color: "#fff", fontWeight: 700, cursor: "pointer",
+            background: T.primary, color: "#fff", fontWeight: 700, cursor: "pointer",
           }}>Go back</button>
         </div>
         <BottomNav darkMode={dark} />
@@ -150,7 +150,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         </button>
 
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>
             {data.subject}
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: "2px 0 0" }}>
@@ -162,7 +162,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
           {segments.map(s => {
             const filled = stageOrder.indexOf(stage) >= stageOrder.indexOf(s);
             return (
-              <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: filled ? C.accent : T.s3 }} />
+              <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: filled ? T.accent : T.s3 }} />
             );
           })}
         </div>
@@ -170,7 +170,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         {isV2 && stage === "learn" && (
           <>
             {data.objectives && data.objectives.length > 0 && (
-              <div style={{ background: T.primaryTint, border: `1px solid ${T.primary}`, borderRadius: R.xl2, padding: "16px 18px", marginBottom: 14 }}>
+              <div style={{ background: T.primaryTint, border: `1px solid ${T.primary}`, borderRadius: R.xxl, padding: "16px 18px", marginBottom: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: T.primaryText, textTransform: "uppercase", letterSpacing: 1, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                   <Target size={13} /> In this lesson
                 </div>
@@ -182,7 +182,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
             {(data.blocks ?? []).map((b, i) => <LessonBlockView key={i} block={b} T={T} />)}
             <button onClick={startQuiz} style={{
               width: "100%", padding: "13px", borderRadius: R.pill, border: "none",
-              background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
+              background: T.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
             }}>
               {exercises.length > 0 ? `Start exercises (${exercises.length}) →` : "Finish lesson →"}
             </button>
@@ -190,7 +190,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         )}
 
         {!isV2 && stage === "video" && (
-          <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
+          <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
             {data.videoId ? (
               <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, borderRadius: R.lg, overflow: "hidden", marginBottom: 14 }}>
                 <iframe
@@ -208,20 +208,20 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
             )}
             <button onClick={() => setStage("summary")} style={{
               width: "100%", padding: "13px", borderRadius: R.pill, border: "none",
-              background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
+              background: T.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
             }}>Continue to summary →</button>
           </div>
         )}
 
         {!isV2 && stage === "summary" && (
-          <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
+          <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
             <h2 style={{ fontSize: 15, fontWeight: 800, color: T.text, marginBottom: 10 }}>Key points</h2>
             <p style={{ fontSize: 14, lineHeight: 1.7, color: T.text, whiteSpace: "pre-wrap" }}>
               {data.summary}
             </p>
             <button onClick={startQuiz} style={{
               width: "100%", padding: "13px", borderRadius: R.pill, border: "none",
-              background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16,
+              background: T.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16,
             }}>
               {exercises.length > 0 ? `Start exercises (${exercises.length}) →` : "Finish lesson →"}
             </button>
@@ -229,7 +229,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         )}
 
         {stage === "quiz" && currentQ && (
-          <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
+          <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
             <div style={{ fontSize: 12, color: T.sub, fontWeight: 600, marginBottom: 8 }}>
               Question {qIndex + 1} of {exercises.length}
             </div>
@@ -248,8 +248,8 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
                 const isChosen  = i === selected;
                 let bg = T.s2, border = T.border, color = T.text;
                 if (selected !== null) {
-                  if (isCorrect)     { bg = C.successLight; border = C.success; color = C.success; }
-                  else if (isChosen) { bg = C.dangerLight;  border = C.danger;  color = C.danger;  }
+                  if (isCorrect)     { bg = T.successTint; border = T.success; color = T.successText; }
+                  else if (isChosen) { bg = T.dangerTint; border = T.danger; color = T.dangerText;  }
                 }
                 return (
                   <button key={i} onClick={() => selectAnswer(i)} disabled={selected !== null} style={{
@@ -259,8 +259,8 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                   }}>
                     {opt}
-                    {selected !== null && isCorrect && <CheckCircle2 size={16} color={C.success} />}
-                    {selected !== null && isChosen && !isCorrect && <XCircle size={16} color={C.danger} />}
+                    {selected !== null && isCorrect && <CheckCircle2 size={16} color={T.successText} />}
+                    {selected !== null && isChosen && !isCorrect && <XCircle size={16} color={T.dangerText} />}
                   </button>
                 );
               })}
@@ -272,7 +272,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
                 </p>
                 <button onClick={nextQuestion} style={{
                   width: "100%", padding: "13px", borderRadius: R.pill, border: "none",
-                  background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 14,
+                  background: T.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 14,
                 }}>
                   {qIndex + 1 < exercises.length ? "Next question →" : "Finish lesson →"}
                 </button>
@@ -282,7 +282,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         )}
 
         {stage === "done" && (
-          <div style={{ background: T.surface, borderRadius: R.xl2, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14, textAlign: "center" }}>
+          <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14, textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
               <Flame stage={readFlameStage()} heat={heat} mood={completionFlame(score, exercises.length).mood} speech={completionFlame(score, exercises.length).speech} size={88} />
             </div>
@@ -294,7 +294,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
             )}
             <Link href={`/drill/${data.topicId}`} style={{
               display: "block", padding: "13px", borderRadius: R.pill,
-              background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14,
+              background: T.accent, color: "#fff", fontWeight: 700, fontSize: 14,
               textDecoration: "none", marginBottom: 10,
             }}>
               Drill this topic

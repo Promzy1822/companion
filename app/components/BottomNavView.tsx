@@ -11,7 +11,7 @@ export const BOTTOM_NAV_HEIGHT = 60;
 export default function BottomNavView({ railOnly = false }: { railOnly?: boolean }) {
   const pathname = usePathname() ?? "";
   const dark = useDark();
-  const T = palette(dark);
+  const T = palette();
 
   const railItems = [...NAV_ITEMS, ...NAV_SECONDARY];
 

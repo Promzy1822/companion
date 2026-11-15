@@ -23,7 +23,7 @@ interface UserData {
 
 
 function Card({ children, darkMode, style }: { children: React.ReactNode; darkMode: boolean; style?: React.CSSProperties }) {
-  const T = palette(darkMode);
+  const T = palette();
   return (
     <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", overflow: "hidden", ...style }}>
       {children}
@@ -32,7 +32,7 @@ function Card({ children, darkMode, style }: { children: React.ReactNode; darkMo
 }
 
 function CardHeader({ title, action, darkMode }: { title: string; action?: React.ReactNode; darkMode: boolean }) {
-  const T = palette(darkMode);
+  const T = palette();
   return (
     <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
       <span style={{ fontWeight: 700, fontSize: "14px", color: T.text }}>{title}</span>
@@ -119,7 +119,7 @@ export default function Profile() {
 
   if (!user) return null;
 
-  const T = palette(dark);
+  const T = palette();
   const daysLeft = user.deadline ? Math.max(0, Math.ceil((new Date(user.deadline).getTime() - Date.now()) / 86400000)) : null;
   const PREP = ["", "Not ready", "Just started", "Making progress", "Almost ready"];
 

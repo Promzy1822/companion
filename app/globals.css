@@ -1,93 +1,89 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* NOTE (W1 §0): the Tailwind directives are deliberately KEPT. Removing
+   them also removes Tailwind preflight, which needs visual verification
+   first — see NOTES.md. Do not remove them in a later §0 pass without it. */
 
 /* ── Design System ─────────────────────────────────────────────── */
+/* One token system (D1): these vars mirror app/lib/design.ts D exactly.
+   If a value here disagrees with design.ts, design.ts wins — fix this file. */
 :root {
   /* Primary — Companion indigo. Dark is the default and only theme:
    :root carries the dark values so nothing paints light before the boot script runs. */
   --primary:        #6366F1;
   --primary-hover:  #818CF8;
   --primary-dark:   #4F46E5;
-  --primary-light:  #2A2B63;
+  --primary-light:  rgba(99,102,241,0.12);
   --primary-soft:   #1D1E45;
 
-  /* Surfaces */
-  --bg:             #0E1018;
-  --surface:        #161925;
-  --surface-2:      #1E2230;
-  --surface-3:      #2A2F42;
+  /* Surfaces (D3 ramp: bg #0B0D14, surface #14161F, s2 #1B1E2A, s3 #232636) */
+  --bg:             #0B0D14;
+  --surface:        #14161F;
+  --surface-2:      #1B1E2A;
+  --surface-3:      #232636;
 
   /* Borders */
-  --border:         #2A2E3F;
-  --border-light:   #2A2E3F;
+  --border:         #343947;
+  --border-light:   #3E4358;
 
   /* Text */
-  --text:           #E8EAF2;
+  --text:           #E3E6EF;
   --text-sub:       #A7AEC2;
-  --text-muted:     #7C849A;
+  --text-muted:     #8E96AC;
 
   /* Semantic */
   --success:        #31A24C;
-  --success-light:  #12291A;
+  --success-light:  rgba(49,162,76,0.12);
   --warning:        #F7B928;
-  --warning-light:  #2E2410;
+  --warning-light:  rgba(247,185,40,0.12);
   --danger:         #FA3E3E;
-  --danger-light:   #33151A;
+  --danger-light:   rgba(250,62,62,0.12);
 
   /* Brand accent (keep orange for accents only) */
   --accent:         #F97316;
-  --accent-light:   #331D0F;
+  --accent-light:   rgba(249,115,22,0.12);
+
+  /* Focus ring (D7): the one ring, used by :focus-visible and inputs. */
+  --focus-ring:     0 0 0 3px rgba(165,180,252,0.45);
 
   /* Layout */
   --nav-h:          56px;
   --bottom-nav-h:   60px;
+  --rail-w:         248px;
+  --content-max:    1040px;
+  --tablet-max:     720px;
   --radius-sm:      6px;
   --radius-md:      8px;
   --radius-lg:      12px;
   --radius-xl:      16px;
-  --radius-2xl:     20px;
-  --radius-pill:    50px;
+  --radius-xxl:     20px;
+  --radius-pill:    999px;
 
-  /* Shadows */
-  --shadow-sm:      0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md:      0 2px 8px rgba(0,0,0,0.08);
-  --shadow-lg:      0 4px 20px rgba(0,0,0,0.1);
-  --shadow-xl:      0 8px 32px rgba(0,0,0,0.12);
+  /* Shadows (D3): black at 40–55% alpha + 1px top highlight on raised sizes */
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md:      inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 12px rgba(0,0,0,0.45);
+  --shadow-lg:      inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-xl:      inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 40px rgba(0,0,0,0.55);
+
+  /* Z-index scale (D15 / LAYOUT.z): no literal z-indexes elsewhere in CSS. */
+  --z-exam-bar:     50;
+  --z-banner:       140;
+  --z-bottom-nav:   150;
+  --z-top-bar:      200;
+  --z-rail:         210;
+  --z-dropdown:     300;
+  --z-scrim:        305;
+  --z-modal:        400;
+  --z-splash:       500;
 
   /* Typography */
   --font: var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Dark mode */
-[data-dark="true"] {
-  --bg:           #0E1018;
-  --surface:      #161925;
-  --surface-2:    #1E2230;
-  --surface-3:    #2A2F42;
-  --border:       #2A2E3F;
-  --border-light: #2A2E3F;
-  --text:         #E8EAF2;
-  --text-sub:     #A7AEC2;
-  --text-muted:   #7C849A;
-  --primary-soft: #1D1E45;
-  --primary-light:#2A2B63;
-  --primary:      #6366F1;
-  --primary-hover:#818CF8;
-  --primary-dark: #4F46E5;
-  --success:      #31A24C;
-  --success-light:#12291A;
-  --warning:      #F7B928;
-  --warning-light:#2E2410;
-  --danger:       #FA3E3E;
-  --danger-light: #33151A;
-  --accent:       #F97316;
-  --accent-light: #331D0F;
-}
-
 /* ── Reset ─────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; padding: 0;
   background: var(--bg);
@@ -96,8 +92,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-::-webkit-scrollbar { width: 0; height: 0; }
-* { scrollbar-width: none; }
 
 /* ── Animations ────────────────────────────────────────────────── */
 @keyframes fadeUp {
@@ -136,39 +130,7 @@ body {
 /* ── Global components ─────────────────────────────────────────── */
 .page-enter { animation: fadeUp 0.22s ease both; }
 
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-primary {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-pill);
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-}
-.btn-primary:hover  { background: var(--primary-hover); box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
-.btn-primary:active { transform: scale(0.97); }
-
-.btn-secondary {
-  background: var(--surface-2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-secondary:hover  { background: var(--surface-3); }
-.btn-secondary:active { transform: scale(0.97); }
-
 button { -webkit-tap-highlight-color: transparent; }
-button:active:not(:disabled) { transition: transform 0.1s; transform: scale(0.97); }
 a { -webkit-tap-highlight-color: transparent; }
 
 input, select, textarea {
@@ -182,9 +144,10 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+  box-shadow: var(--focus-ring);
 }
 
+/* The one loading language (D9): States.tsx SkeletonCard uses this class. */
 .skeleton {
   background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
   background-size: 400% 100%;
@@ -192,7 +155,9 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-md);
 }
 
-:focus-visible { outline: 2px solid #A5B4FC; outline-offset: 2px; border-radius: 4px; }
+/* One focus ring (D7): follows the element's own radius — no override here.
+   Never outline: none without this ring as the replacement. */
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 input[type="range"] {
   -webkit-appearance: none;
@@ -203,7 +168,6 @@ input[type="range"] {
   border: none;
   box-shadow: none;
 }
-input[type="range"]:focus { box-shadow: none; border-color: transparent; }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 20px; height: 20px;
@@ -224,18 +188,6 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Full screen loader ────────────────────────────────────────── */
-#companion-splash {
-  position: fixed; inset: 0; z-index: 99999;
-  background: var(--bg);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  transition: opacity 0.3s ease;
-}
-#companion-splash.hiding {
-  opacity: 0; pointer-events: none;
-}
-
 /* ── Spinner utility ───────────────────────────────────────────── */
 .spinner {
   border-radius: 50%;
@@ -247,15 +199,12 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
 .spinner-md  { width: 28px; height: 28px; }
 .spinner-lg  { width: 40px; height: 40px; border-width: 4px; }
 
-/* (.skeleton is defined once, above) */
-
 /* ── Responsive app shell ──────────────────────────────────────────────────── */
 /*
  * Phone  (<768px):   full width, bottom tabs
  * Tablet (768-1023): centered 720px column, bottom tabs aligned to it
  * Laptop (>=1024):   left side rail + centered content column
  */
-:root { --rail-w: 248px; --content-max: 1040px; }
 
 /* Snappy, consistent interaction */
 button {
@@ -263,7 +212,7 @@ button {
   cursor: pointer;
   transition: transform 0.12s ease, background-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
-button:disabled { cursor: not-allowed; }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
 a, button, [role="button"], input, select, textarea, label { touch-action: manipulation; }
 
 .app-shell {
@@ -294,11 +243,10 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
 
 /* Tablet and up: centered column */
 @media (min-width: 768px) {
-  body { background: #E3E6EF; }
-  [data-dark="true"] body { background: #0A0C12; }
+  body { background: var(--bg); }
 
   .app-shell {
-    max-width: 720px;
+    max-width: var(--tablet-max);
     margin: 0 auto;
     box-shadow: -1px 0 0 rgba(0,0,0,0.08), 1px 0 0 rgba(0,0,0,0.08), 0 0 40px rgba(0,0,0,0.08);
   }
@@ -306,16 +254,15 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
     left: 50% !important;
     right: auto !important;
     width: 100% !important;
-    max-width: 720px !important;
+    max-width: var(--tablet-max) !important;
     transform: translateX(-50%) !important;
   }
-  .nav-dropdown { right: calc((100vw - 720px) / 2 + 12px) !important; }
+  .nav-dropdown { right: calc((100vw - var(--tablet-max)) / 2 + 12px) !important; }
 }
 
 /* Laptop: side rail + content centered in the space to its right */
 @media (min-width: 1024px) {
   body { background: var(--bg); }
-  [data-dark="true"] body { background: var(--bg); }
 
   .app-shell {
     max-width: var(--content-max);
@@ -329,13 +276,16 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
     flex-direction: column;
     gap: 4px;
     padding: 14px 12px;
-    z-index: 210;
+    z-index: var(--z-rail);
     overflow-y: auto;
   }
   .bottom-nav { display: none !important; }
+  /* Top bar content is capped to the same 1040px column as the page below
+     it (same centring formula as .app-shell), so the avatar no longer drifts
+     right of the content column on wide screens. */
   .top-bar {
-    left: var(--rail-w) !important;
-    right: 0 !important;
+    left: calc(var(--rail-w) + max(0px, (100% - var(--rail-w) - var(--content-max)) / 2)) !important;
+    right: max(0px, (100% - var(--rail-w) - var(--content-max)) / 2) !important;
     width: auto !important;
     max-width: none !important;
     transform: none !important;
@@ -349,14 +299,16 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
   .page-enter, .page-transition { animation: none; }
 }
 
-/* ── Polish: smooth navigation, visible scrollbar on laptops, hero ─────────── */
+/* ── Polish: visible scrollbar on laptops, hero ─────────── */
+/* One scroll-behavior (D14): auto. Smooth scrolling only where explicitly wanted. */
 html { scroll-behavior: auto; }
 
 /* Soft fade when a page appears (opacity only, and no fill-mode, so it never traps fixed children) */
 .app-shell > div { animation: routeFade 0.14s ease-out backwards; }
 @keyframes routeFade { from { opacity: 0.35; } to { opacity: 1; } }
 
-/* Mouse devices (laptops/desktops) get a slim visible scrollbar. Touch devices stay clean. */
+/* One scrollbar policy (D14): slim visible scrollbar on mouse devices
+   (laptops/desktops). Touch devices keep the native overlay scrollbar. */
 @media (hover: hover) and (pointer: fine) {
   * { scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -369,13 +321,20 @@ html { scroll-behavior: auto; }
 }
 
 @media (min-width: 768px)  { .hero-banner { margin: 14px 14px 0; border-radius: 20px; } }
-@media (min-width: 1024px) { .hero-banner { padding: 30px 32px 46px !important; } }
 
 @media (prefers-reduced-motion: reduce) { .app-shell > div { animation: none; } }
 
+/* ── Home dashboard ───────────────────────────────────────────────────────── */
+/* R1 — bottom padding is tier-aware: 76px (tabs + 16px) below laptop, where
+   the tab bar exists; a plain 24px on laptop, where it is hidden.
+   The !important flags override the inline paddingBottom / marginTop that
+   app/page.tsx still carries — the Home rebuild should delete those inline
+   styles (see NOTES.md) and these rules then apply without the flags. */
+.home-cols { margin-top: 0 !important; padding-bottom: 76px !important; }
+
 /* ── Laptop: Home dashboard as two columns ─────────────────────────────────── */
 @media (min-width: 1024px) {
-  .hero-banner { margin: 18px 24px 0; }
+  .hero-banner { margin: 18px 24px 0; padding: 30px 32px 46px !important; }
   .home-cols {
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
@@ -383,6 +342,7 @@ html { scroll-behavior: auto; }
     align-items: start;
     padding-left: 24px !important;
     padding-right: 24px !important;
+    padding-bottom: 24px !important;
   }
   .home-main, .home-side { min-width: 0; }
 }
@@ -393,7 +353,9 @@ html { scroll-behavior: auto; }
 @media (hover: hover) { .lift:hover { transform: translateY(-2px); } }
 .lift { transition: transform 0.15s ease, box-shadow 0.15s ease !important; }
 
-@media (min-width: 640px)  { .subject-grid { grid-template-columns: repeat(3, 1fr) !important; } }
+/* Column counts change only at tier boundaries: 3-col starts at 768px (tablet),
+   not at the old orphan 640px breakpoint. */
+@media (min-width: 768px)  { .subject-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (min-width: 1024px) {
   .subject-grid { grid-template-columns: repeat(4, 1fr) !important; }
 
@@ -419,19 +381,15 @@ html { scroll-behavior: auto; }
 
 /* ── Theme + transitions ───────────────────────────────────────────────────── */
 html { color-scheme: dark; }
-html[data-dark="true"] { color-scheme: dark; }
 /* server HTML is never visible un-themed; the splash covers this until the app has hydrated */
 html[data-booting="true"] .app-shell { visibility: hidden; }
 
-/* ── AI chat page: laptop side rail without the phone bottom tabs ───────────── */
-
-/* Profile laptop layout (step c) */
 .profile-main,.profile-side{display:flex;flex-direction:column;gap:14px;min-width:0}
 @media (min-width:1024px){
   .profile-cols{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:20px !important;padding:20px 24px 0 !important;align-items:start}
 }
 
-/* Study Plan laptop layout (step c) */
+/* Study Plan laptop layout */
 @media (min-width:1024px){
   .plan-content{padding:20px 24px 80px !important}
   .plan-today{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:20px;align-items:start}
@@ -464,7 +422,7 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
     background: rgba(3, 5, 10, 0.5);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
-    z-index: 305;
+    z-index: var(--z-scrim);
   }
 }
 
@@ -488,7 +446,7 @@ html, body { overflow-x: clip; }
   left: 12px;
   right: 12px;
   bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 12px);
-  z-index: 140;
+  z-index: var(--z-banner);
 }
 @media (min-width: 1024px) {
   .install-banner {

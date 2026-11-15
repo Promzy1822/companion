@@ -159,10 +159,8 @@ export const CUTOFF_DB: CutoffDatabase = {
     "Accounting": { minJamb:188, recommendedJamb:218, postUtmeWeight:true, notes:"Moderate.", competition:"Moderate" },
     "Economics": { minJamb:185, recommendedJamb:215, postUtmeWeight:true, notes:"Moderate.", competition:"Moderate" },
     "Mass Communication": { minJamb:183, recommendedJamb:212, postUtmeWeight:true, notes:"Moderate.", competition:"Moderate" },
-    "Medicine & Surgery": { minJamb:245, recommendedJamb:278, postUtmeWeight:true, notes:"Competitive.", competition:"Very High" },
     "Pharmacy": { minJamb:220, recommendedJamb:250, postUtmeWeight:true, notes:"Competitive.", competition:"High" },
     "Nursing": { minJamb:210, recommendedJamb:240, postUtmeWeight:true, notes:"Competitive.", competition:"High" },
-    "Law": { minJamb:225, recommendedJamb:255, postUtmeWeight:true, notes:"Competitive.", competition:"High" },
   },
   "FUNAAB": {
     "Agriculture": { minJamb:180, recommendedJamb:205, postUtmeWeight:true, notes:"FUNAAB's strongest faculty.", competition:"Low" },
@@ -173,9 +171,7 @@ export const CUTOFF_DB: CutoffDatabase = {
     "Economics": { minJamb:183, recommendedJamb:212, postUtmeWeight:true, notes:"Moderate.", competition:"Moderate" },
     "Nursing": { minJamb:205, recommendedJamb:235, postUtmeWeight:true, notes:"Competitive.", competition:"High" },
     "Mass Communication": { minJamb:180, recommendedJamb:210, postUtmeWeight:true, notes:"Moderate.", competition:"Moderate" },
-    "Medicine & Surgery": { minJamb:240, recommendedJamb:272, postUtmeWeight:true, notes:"Competitive.", competition:"Very High" },
     "Pharmacy": { minJamb:215, recommendedJamb:245, postUtmeWeight:true, notes:"Competitive.", competition:"High" },
-    "Law": { minJamb:218, recommendedJamb:248, postUtmeWeight:true, notes:"Competitive.", competition:"High" },
     "Architecture": { minJamb:192, recommendedJamb:222, postUtmeWeight:true, notes:"Moderate.", competition:"Moderate" },
   },
 };

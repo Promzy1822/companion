@@ -32,7 +32,7 @@ const WELCOME: Message = {
 
 /** One chat bubble. Memoised, so typing in the box never re-renders (or re-parses) the conversation. */
 const MessageBubble = React.memo(function MessageBubble({ m, dark }: { m: Message; dark: boolean }) {
-  const T      = palette(dark);
+  const T      = palette();
   const isUser = m.role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 8, marginBottom: 2, animation: "fadeUp 0.2s ease backwards" }}>
@@ -71,7 +71,7 @@ const MessageBubble = React.memo(function MessageBubble({ m, dark }: { m: Messag
 
 export default function AIChat() {
   const dark = useDark();
-  const T    = palette(dark);
+  const T    = palette();
 
   const [input,      setInput]      = useState("");
   const [messages,   setMessages]   = useState<Message[]>([WELCOME]);
@@ -214,9 +214,8 @@ export default function AIChat() {
         </Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: T.text, letterSpacing: "-0.2px" }}>AI Tutor</div>
-          <div style={{ fontSize: 11, color: "#31A24C", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#31A24C" }} />
-            Online · JAMB expert
+          <div style={{ fontSize: 11, color: T.sub, fontWeight: 600 }}>
+            Answers from the official JAMB syllabus
           </div>
         </div>
         <button

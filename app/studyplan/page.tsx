@@ -160,7 +160,7 @@ export default function StudyPlan() {
 
   if (!mounted) return null;
 
-  const T         = palette(dark);
+  const T         = palette();
   const today     = todayWAT();
   const active    = Progress.getActiveDays();
   const todayTask = plan.flatMap(w => w.days).find(d => d.date === today);
@@ -312,15 +312,6 @@ export default function StudyPlan() {
                       </div>
                       <div style={{ fontSize: 13, color: T.sub, marginBottom: 10 }}>
                         {todayTask.subtopic}
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4, background: T.s2, borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: T.text }}>
-                          <Clock size={11} strokeWidth={2} />
-                          {todayTask.hours}h
-                        </span>
-                        <span style={{ background: T.s2, borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: T.text, textTransform: "capitalize" }}>
-                          {todayTask.type}
-                        </span>
                       </div>
                     </div>
 

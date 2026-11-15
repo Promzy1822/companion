@@ -21,7 +21,7 @@ export default function NavbarView() {
   const router   = useRouter();
   const pathname = usePathname() ?? "";
   const dark     = useDark();
-  const T        = palette(dark);
+  const T        = palette();
 
   useEffect(() => { setOpen(false); }, [pathname]);
 

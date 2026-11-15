@@ -12,7 +12,7 @@ type Block = LessonBlock;
 
 const card = (T: T): CSSProperties => ({
   background: T.surface, border: `1px solid ${T.border}`,
-  borderRadius: R.xl2, padding: "18px", marginBottom: 14,
+  borderRadius: R.xxl, padding: "18px", marginBottom: 14,
 });
 const eyebrow = (color: string): CSSProperties => ({
   fontSize: 11, fontWeight: 700, color, textTransform: "uppercase",

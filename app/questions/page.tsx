@@ -151,7 +151,7 @@ function QuestionsContent() {
     setRevealed(!!prev);
   };
 
-  const T = palette(dark);
+  const T = palette();
 
   // Keyboard shortcuts (laptops): A-D answer, left/right move, Enter = next once answered
   useEffect(() => {
@@ -459,7 +459,7 @@ function QuestionsContent() {
                   </button>
 
                   {!revealed && (
-                    <button onClick={()=>{ setRevealed(true); setScore(p=>({...p,total:p.total+1})); }} style={{
+                    <button onClick={()=>{ if (current < questions.length - 1) goTo(current + 1); }} style={{
                       flex:1, padding:"13px", borderRadius:12,
                       border:`1.5px solid ${T.border}`, background:T.surface,
                       color:T.sub, fontWeight:700, cursor:"pointer", fontSize:13,

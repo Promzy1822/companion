@@ -12,7 +12,7 @@ import { createClient } from "../lib/supabase/client";
 function ResetContent() {
   const router = useRouter();
   const dark = useDark();
-  const T = palette(dark);
+  const T = palette();
 
   const [password,  setPassword]  = useState("");
   const [confirm,   setConfirm]   = useState("");

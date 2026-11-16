@@ -363,8 +363,6 @@ html { scroll-behavior: auto; }
 
   /* exam has no side rail, so centre it */
   .app-shell:has(.focus-page) { margin-left: auto; margin-right: auto; }
-  .q-chips { flex-wrap: wrap !important; overflow: visible !important; }
-  .q-chips > div { width: 30px !important; height: 30px !important; font-size: 12px !important; }
   .exam-body::after {
     content: "Keyboard:  A-D to answer   |   Left / Right arrows to move";
     display: block; text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 18px;
@@ -480,4 +478,77 @@ html, body { overflow-x: clip; }
     gap: 16px !important;
     align-items: stretch;
   }
+}
+
+/* ── Mock exam rebuild (approved Mock sample) ───────────────────────── */
+/* Tier-aware bottom padding (R1): 76px where the tab bar exists, 24px on
+   laptop where it is hidden. Overrides the inline paddingBottom the Mock
+   pages still carry. */
+.mock-page-pad { padding-bottom: 76px !important; }
+@media (min-width: 1024px) { .mock-page-pad { padding-bottom: 24px !important; } }
+
+/* Setup: plan + history side by side on laptop, stacked below. */
+@media (min-width: 1024px) {
+  .mock-setup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 20px;
+    align-items: start;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+/* Exam bar rows: phone gets a second row (answered count + Question map
+   button); tablet keeps the pills + chips rows in the bar; laptop moves
+   the palette into the sticky rail, so the bar is one slim row. */
+.mock-bar-sub { display: flex; }
+.mock-bar-answered { display: none; }
+.mock-bar-pills, .mock-bar-chips, .mock-bar-legend { display: none; }
+@media (min-width: 768px) {
+  .mock-bar-sub { display: none; }
+  .mock-bar-answered { display: block; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mock-bar-pills, .mock-bar-chips, .mock-bar-legend { display: block; }
+}
+
+/* Exam body: question + sticky palette rail on laptop (P4 pattern:
+   question left, ~288px rail right, sticky below the bar). */
+.mock-rail { display: none; }
+@media (min-width: 1024px) {
+  .mock-exam {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 288px;
+    gap: 0 20px;
+    align-items: start;
+  }
+  .mock-exam::after { grid-column: 1 / -1; }
+  .mock-rail { display: block; position: sticky; top: 16px; }
+}
+
+/* Phone palette overlay: bottom sheet, phone only. */
+.mock-overlay {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  display: flex; align-items: flex-end;
+  background: rgba(3, 5, 10, 0.6);
+}
+.mock-overlay-card {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  width: 100%; max-height: 78vh; overflow-y: auto;
+  padding: 16px 20px 24px;
+}
+@media (min-width: 768px) { .mock-overlay { display: none; } }
+
+/* Submit confirm sheet: centred card on every tier. */
+.mock-sheet {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: rgba(3, 5, 10, 0.6);
+}
+.mock-sheet-card {
+  width: 100%; max-width: 420px;
+  border-radius: 16px; padding: 20px;
 }

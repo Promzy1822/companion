@@ -53,6 +53,7 @@
   --rail-w:         248px;
   --content-max:    1040px;
   --tablet-max:     720px;
+  --prose-max:      640px; /* LAYOUT.proseMax - lesson prose cap (AUDIT 2.3) */
   --radius-sm:      6px;
   --radius-md:      8px;
   --radius-lg:      12px;
@@ -552,3 +553,72 @@ html, body { overflow-x: clip; }
   width: 100%; max-width: 420px;
   border-radius: 16px; padding: 20px;
 }
+
+/* -- Lesson reader rebuild (approved Lesson sample) -- */
+/* P4 pattern (cf. .q-practice / .q-side, .mock-exam / .mock-rail):
+   single column below laptop; lesson + sticky objectives rail on laptop.
+   DOM contract (see lessonrebuild/work/w3-layout-spec.md): .lesson-layout
+   holds exactly two children - .lesson-rail (objectives card, FIRST in
+   DOM so it stacks above the blocks on phone/tablet) then .lesson-main
+   (header, stage progress, blocks, quiz). The :has() guard means a
+   lesson with no objectives card (v1) stays single-column full width. */
+
+/* R1 - bottom padding is tier-aware: 76px where the tab bar exists, 24px
+   on laptop where it is hidden. Overrides the inline paddingBottom the
+   lesson page still carries. */
+.lesson-page-pad { padding-bottom: 76px !important; }
+@media (min-width: 1024px) { .lesson-page-pad { padding-bottom: 24px !important; } }
+
+/* Prose cap (AUDIT 2.3, LAYOUT.proseMax): 640px = 65-75 chars/line at
+   16px/1.75. Inert on phone (column is narrower anyway); engages on
+   tablet (680px content) and inside the laptop lesson column. Put on
+   section paragraphs, summary body, DoYouKnow text, StoryShort body -
+   never on the lesson column itself, so video / BoyleLab / quiz may use
+   the full column width. */
+.lesson-prose { max-width: var(--prose-max, 640px); }
+
+/* Layout grid: block (single column) below laptop. The rail stays
+   visible and stacked above .lesson-main on phone/tablet (unlike
+   .mock-rail, which is hidden below laptop - objectives must not vanish;
+   collapse on phone is JS, in the page). */
+.lesson-layout { display: block; }
+.lesson-main { min-width: 0; }
+.lesson-rail { display: block; min-width: 0; }
+
+@media (min-width: 1024px) {
+  .lesson-layout:has(> .lesson-rail) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+    gap: 0 20px;
+    align-items: start;
+  }
+  /* Rail is first in DOM; pin it to column 2, main content to column 1. */
+  .lesson-layout:has(> .lesson-rail) > .lesson-main { grid-column: 1; grid-row: 1; }
+  .lesson-layout:has(> .lesson-rail) > .lesson-rail {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 72px; /* LAYOUT.stickyTop: 56px nav + 16px gap, cf. .q-side (R4/R5) */
+  }
+}
+
+/* BoyleLab: piston + graph stacked on phone, two real columns from
+   tablet up (AUDIT 3.8). The graph's old maxWidth: 260 inline style
+   must be removed by the page - the column sizes it now. Stats grid +
+   slider stay outside this wrapper, full-width below it. */
+.lesson-boyle { display: block; }
+.lesson-boyle > * { min-width: 0; }
+@media (min-width: 768px) {
+  .lesson-boyle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+  }
+}
+
+/* Focus (D7): buttons already get the one ring from the global
+   :focus-visible rule - no helper needed. The range slider does not:
+   the base input[type="range"] rule (box-shadow: none) outranks
+   :focus-visible, so the BoyleLab slider gets its ring here. */
+.lesson-boyle input[type="range"]:focus-visible { box-shadow: var(--focus-ring); }

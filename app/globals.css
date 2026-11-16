@@ -374,9 +374,18 @@ html { scroll-behavior: auto; }
     display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0 20px;
     grid-auto-flow: row dense; align-items: start;
   }
-  .q-practice:has(> .q-side) > :first-child { grid-column: 1 / -1; }
-  .q-side { display: block; grid-column: 2; position: sticky; top: 72px; }
+  .q-practice:has(> .q-side) > :first-child { grid-column: 1; }
+  .q-side { display: block; grid-column: 2; position: sticky; top: 72px; max-height: calc(100vh - 72px - 24px); overflow-y: auto; }
 }
+
+/* -- Tablet question map (approved Practice sample) -- */
+/* Worker 2 renders a .q-map-btn button and a .q-map-overlay div holding a
+   .q-map-sheet. Hidden on phone (the navigator is inline there) and on
+   laptop (the .q-side rail is visible); tablet only, as a bottom sheet. */
+.q-map-btn { display: none; }
+@media (min-width: 768px) and (max-width: 1023px) { .q-map-btn { display: flex !important; } }
+.q-map-overlay { position: fixed; inset: 0; z-index: 400; background: rgba(3,5,10,0.6); display: flex; align-items: flex-end; justify-content: center; }
+.q-map-sheet { background: var(--surface); width: 100%; max-width: 720px; max-height: 80vh; overflow-y: auto; border-radius: 16px 16px 0 0; padding: 16px 20px 24px; }
 
 /* ── Theme + transitions ───────────────────────────────────────────────────── */
 html { color-scheme: dark; }
@@ -471,14 +480,16 @@ html, body { overflow-x: clip; }
   .fd-auth-form { max-width: 420px; width: 100%; margin: 0 auto; }
 }
 
-/* ── Laptop: Practice mode cards as a three-column row ─────────────────────── */
-@media (min-width: 1024px) {
+/* ── Tablet+: Practice mode cards as a three-column row ─────────────────────── */
+@media (min-width: 768px) {
   .practice-modes {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px !important;
     align-items: stretch;
   }
+  .practice-mode-card { flex-direction: column !important; align-items: flex-start !important; }
+  .practice-mode-chevron { display: none !important; }
 }
 
 /* ── Mock exam rebuild (approved Mock sample) ───────────────────────── */

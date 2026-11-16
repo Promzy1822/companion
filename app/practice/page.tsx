@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, ClipboardList, Zap, ChevronRight, Trophy, Calculator, ChevronDown, ChevronUp } from "lucide-react";
-import { palette } from "../lib/design";
+import { Library, Timer, Target, ChevronRight, Trophy, Calculator, ChevronDown, ChevronUp } from "lucide-react";
+import { palette, LAYOUT } from "../lib/design";
 import { NAVBAR_HEIGHT } from "../components/NavbarView";
 import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
 
@@ -20,18 +20,29 @@ const TOTAL = SUBJECTS.reduce((a, s) => a + s.count, 0);
 
 const CARDS = [
   {
-    icon: BookOpen, href: "/questions", title: "Past Questions",
-    sub: `${TOTAL.toLocaleString()} real past questions · 8 subjects`,
+    icon: Library, href: "/questions", title: "Past Questions",
+    sub: `${TOTAL.toLocaleString()} past questions across 8 subjects`,
+    featured: false,
   },
   {
-    icon: ClipboardList, href: "/mock", title: "Mock Exam",
-    sub: "The full JAMB paper: 180 questions in subject sections · 2 hours · scored out of 400",
+    icon: Timer, href: "/mock", title: "Mock Exam",
+    sub: "180 questions · 2 hours · scored /400",
+    featured: true,
   },
   {
-    icon: Zap, href: "/drill", title: "Quick Drills",
-    sub: "Short scored drills by topic — drill a topic right after you study it",
+    icon: Target, href: "/drill", title: "Quick Drills",
+    sub: "5-minute drills by topic",
+    featured: false,
   },
 ];
+
+// "12 Nov 2026" (en-GB: day numeric, month short, year numeric);
+// falls back to the raw string when the stored date does not parse.
+const fmtDate = (raw: string): string => {
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+};
 
 export default function PracticeHub() {
   const T = palette();
@@ -93,22 +104,21 @@ export default function PracticeHub() {
   return (
     <div style={{ minHeight: "100vh", paddingTop: NAVBAR_HEIGHT, background: T.bg, fontFamily: "var(--font)" }}>
       <div style={{ padding: `20px 20px calc(${BOTTOM_NAV_HEIGHT}px + 16px)` }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800, color: T.text, margin: "0 0 4px", letterSpacing: "-0.5px" }}>Practice</h1>
-        <p style={{ fontSize: "13px", color: T.sub, margin: "0 0 20px" }}>Real JAMB questions, timed mocks and quick drills.</p>
+        <h1 style={{ fontSize: "24px", fontWeight: 800, color: T.text, margin: "0 0 20px", letterSpacing: "-0.5px" }}>Practice</h1>
 
         <div className="practice-modes" style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
           {CARDS.map(card => {
             const Icon = card.icon;
             return (
-              <Link key={card.title} href={card.href} style={{ display: "flex", alignItems: "center", gap: "14px", background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", padding: "16px", textDecoration: "none", minHeight: "44px" }}>
-                <span style={{ width: 44, height: 44, borderRadius: "12px", background: T.primaryTint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Icon size={22} color={T.primary} strokeWidth={1.8} />
+              <Link key={card.title} href={card.href} className="practice-mode-card" style={{ display: "flex", alignItems: "center", gap: "14px", background: T.surface, border: `1px solid ${T.border}`, ...(card.featured ? { borderLeft: `4px solid ${T.accent}` } : {}), borderRadius: "16px", padding: "16px", textDecoration: "none", minHeight: "44px" }}>
+                <span style={{ width: 44, height: 44, borderRadius: "12px", background: card.featured ? T.accentTint : T.primaryTint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon size={22} color={card.featured ? T.accent : T.primary} strokeWidth={1.8} />
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: "15px", fontWeight: 700, color: T.text }}>{card.title}</span>
+                  <span style={{ display: "block", fontSize: card.featured ? "16px" : "15px", fontWeight: 700, color: T.text }}>{card.title}</span>
                   <span style={{ display: "block", fontSize: "12px", color: T.sub, marginTop: "2px", lineHeight: 1.45 }}>{card.sub}</span>
                 </span>
-                <ChevronRight size={18} color={T.muted} style={{ flexShrink: 0 }} />
+                <ChevronRight size={18} color={T.muted} className="practice-mode-chevron" style={{ flexShrink: 0 }} />
               </Link>
             );
           })}
@@ -147,6 +157,11 @@ export default function PracticeHub() {
                     {t==="aggregate" ? "Aggregate" : "JAMB Only"}
                   </button>
                 ))}
+              </div>
+              <div style={{ fontSize: "12px", color: T.sub, marginBottom: "14px" }}>
+                {calcType === "aggregate"
+                  ? "Bands: 70+ competitive · 55–69 many state universities · 45–54 minimum · under 45 below minimum"
+                  : "Bands: 300+ competitive · 250–299 many state universities · 200–249 minimum · under 200 below minimum"}
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                 <div>
@@ -199,26 +214,37 @@ export default function PracticeHub() {
           )}
         </div>
 
-        {history.length > 0 && (
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", overflow: "hidden" }}>
-            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: "8px" }}>
-              <Trophy size={16} color={T.primary} strokeWidth={1.8} />
-              <span style={{ fontWeight: 700, color: T.text, fontSize: "14px" }}>Recent mock results</span>
-            </div>
-            {history.slice(0, 3).map((h, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: i < Math.min(2, history.length - 1) ? `1px solid ${T.border}` : "none" }}>
-                <div>
-                  <div style={{ fontSize: "14px", fontWeight: 700, color: T.text }}>{h.score}/{h.total} correct</div>
-                  <div style={{ fontSize: "11px", color: T.sub }}>{h.date}</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "20px", fontWeight: 900, color: h.jambEquivalent >= 250 ? "#2FBF71" : h.jambEquivalent >= 200 ? "#F7B928" : "#FF6B5E", letterSpacing: "-1px" }}>{h.jambEquivalent}</div>
-                  <div style={{ fontSize: "10px", color: T.sub }}>JAMB equiv.</div>
-                </div>
-              </div>
-            ))}
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "16px", overflow: "hidden", maxWidth: LAYOUT.pageNarrow }}>
+          <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: "8px" }}>
+            <Trophy size={16} color={T.primary} strokeWidth={1.8} />
+            <span style={{ fontWeight: 700, color: T.text, fontSize: "14px" }}>Recent mock results</span>
           </div>
-        )}
+          <div style={{ padding: "10px 18px 0", fontSize: "12px", color: T.sub }}>250+ competitive</div>
+          {history.length > 0 ? (
+            <>
+              {history.slice(0, 3).map((h, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: i < Math.min(2, history.length - 1) ? `1px solid ${T.border}` : "none" }}>
+                  <div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: T.text }}>{h.score}/{h.total} correct</div>
+                    <div style={{ fontSize: "12px", color: T.sub }}>{fmtDate(h.date)}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: "20px", fontWeight: 900, color: h.jambEquivalent >= 250 ? T.successText : h.jambEquivalent >= 200 ? T.warning : T.dangerText, letterSpacing: "-1px" }}>{h.jambEquivalent}</div>
+                    <div style={{ fontSize: "12px", color: T.sub }}>JAMB score</div>
+                  </div>
+                </div>
+              ))}
+              <div style={{ padding: "12px 18px", borderTop: `1px solid ${T.border}` }}>
+                <Link href="/mock" style={{ fontSize: "13px", fontWeight: 700, color: T.primaryText, textDecoration: "none" }}>See all results</Link>
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: "18px" }}>
+              <div style={{ fontSize: "13px", color: T.sub }}>No mocks yet — take your first mock</div>
+              <Link href="/mock" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", marginTop: "12px", padding: "12px 16px", borderRadius: "10px", background: T.accent, color: "#1F1156", fontWeight: 700, fontSize: "14px", textDecoration: "none", minHeight: "44px", boxSizing: "border-box" }}>Take your first mock</Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

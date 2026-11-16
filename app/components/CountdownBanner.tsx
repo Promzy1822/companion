@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { palette, TY, LH, FW, SP, R, LAYOUT } from "../lib/design";
-import { CalendarDays, ChevronRight, X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { useIsoLayoutEffect } from "../lib/theme";
 import {
   WINDOW_LABEL,
   WINDOW_START,
+  WINDOW_END,
   daysUntil,
   normalizeExamChoice,
   saveExamChoice,
@@ -37,6 +38,15 @@ const fmtLong = (iso: string): string =>
     month: "long",
     year: "numeric",
   });
+
+// Whole days from a to b, parsing "YYYY-MM-DD" as UTC. 0 on NaN.
+const daysBetween = (a: string, b: string): number => {
+  const ms = Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z");
+  if (Number.isNaN(ms)) return 0;
+  return Math.round(ms / 86400000);
+};
+const fmtShort = (iso: string): string =>
+  new Date(iso + "T00:00:00").toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 
 interface Props {
   darkMode?: boolean;
@@ -74,9 +84,6 @@ export default function CountdownBanner({ darkMode: _darkMode }: Props) {
   if (view === null || days === null) return null;
 
   const urgent = days <= 30;
-  const soon = days <= 60;
-  const tileBg = urgent ? T.dangerTint : soon ? T.warningTint : T.primaryTint;
-  const accent = urgent ? T.dangerText : soon ? T.warning : T.primary;
   const estimated = view.estimated;
 
   const openSheet = () => {
@@ -88,6 +95,20 @@ export default function CountdownBanner({ darkMode: _darkMode }: Props) {
 
   const todayISO = localISO(new Date());
   const tomorrowISO = localISO(new Date(Date.now() + 86400000));
+
+  // Where the 15 March window start sits on the runway from today to
+  // 25 March (0-100). Exact mode: the exam dot sits at the right end.
+  const windowStartPct = estimated
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          (daysBetween(todayISO, WINDOW_START) /
+            Math.max(1, daysBetween(todayISO, WINDOW_END))) *
+            100
+        )
+      )
+    : 100;
 
   const validateExact = (d: string): string | null => {
     if (!d) return "Pick a date";
@@ -192,60 +213,142 @@ export default function CountdownBanner({ darkMode: _darkMode }: Props) {
             borderRadius: R.xl,
             background: T.surface,
             border: "1px solid " + T.border,
-            display: "flex",
-            alignItems: "center",
-            gap: SP[3],
           }}
         >
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: R.lg,
-              flexShrink: 0,
-              background: tileBg,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              gap: 8,
             }}
           >
-            <CalendarDays size={20} color={accent} strokeWidth={1.8} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontSize: TY.xs,
-                color: urgent ? T.dangerText : T.sub,
+                flex: 1,
+                fontSize: 12,
                 fontWeight: FW.semibold,
                 lineHeight: px(LH.xs),
+                color: urgent ? T.dangerText : T.sub,
               }}
             >
               {estimated ? `JAMB 2027 · ${WINDOW_LABEL} (proposed)` : "JAMB 2027"}
             </div>
             <div
               style={{
-                fontSize: TY.xl,
+                fontSize: 11,
                 fontWeight: FW.bold,
-                color: T.text,
-                lineHeight: 1.1,
+                padding: "3px 8px",
+                borderRadius: R.pill,
+                flexShrink: 0,
+                background: estimated ? T.warningTint : T.successTint,
+                color: estimated ? T.warning : T.successText,
               }}
             >
-              {days === 0 ? "Exam day — today" : `${days} day${days === 1 ? "" : "s"} left`}
+              {estimated ? "Estimated" : "Exact date"}
             </div>
+            <ChevronRight size={18} color={T.sub} />
+          </div>
+          <div
+            style={{
+              fontSize: TY.display,
+              fontWeight: FW.bold,
+              color: T.text,
+              lineHeight: 1.1,
+              marginTop: 8,
+            }}
+          >
+            {days === 0 ? "Exam day — today" : `${days} day${days === 1 ? "" : "s"} left`}
+          </div>
+          <div
+            style={{
+              position: "relative",
+              height: 6,
+              borderRadius: R.pill,
+              background: T.s2,
+              marginTop: 12,
+            }}
+          >
+            {estimated && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: `${windowStartPct}%`,
+                  right: 0,
+                  borderRadius: R.pill,
+                  background: ORANGE,
+                }}
+              />
+            )}
             <div
               style={{
-                fontSize: TY.xs,
-                color: T.sub,
-                marginTop: 2,
-                lineHeight: px(LH.xs),
+                position: "absolute",
+                left: 0,
+                top: "50%",
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: ORANGE,
+                border: "2px solid " + T.surface,
+                transform: "translate(-1px,-50%)",
               }}
-            >
-              {estimated
-                ? `Countdown to 15 March — estimated`
-                : `Exam date: ${fmtLong(view.deadline)}`}
-            </div>
+            />
+            {!estimated && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "50%",
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: ORANGE,
+                  border: "2px solid " + T.surface,
+                  transform: "translate(1px,-50%)",
+                }}
+              />
+            )}
           </div>
-          <ChevronRight size={18} color={T.sub} />
+          <div
+            style={{
+              position: "relative",
+              height: 16,
+              marginTop: 6,
+              fontSize: 11,
+              color: T.muted,
+            }}
+          >
+            <span style={{ position: "absolute", left: 0 }}>Today</span>
+            {estimated ? (
+              <>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: `${windowStartPct}%`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {fmtShort(WINDOW_START)}
+                </span>
+                <span style={{ position: "absolute", right: 0 }}>{fmtShort(WINDOW_END)}</span>
+              </>
+            ) : (
+              <span style={{ position: "absolute", right: 0 }}>{fmtLong(view.deadline)}</span>
+            )}
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: T.sub,
+              marginTop: 8,
+              lineHeight: px(LH.xs),
+            }}
+          >
+            {estimated
+              ? `Countdown to 15 March — estimated`
+              : `Exam date: ${fmtLong(view.deadline)}`}
+          </div>
         </div>
       </button>
 

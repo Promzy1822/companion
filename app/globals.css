@@ -389,13 +389,78 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
   .profile-cols{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:20px !important;padding:20px 24px 0 !important;align-items:start}
 }
 
-/* Study Plan laptop layout */
+/* ── Plan + Coverage rebuild (approved Plan/Coverage samples) ──────── */
+/* R1 — tier-aware bottom padding (.plan-page-pad): 76px where the tab bar
+   exists, 24px on laptop where it is hidden — same pattern as
+   .mock-page-pad / .lesson-page-pad. The !important flags override the
+   inline padding ("16px 20px") the Plan page still carries. The old
+   .plan-content 80px laptop bottom padding is superseded: patched to
+   24px below so the two rules agree even where both apply. */
+.plan-page-pad { padding-bottom: 76px !important; }
+@media (min-width: 1024px) { .plan-page-pad { padding-bottom: 24px !important; } }
+
+/* Study Plan layout — tier-aware (AUDIT §3.14). Today (task + Coming Up)
+   and Overview (week cards, progress spanning) pair at tablet (>=768px),
+   not laptop-only: the cards fit at 720px. */
 @media (min-width:1024px){
-  .plan-content{padding:20px 24px 80px !important}
+  .plan-content{padding:20px 24px 24px !important}
+}
+@media (min-width:768px){
   .plan-today{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:20px;align-items:start}
   .plan-today>*{min-width:0}
   .plan-overview{display:grid !important;grid-template-columns:1fr 1fr;gap:12px !important}
   .plan-overview>*:first-child{grid-column:1/-1}
+}
+
+/* Week view (AUDIT §3.14): single column below laptop; on laptop the week
+   pills become a sticky left column beside the day list. DOM: .plan-week
+   wraps .plan-week-pills + the week card. The pills row is inline-styled
+   (flex + horizontal scroll) on phone/tablet; only the laptop column
+   treatment lives here. The 2-column phone day grid from the sample was
+   NOT used — see the page comment (sticky-column alternative). */
+.plan-week { display: block; }
+.plan-week > * { min-width: 0; }
+@media (min-width: 1024px) {
+  .plan-week {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .plan-week-pills {
+    flex-direction: column;
+    position: sticky;
+    top: 72px; /* LAYOUT.stickyTop: 56px nav + 16px gap, cf. .q-side */
+    overflow-x: visible !important; /* overrides the inline overflow-x: auto */
+  }
+}
+
+/* Coverage (AUDIT §3.15, option (a)): single column below laptop; on
+   laptop a sticky 248px subject rail + the topic column. The subject tabs
+   (.cov-tabs) are the phone/tablet control; the rail (.cov-rail) is the
+   laptop control — exactly one of them is visible at any tier. */
+.cov-layout { display: block; }
+.cov-layout > * { min-width: 0; }
+.cov-rail { display: none; }
+@media (min-width: 1024px) {
+  .cov-layout {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .cov-rail { display: block; position: sticky; top: 72px; }
+  .cov-tabs { display: none !important; } /* overrides the inline display: flex */
+}
+
+/* Expanded-topic action buttons (C9): stacked full-width on phone,
+   natural widths in a row on laptop. The buttons carry no inline flex,
+   so this class governs. The container's inline display: flex stands;
+   only the direction changes by tier. */
+.cov-actions { display: flex; flex-direction: column; }
+.cov-actions > * { flex: none; }
+@media (min-width: 1024px) {
+  .cov-actions { flex-direction: row; }
 }
 
     /* Exam focus mode (mock exam): hide app chrome while an exam is running */

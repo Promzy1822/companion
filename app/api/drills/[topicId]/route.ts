@@ -188,6 +188,14 @@ export async function GET(
     merged.push(ex);
   }
 
-  const exercises = merged.length >= 4 ? shuffle(merged).slice(0, 12) : lessonExercises;
-  return NextResponse.json({ ...base, exercises });
+  if (merged.length >= 4) {
+    return NextResponse.json({ ...base, source: "drill", exercises: shuffle(merged).slice(0, 12) });
+  }
+  if (lessonExercises.length > 0) {
+    return NextResponse.json({ ...base, source: "lesson-exercises", exercises: lessonExercises });
+  }
+  return NextResponse.json(
+    { ...base, source: "none", error: "Drill questions could not be generated for this topic yet. Try again later, or open the lesson." },
+    { status: 502 }
+  );
 }

@@ -386,7 +386,7 @@ html[data-booting="true"] .app-shell { visibility: hidden; }
 
 .profile-main,.profile-side{display:flex;flex-direction:column;gap:14px;min-width:0}
 @media (min-width:1024px){
-  .profile-cols{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:20px !important;padding:20px 24px 0 !important;align-items:start}
+  .profile-cols{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,min(360px,40%));gap:20px !important;padding:20px 24px 0 !important;align-items:start}
 }
 
 /* ── Plan + Coverage rebuild (approved Plan/Coverage samples) ──────── */
@@ -699,3 +699,67 @@ html, body { overflow-x: clip; }
    the base input[type="range"] rule (box-shadow: none) outranks
    :focus-visible, so the BoyleLab slider gets its ring here. */
 .lesson-boyle input[type="range"]:focus-visible { box-shadow: var(--focus-ring); }
+/* profileaidrill: ai */
+.md-body .md-table-wrap { overflow-x: auto; margin: 0 0 0.65em; }
+.md-body table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.md-body th, .md-body td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; line-height: 1.45; }
+.md-body th { background: var(--surface-2); font-weight: 700; }
+.md-body img { max-width: 100%; height: auto; border-radius: 10px; }
+
+
+/* profileaidrill: profile */
+/* Profile rebuild (approved Profile sample, Profile+AI+Drill package).
+   Only Profile-owned rules live here: the tablet .profile-cols grid,
+   the tier-aware page pad, the edit-mode field grid, and the target
+   slider focus ring. The 1024px .profile-cols rule itself is patched
+   in place above (side-column guard); it is NOT duplicated here. */
+
+/* R1 — tier-aware bottom padding (.profile-page-pad): 76px where the tab
+   bar exists, 24px on laptop where it is hidden — same pattern as
+   .plan-page-pad / .mock-page-pad / .lesson-page-pad. */
+.profile-page-pad { padding-bottom: 76px !important; }
+@media (min-width: 1024px) { .profile-page-pad { padding-bottom: 24px !important; } }
+
+/* Tablet 2-column layout (AUDIT §3.17): the .profile-cols grid lowers
+   from 1024px to 768px. Same §2.4 guard as the laptop rule:
+   min(360px, 40%) so the fixed side can never exceed the main column. */
+@media (min-width: 768px) {
+  .profile-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,min(360px,40%));gap:20px;align-items:start}
+  .profile-cols>*{min-width:0}
+}
+
+/* Edit-mode fields pair into two columns from tablet up (AUDIT §3.17),
+   instead of stretching full-width across ~640px. Target, Prep and
+   Email span both columns; password fields stay stacked (in the page). */
+.profile-edit-grid { display: grid; grid-template-columns: 1fr; gap: 13px; }
+@media (min-width: 768px) {
+  .profile-edit-grid { grid-template-columns: 1fr 1fr; }
+  .profile-edit-grid > .profile-edit-wide { grid-column: 1 / -1; }
+}
+
+/* Focus (D7): buttons already get the one ring from the global
+   :focus-visible rule — no helper needed. The range slider does not:
+   the base input[type="range"] rule (box-shadow: none) outranks
+   :focus-visible, so the target slider gets its ring here. */
+.profile-target-slider input[type="range"]:focus-visible { box-shadow: var(--focus-ring); }
+
+/* profileaidrill: drill */
+/* Drill picker grid (AUDIT §3.10): single column on phone/tablet; real
+   2-column grid at laptop, as in the approved sample's picker-grid. */
+.drill-picker-grid { display: flex; flex-direction: column; gap: 10px; }
+/* Tier-aware container padding (AUDIT §0.5(10), §3.11): one value per
+   tier, replacing the old 16px-runner / 20px-picker split. */
+.drill-content { padding: 16px; }
+/* Card padding to the D5 standard: 16px mobile / 20px laptop. */
+.drill-card { padding: 16px; }
+/* Done-state buttons (AUDIT §3.11 / sample .done-actions): stacked
+   full-width on phone; 2-column grid at laptop, lesson link spans both. */
+.drill-done-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.drill-done-actions > * { flex: none; }
+@media (min-width: 1024px) {
+  .drill-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .drill-content { padding: 20px 24px; }
+  .drill-card { padding: 20px; }
+  .drill-done-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .drill-done-actions > .full { grid-column: 1 / -1; }
+}

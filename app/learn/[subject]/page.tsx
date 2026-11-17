@@ -3,7 +3,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, ChevronRight, PlayCircle } from "lucide-react";
 import { NAVBAR_HEIGHT } from "../../components/NavbarView";
-import { BOTTOM_NAV_HEIGHT } from "../../components/BottomNavView";
 import { palette, R } from "../../lib/design";
 import { useDark } from "../../lib/theme";
 import { getTopics, getSubjectSyllabus } from "../../lib/syllabus";
@@ -28,7 +27,7 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
 
   if (!subjectInfo) {
     return (
-      <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily: "var(--font)" }}>
+      <div className="learn-page-pad" style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, fontFamily: "var(--font)" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 20px", textAlign: "center" }}>
           <p style={{ color: T.text, fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Subject not found</p>
           <p style={{ color: T.sub, fontSize: 13, marginBottom: 18 }}>We don't have lessons for "{subject}" yet.</p>
@@ -41,7 +40,7 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, paddingBottom: `${BOTTOM_NAV_HEIGHT + 20}px`, fontFamily: "var(--font)" }}>
+    <div className="learn-page-pad" style={{ minHeight: "100vh", background: T.bg, paddingTop: `${NAVBAR_HEIGHT}px`, fontFamily: "var(--font)" }}>
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "20px" }}>
         <Link href="/subjects" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: T.sub, fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 12, minHeight: "44px" }}>
           <ArrowLeft size={16} /> All subjects
@@ -65,6 +64,15 @@ export default function LearnSubjectPage({ params }: { params: { subject: string
             </div>
             <Link href={`/questions?subject=${subject}&mode=practice`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 700, color: T.primary, textDecoration: "none", minHeight: "44px" }}>
               Practice {subjectInfo?.display_name || subject} questions <ChevronRight size={14} strokeWidth={2.4} />
+            </Link>
+          </div>
+        )}
+
+        {topics.length === 0 && (
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: R.lg, padding: "24px 16px", textAlign: "center" }}>
+            <p style={{ color: T.text, fontWeight: 700, fontSize: 14, margin: "0 0 18px" }}>No topics listed for this subject yet.</p>
+            <Link href="/subjects" style={{ display: "inline-block", padding: "11px 22px", borderRadius: 999, background: T.primary, color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+              Back to subjects
             </Link>
           </div>
         )}

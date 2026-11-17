@@ -9,6 +9,7 @@ import {
 import { palette } from "../lib/design";
 import { stripEmoji } from "../components/AppIcon";
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
+import { fetchWithTimeout, FETCH_TIMEOUTS, OfflineError, TimeoutError } from "../lib/fetch-timeout";
 
 interface Message {
   role:    "user" | "assistant";
@@ -83,6 +84,10 @@ export default function AIChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const msgId    = useRef(1);
   const autoSent = useRef(false);
+  // H5: slow-network escalation for the chat fetch (~8s) + user cancel.
+  const [slowChat, setSlowChat] = useState(false);
+  const chatAbortRef = useRef<AbortController | null>(null);
+  const cancelChat = () => { chatAbortRef.current?.abort(); };
 
   // Keep the newest message in view. Scrolls the list itself, never the whole page.
   useEffect(() => {
@@ -167,19 +172,37 @@ export default function AIChat() {
     }
     setAttachment(null);
     setLoading(true);
+    setSlowChat(false);
+    const aborter = new AbortController();
+    chatAbortRef.current = aborter;
+    // H5: after ~8s say the reply is still coming and offer Cancel.
+    const slowTimer = window.setTimeout(() => setSlowChat(true), 8000);
 
     try {
-      const res   = await fetch("/api/chat", {
+      const res   = await fetchWithTimeout("/api/chat", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
-      });
+        signal:  aborter.signal,
+      }, FETCH_TIMEOUTS.chat);
       const data  = await res.json();
       const reply = data.reply || data.error || "Sorry, I could not get a response. Please try again.";
       setMessages([...newMsgs, { role: "assistant", id: msgId.current++, content: reply }]);
-    } catch {
-      setMessages([...newMsgs, { role: "assistant", id: msgId.current++, content: "Network error. Please check your connection and try again." }]);
+    } catch (err) {
+      // A user Cancel just stops waiting — no error bubble, and the
+      // conversation stays put (no navigation away from the chat).
+      if (err instanceof Error && err.name === "AbortError") { /* cancelled */ }
+      else if (err instanceof OfflineError) {
+        setMessages([...newMsgs, { role: "assistant", id: msgId.current++, content: "You're offline — your message was not sent. Check your connection and try again." }]);
+      } else if (err instanceof TimeoutError) {
+        setMessages([...newMsgs, { role: "assistant", id: msgId.current++, content: "Still waiting for the AI — the request timed out. Please try again." }]);
+      } else {
+        setMessages([...newMsgs, { role: "assistant", id: msgId.current++, content: "Network error. Please check your connection and try again." }]);
+      }
     } finally {
+      window.clearTimeout(slowTimer);
+      setSlowChat(false);
+      chatAbortRef.current = null;
       setLoading(false);
     }
   };
@@ -246,6 +269,13 @@ export default function AIChat() {
           )}
         </div>
       </div>
+
+      {loading && slowChat && (
+        <div style={{ flexShrink: 0, background: T.surface, borderTop: `1px solid ${T.border}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ flex: 1, fontSize: 13, color: T.sub, lineHeight: 1.45 }}>Still loading — this can take a few seconds on a slow connection.</span>
+          <button onClick={cancelChat} style={{ padding: "8px 14px", minHeight: 36, borderRadius: 10, border: `1px solid ${T.border}`, background: T.s2, color: T.text, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+        </div>
+      )}
 
       {/* Composer */}
       <div style={{ flexShrink: 0, background: T.surface, borderTop: `1px solid ${T.border}` }}>

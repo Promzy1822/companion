@@ -26,6 +26,9 @@ export async function middleware(request: NextRequest) {
   // getSession() only contacts Supabase when the token is about to expire.
   // (getUser() made a network call to Supabase on EVERY page change, which was the main reason
   // switching pages felt slow.) Nothing here makes access decisions, it only refreshes cookies.
+  // H3 — session expiry is handled client-side, NOT here: AppChrome subscribes to
+  // onAuthStateChange and Session.markExpired() records it; this middleware stays a
+  // refresh-only pass-through so logged-out users can still reach /landing and /auth.
   await supabase.auth.getSession();
 
   return supabaseResponse;

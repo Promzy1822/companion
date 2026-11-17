@@ -5,6 +5,7 @@ import RouteProgress from "./components/RouteProgress";
 import ThemeSync from "./components/ThemeSync";
 import AppChrome from "./components/AppChrome";
 import InstallBanner from "./components/InstallBanner";
+import OfflineBanner from "./components/OfflineBanner";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -69,12 +70,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Cold-start splash. Stays until the app has hydrated, then is removed from the DOM for good. */}
         <div id="companion-splash">
           <div style={{ position: "relative", width: 112, height: 112, marginBottom: 20 }}>
-            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(249,115,22,0.45)", animation: "splashRing 1.6s ease-out 0.15s 2 both" }} />
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid var(--splash-ring)", animation: "splashRing 1.6s ease-out 0.15s 2 both" }} />
             <img src="/icon-192.png" alt="Companion" width={112} height={112}
               style={{ display: "block", animation: "splashMarkIn 0.7s ease-out both" }} />
           </div>
           <div style={{
-            fontWeight: 800, fontSize: 22, color: "#FFFFFF",
+            fontWeight: 800, fontSize: 22, color: "var(--splash-text)",
             marginBottom: 4, letterSpacing: "-0.5px",
             fontFamily: "var(--font)",
           }}>
@@ -83,7 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             ))}
           </div>
           <div style={{
-            fontSize: 11, color: "rgba(255,255,255,0.65)", marginBottom: 40,
+            fontSize: 11, color: "var(--splash-tagline)", marginBottom: 40,
             letterSpacing: "0.5px",
             fontFamily: "var(--font)",
           }}>
@@ -95,7 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}>
             <div style={{
               width: "45%", height: "100%", borderRadius: 2,
-              background: "linear-gradient(90deg, #6366F1, #F97316)",
+              background: "linear-gradient(90deg, var(--primary), var(--accent))",
               animation: "splashBar 1.1s ease-in-out infinite",
             }} />
           </div>
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeSync />
         <AppChrome />
         <InstallBanner />
+        <OfflineBanner />
         <div className="app-shell">
           {children}
         </div>

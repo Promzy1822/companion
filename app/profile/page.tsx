@@ -53,6 +53,7 @@ export default function Profile() {
   const [editing,   setEditing]   = useState(false);
   const [form,      setForm]      = useState<Partial<UserData>>(() => user || {});
   const [saved,     setSaved]     = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [showPwForm,setShowPwForm]= useState(false);
   const [oldPw,     setOldPw]     = useState("");
   const [newPw,     setNewPw]     = useState("");
@@ -65,7 +66,8 @@ export default function Profile() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) { router.replace("/landing"); }
+    // H3: same reason-carrying redirect as Home (see app/page.tsx).
+    if (!user) { router.replace(Session.consumeExpiredFlag() ? "/landing?session=expired" : "/landing"); }
   }, [router]);
 
   // Arriving from the account menu's "Change Password" row: open the form
@@ -115,7 +117,15 @@ export default function Profile() {
     } finally { setPwBusy(false); }
   };
 
-  const logout = () => { Session.logout(); router.replace("/landing"); };
+  // H3 logout ordering: confirm first, then Session.logout() signs out
+  // of Supabase FIRST (so sync no-ops and cannot delete the cloud
+  // backup), then clears the companion_* local keys — only then redirect.
+  const logout = async () => {
+    if (!window.confirm("Log out? This clears your saved plan and progress from this device.")) return;
+    setLoggingOut(true);
+    try { await Session.logout(); } finally { setLoggingOut(false); }
+    router.replace("/landing");
+  };
 
   if (!user) return null;
 
@@ -343,13 +353,13 @@ export default function Profile() {
           </Card>
 
           {/* Logout */}
-          <button onClick={logout} style={{
+          <button onClick={logout} disabled={loggingOut} style={{
             width:"100%", padding:"15px 18px", borderRadius:"14px", border:`1.5px solid ${T.danger}33`,
             background: T.dangerTint, color: T.danger,
             fontWeight:700, fontSize:"14px", cursor:"pointer",
             display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
           }}>
-            <LogOut size={16} strokeWidth={2} /> Log Out
+            <LogOut size={16} strokeWidth={2} /> {loggingOut ? "Logging out…" : "Log Out"}
           </button>
 
           {user.createdAt && (

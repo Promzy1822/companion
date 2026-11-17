@@ -80,6 +80,23 @@
 
   /* Typography */
   --font: var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Durations (D16): one entrance duration + the kept loop durations.
+     Values equal the old literals exactly. No TS component consumes
+     a duration (the animations live in this file), so they live here
+     as CSS vars, mirroring --radius-* / --shadow-*. */
+  --dur-fast:    0.14s;
+  --dur-base:    0.22s;
+  --dur-spin:    0.8s;
+  --dur-shimmer: 1.6s;
+
+  /* Splash tokens (D22): the boot splash renders on indigo #1F1156,
+     so its white text/tagline and orange ring have no D equivalent.
+     Values equal the old layout.tsx literals exactly — token-swapped,
+     not re-valued. */
+  --splash-text:    #FFFFFF;
+  --splash-tagline: rgba(255,255,255,0.65);
+  --splash-ring:    rgba(249,115,22,0.45);
 }
 
 /* ── Reset ─────────────────────────────────────────────────────── */
@@ -99,25 +116,9 @@ body {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1);    }
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)     scale(1);    }
-}
 @keyframes shimmer {
   0%   { background-position: -400% 0; }
   100% { background-position:  400% 0; }
-}
-@keyframes pulse {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.4; }
 }
 @keyframes bounce {
   0%,60%,100% { transform: translateY(0); }
@@ -129,7 +130,7 @@ body {
 }
 
 /* ── Global components ─────────────────────────────────────────── */
-.page-enter { animation: fadeUp 0.22s ease both; }
+.page-enter { animation: fadeUp var(--dur-base) ease both; }
 
 button { -webkit-tap-highlight-color: transparent; }
 a { -webkit-tap-highlight-color: transparent; }
@@ -152,7 +153,7 @@ input:focus, select:focus, textarea:focus {
 .skeleton {
   background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
   background-size: 400% 100%;
-  animation: shimmer 1.6s infinite;
+  animation: shimmer var(--dur-shimmer) infinite;
   border-radius: var(--radius-md);
 }
 
@@ -180,23 +181,14 @@ input[type="range"]::-webkit-slider-thumb {
 }
 input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
 
-/* ── Page transitions ──────────────────────────────────────────── */
-.page-transition {
-  animation: pageIn 0.18s ease both;
-}
-@keyframes pageIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 /* ── Spinner utility ───────────────────────────────────────────── */
 .spinner {
   border-radius: 50%;
   border: 3px solid var(--surface-3);
   border-top-color: var(--primary);
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--dur-spin) linear infinite;
 }
-.spinner-sm  { width: 20px; height: 20px; border-width: 2px; }
+.spinner-sm  { width: var(--radius-xxl); height: var(--radius-xxl); border-width: 2px; }
 .spinner-md  { width: 28px; height: 28px; }
 .spinner-lg  { width: 40px; height: 40px; border-width: 4px; }
 
@@ -297,7 +289,7 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-enter, .page-transition { animation: none; }
+  .page-enter { animation: none; }
 }
 
 /* ── Polish: visible scrollbar on laptops, hero ─────────── */
@@ -305,7 +297,7 @@ a, button, [role="button"], input, select, textarea, label { touch-action: manip
 html { scroll-behavior: auto; }
 
 /* Soft fade when a page appears (opacity only, and no fill-mode, so it never traps fixed children) */
-.app-shell > div { animation: routeFade 0.14s ease-out backwards; }
+.app-shell > div { animation: routeFade var(--dur-fast) ease-out backwards; }
 @keyframes routeFade { from { opacity: 0.35; } to { opacity: 1; } }
 
 /* One scrollbar policy (D14): slim visible scrollbar on mouse devices
@@ -366,7 +358,7 @@ html { scroll-behavior: auto; }
   .app-shell:has(.focus-page) { margin-left: auto; margin-right: auto; }
   .exam-body::after {
     content: "Keyboard:  A-D to answer   |   Left / Right arrows to move";
-    display: block; text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 18px;
+    display: block; text-align: center; font-size: 12px; color: var(--text-sub); margin-top: 18px;
   }
 
   /* past questions: question on the left, navigator on the right */
@@ -579,6 +571,15 @@ html, body { overflow-x: clip; }
    lesson page still carries. */
 .lesson-page-pad { padding-bottom: 76px !important; }
 @media (min-width: 1024px) { .lesson-page-pad { padding-bottom: 24px !important; } }
+
+/* R1 — tier-aware bottom padding for Learn + Drill (§0.5(2)): same
+   pattern as .mock-page-pad / .lesson-page-pad — 76px where the tab
+   bar exists, 24px on laptop where it is hidden. The pages carry no
+   inline paddingBottom; the class is the only source. */
+.learn-page-pad { padding-bottom: 76px !important; }
+@media (min-width: 1024px) { .learn-page-pad { padding-bottom: 24px !important; } }
+.drill-page-pad { padding-bottom: 76px !important; }
+@media (min-width: 1024px) { .drill-page-pad { padding-bottom: 24px !important; } }
 
 /* Prose cap (AUDIT 2.3, LAYOUT.proseMax): 640px = 65-75 chars/line at
    16px/1.75. Inert on phone (column is narrower anyway); engages on

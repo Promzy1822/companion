@@ -61,6 +61,9 @@ export default function PracticeHub() {
   const [postS,    setPostS]    = useState("");
   const [result,   setResult]   = useState<{agg:number;jamb:number;post:number;note:string;color:string}|null>(null);
   const [calcErr,  setCalcErr]  = useState("");
+  // M12: per-field errors, validated on change/blur (not only on Calculate).
+  const [jambErr,  setJambErr]  = useState("");
+  const [postErr,  setPostErr]  = useState("");
 
   // One-line interpretation of the score, with its thresholds stated next
   // to it (replaces the old Excellent/Good/Average/Below average grade,
@@ -78,18 +81,49 @@ export default function PracticeHub() {
     return "Below the minimum for most universities (under 200)";
   };
 
+  // Per-field validation (M12) — same copy as the submit validation.
+  const jambFieldErr = (v: string): string => {
+    if (v.trim() === "") return "Enter valid JAMB score (0-400)";
+    const n = parseFloat(v);
+    if (isNaN(n) || n < 0 || n > 400) return "Enter valid JAMB score (0-400)";
+    return "";
+  };
+  const postFieldErr = (v: string): string => {
+    if (v.trim() === "") return "Enter valid Post-UTME score (0-100)";
+    const n = parseFloat(v);
+    if (isNaN(n) || n < 0 || n > 100) return "Enter valid Post-UTME score (0-100)";
+    return "";
+  };
+
+  // L7: short grade label reusing the disclosed bands (see the "Bands:"
+  // line above the inputs) — e.g. "72% — Competitive".
+  const calcGrade = (type: "jamb" | "aggregate", agg: number, jamb: number): string => {
+    if (type === "aggregate") {
+      if (agg >= 70) return "Competitive";
+      if (agg >= 55) return "Many state universities";
+      if (agg >= 45) return "Minimum";
+      return "Below minimum";
+    }
+    if (jamb >= 300) return "Competitive";
+    if (jamb >= 250) return "Many state universities";
+    if (jamb >= 200) return "Minimum";
+    return "Below minimum";
+  };
+
   const calcAggregate = () => {
     setCalcErr(""); setResult(null);
+    setJambErr(jambFieldErr(jambS));
+    setPostErr(calcType === "aggregate" ? postFieldErr(postS) : "");
     const j = parseFloat(jambS), p = parseFloat(postS);
     if (isNaN(j)||j<0||j>400) { setCalcErr("Enter valid JAMB score (0-400)"); return; }
     if (calcType==="aggregate") {
       if (isNaN(p)||p<0||p>100) { setCalcErr("Enter valid Post-UTME score (0-100)"); return; }
       const jP=j/8, pP=p/2, agg=jP+pP;
-      const color=agg>=70?"#2FBF71":agg>=55?"#A5B4FC":agg>=45?"#F7B928":"#FF6B5E";
+      const color=agg>=70?T.successText:agg>=55?T.primaryText:agg>=45?T.warning:T.dangerText;
       setResult({agg:+agg.toFixed(2),jamb:+jP.toFixed(2),post:+pP.toFixed(2),note:calcNote("aggregate",agg,j),color});
     } else {
       const sc=(j/400)*100;
-      const color=j>=300?"#2FBF71":j>=250?"#A5B4FC":j>=200?"#F7B928":"#FF6B5E";
+      const color=j>=300?T.successText:j>=250?T.primaryText:j>=200?T.warning:T.dangerText;
       setResult({agg:+sc.toFixed(1),jamb:j,post:0,note:calcNote("jamb",sc,j),color});
     }
   };
@@ -103,7 +137,11 @@ export default function PracticeHub() {
 
   return (
     <div style={{ minHeight: "100vh", paddingTop: NAVBAR_HEIGHT, background: T.bg, fontFamily: "var(--font)" }}>
-      <div style={{ padding: `20px 20px calc(${BOTTOM_NAV_HEIGHT}px + 16px)` }}>
+      {/* §0.5(10): laptop side padding is 24px like Home (20px below laptop).
+          Same class + media-query pattern as .mock-page-pad / .lesson-page-pad
+          in globals.css, housed here because globals.css is out of scope. */}
+      <style>{`@media (min-width: 1024px) { .practice-page-pad { padding-left: 24px !important; padding-right: 24px !important; } }`}</style>
+      <div className="practice-page-pad" style={{ padding: `20px 20px calc(${BOTTOM_NAV_HEIGHT}px + 16px)` }}>
         <h1 style={{ fontSize: "24px", fontWeight: 800, color: T.text, margin: "0 0 20px", letterSpacing: "-0.5px" }}>Practice</h1>
 
         <div className="practice-modes" style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
@@ -148,7 +186,7 @@ export default function PracticeHub() {
             <div style={{ padding:"0 18px 20px", borderTop:"1px solid "+T.border }}>
               <div style={{ display:"flex", gap:"8px", margin:"16px 0 14px" }}>
                 {(["aggregate","jamb"] as const).map(t=>(
-                  <button key={t} onClick={()=>{setCalcType(t);setResult(null);}} style={{
+                  <button key={t} onClick={()=>{setCalcType(t);setResult(null);setJambErr("");setPostErr("");}} style={{
                     flex:1, padding:"9px", borderRadius:"10px", border:"none",
                     background: calcType===t ? T.primary : T.s2,
                     color: calcType===t ? "#fff" : T.sub,
@@ -166,12 +204,14 @@ export default function PracticeHub() {
               <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                 <div>
                   <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>JAMB Score (0-400)</label>
-                  <input style={inp} type="number" placeholder="e.g. 280" value={jambS} onChange={e=>setJambS(e.target.value)} />
+                  <input style={{ ...inp, border: "1.5px solid " + (jambErr ? T.dangerText : T.border) }} type="number" placeholder="e.g. 280" value={jambS} onChange={e=>{setJambS(e.target.value);setJambErr(jambFieldErr(e.target.value));}} onBlur={e=>setJambErr(jambFieldErr(e.target.value))} />
+                  {jambErr && <div style={{ fontSize:"12px", color:T.dangerText, marginTop:"5px" }}>{jambErr}</div>}
                 </div>
                 {calcType==="aggregate" && (
                   <div>
                     <label style={{ fontSize:"12px", color:T.sub, display:"block", marginBottom:"6px", fontWeight:600 }}>Post-UTME Score (0-100)</label>
-                    <input style={inp} type="number" placeholder="e.g. 65" value={postS} onChange={e=>setPostS(e.target.value)} />
+                    <input style={{ ...inp, border: "1.5px solid " + (postErr ? T.dangerText : T.border) }} type="number" placeholder="e.g. 65" value={postS} onChange={e=>{setPostS(e.target.value);setPostErr(postFieldErr(e.target.value));}} onBlur={e=>setPostErr(postFieldErr(e.target.value))} />
+                    {postErr && <div style={{ fontSize:"12px", color:T.dangerText, marginTop:"5px" }}>{postErr}</div>}
                     <div style={{ fontSize:"11px", color:T.muted, marginTop:"5px" }}>Formula: (JAMB / 8) + (Post-UTME / 2)</div>
                   </div>
                 )}
@@ -207,6 +247,14 @@ export default function PracticeHub() {
                         <span style={{ color:T.text, fontWeight:700 }}>{r.val}</span>
                       </div>
                     ))}
+                  </div>
+                  <div style={{ borderTop:"1px solid "+T.border, marginTop:"12px", paddingTop:"12px" }}>
+                    <div style={{ fontSize:"13px", color:T.text, fontWeight:700 }}>
+                      {result.agg}% — {calcGrade(calcType, result.agg, parseFloat(jambS))}
+                    </div>
+                    <Link href="/studyplan" style={{ display:"block", fontSize:"13px", color:T.primaryText, fontWeight:700, textDecoration:"none", marginTop:"6px" }}>
+                      See what {calcType==="aggregate" ? result.agg+" / 100" : result.agg+"%"} means for your target — open your plan
+                    </Link>
                   </div>
                 </div>
               )}

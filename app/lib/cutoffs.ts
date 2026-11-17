@@ -182,17 +182,6 @@ export function getCutoff(university: string, course: string): CutoffData {
   return uniData[course] || DEFAULT;
 }
 
-export function getAdmissionProbability(targetScore: number, cutoff: CutoffData): { percent: number; label: string; color: string } {
-  const diff = targetScore - cutoff.recommendedJamb;
-  if (targetScore < cutoff.minJamb) return { percent: 5, label: "Very Unlikely", color: "#dc2626" };
-  if (diff >= 30) return { percent: 95, label: "Excellent Chance", color: "#16a34a" };
-  if (diff >= 15) return { percent: 80, label: "Very Good Chance", color: "#16a34a" };
-  if (diff >= 0) return { percent: 65, label: "Good Chance", color: "#2563eb" };
-  if (diff >= -15) return { percent: 40, label: "Possible", color: "#d97706" };
-  if (diff >= -30) return { percent: 20, label: "Risky", color: "#ea580c" };
-  return { percent: 8, label: "Very Unlikely", color: "#dc2626" };
-}
-
 export function getSmartRecommendation(university: string, course: string): string {
   const cutoff = getCutoff(university, course);
   const comp = cutoff.competition;

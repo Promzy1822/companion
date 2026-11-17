@@ -2,20 +2,80 @@
 import { useState, useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, Check, CheckCircle2, Clock, ArrowRight, ClipboardList, Trophy, BarChart3, AlertTriangle, XCircle, LayoutGrid, X, Bot } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Check, CheckCircle2, Clock, ArrowRight, ClipboardList, Trophy, BarChart3, AlertTriangle, XCircle, LayoutGrid, X, Bot, RotateCcw, BookOpen } from "lucide-react";
 import { NAVBAR_HEIGHT } from "../components/NavbarView";
-import { palette } from "../lib/design";
+import { palette, R } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { Sync } from "../lib/sync";
 import { Flame } from "../components/Flame";
 import { mockResultFlame, readFlameStage } from "../lib/flame";
 
-interface Question { id:number; subject:string; question:string; options:string[]; correct:number; explanation:string; image?:string; }
+interface Question { id:number; key:string; subject:string; question:string; options:string[]; correct:number; explanation:string; image?:string; }
 interface Section  { id:string; label:string; target:number; start:number; count:number; }
 interface Result   { score:number; total:number; total400:number; max400:number; bySubject:Record<string,{correct:number;total:number;score100:number}>; timeTaken:number; missing:string[]; }
 interface HistoryEntry { score:number; total:number; jambEquivalent:number; date:string; subjects?:number; }
 
 const TOTAL_TIME = 2 * 60 * 60; // the real UTME allowance: 2 hours
+
+// ── In-progress persistence (H2) ──
+// A refresh, accidental navigation or tab kill mid-exam must lose nothing.
+// Answers, skipped flags and the timer are saved to localStorage on every
+// change (see the save effect below) and offered back as a Resume banner
+// on setup. The paper itself is stored too: the paper is randomly shuffled
+// on every start, so it cannot be rebuilt identically from the bank —
+// without the stored paper there would be no "current paper" to match
+// against. questionIds holds the stable per-question bank key
+// `${subjectId}-${year}-${num}` (the positional id is NOT stable across
+// regenerations); restore requires the stored ids to match the stored
+// paper's keys exactly, in order, and the save to be under 3 hours old.
+const IN_PROGRESS_KEY = "companion_mock_in_progress";
+const IN_PROGRESS_TTL_MS = 3 * 60 * 60 * 1000; // 3 hours
+interface FailedSubject { label: string; empty: boolean; }
+interface StoredProgress {
+  savedAt: number;
+  questionIds: string[];
+  answers: Record<number, number>;
+  skipped: Record<number, boolean>;
+  timeLeft: number;
+  questions: Question[];
+  sections: Section[];
+  missing: string[];
+}
+function clearInProgress() {
+  try { localStorage.removeItem(IN_PROGRESS_KEY); } catch {}
+}
+function readStoredProgress(): StoredProgress | null {
+  const discard = () => { clearInProgress(); return null; };
+  try {
+    const raw = localStorage.getItem(IN_PROGRESS_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || typeof s !== "object") return discard();
+    if (typeof s.savedAt !== "number" || Date.now() - s.savedAt > IN_PROGRESS_TTL_MS || s.savedAt > Date.now() + 60000) return discard();
+    if (!Array.isArray(s.questions) || !s.questions.length) return discard();
+    if (!Array.isArray(s.questionIds) || s.questionIds.length !== s.questions.length) return discard();
+    for (let i = 0; i < s.questions.length; i++) {
+      if (!s.questions[i] || typeof s.questions[i].key !== "string" || s.questionIds[i] !== s.questions[i].key) return discard();
+    }
+    if (!Array.isArray(s.sections) || !s.sections.length) return discard();
+    if (!Array.isArray(s.missing)) return discard();
+    if (typeof s.answers !== "object" || s.answers === null || Array.isArray(s.answers)) return discard();
+    if (typeof s.skipped !== "object" || s.skipped === null || Array.isArray(s.skipped)) return discard();
+    if (typeof s.timeLeft !== "number" || !(s.timeLeft > 0) || s.timeLeft > TOTAL_TIME) return discard();
+    const n = s.questions.length;
+    for (const k of Object.keys(s.answers)) {
+      const idx = Number(k);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= n) return discard();
+      const v = s.answers[k];
+      if (typeof v !== "number" || v < 0 || v > 3) return discard();
+    }
+    for (const k of Object.keys(s.skipped)) {
+      const idx = Number(k);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= n || typeof s.skipped[k] !== "boolean") return discard();
+    }
+    return s as StoredProgress;
+  } catch { return discard(); }
+}
 
 const BANK: Record<string,{id:string;label:string}> = {
   "English Language":      { id:"english",     label:"English Language" },
@@ -63,6 +123,11 @@ export default function MockExam() {
   const [result,    setResult]    = useState<Result|null>(null);
   const [generating,setGenerating]= useState(false);
   const [loadError, setLoadError] = useState("");
+  const [failedSubjects, setFailedSubjects] = useState<FailedSubject[]>([]);
+  const [loadStatus, setLoadStatus]         = useState<Record<string,"loading"|"loaded"|"failed">>({});
+  const [loadedCounts, setLoadedCounts]     = useState<Record<string,number>>({});
+  const [timedOut, setTimedOut]             = useState(false);
+  const [resumable, setResumable]           = useState<StoredProgress|null>(null);
   const [showPalette, setShowPalette]     = useState(false);
   const [showSubmit,  setShowSubmit]      = useState(false);
   const [showAllMissed, setShowAllMissed] = useState(false);
@@ -73,38 +138,68 @@ export default function MockExam() {
   });
   const timerRef   = useRef<ReturnType<typeof setInterval>|null>(null);
   const missingRef = useRef<string[]>([]);
+  const pendingRef  = useRef<{ exam:Question[]; secs:Section[]; missing:string[]; failed:FailedSubject[] }|null>(null);
+  const timedOutRef = useRef(false);
   const submitRef  = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (phase==="exam" && timeLeft>0) {
       timerRef.current = setInterval(()=>setTimeLeft(t=>{
-        if(t<=1){clearInterval(timerRef.current!);submitRef.current?.();return 0;}
+        if(t<=1){clearInterval(timerRef.current!);timedOutRef.current=true;submitRef.current?.();return 0;}
         return t-1;
       }), 1000);
     }
     return ()=>{if(timerRef.current)clearInterval(timerRef.current);};
   }, [phase]);
 
-  const startExam = async () => {
+  // Start a fresh paper, or (retryOnly) re-fetch only the subjects that
+  // failed on the previous attempt, keeping the subjects that loaded (H1).
+  const beginExam = (exam: Question[], secs: Section[], missingNow: string[]) => {
+    missingRef.current = missingNow;
+    pendingRef.current = null;
+    setQuestions(exam);
+    setSections(secs);
+    setTimeLeft(TOTAL_TIME); setAnswers({}); setSkipped({});
+    setCurrent(0); setShowPalette(false); setShowSubmit(false); setShowAllMissed(false);
+    setTimedOut(false); setFailedSubjects([]); setLoadStatus({}); setLoadedCounts({});
+    setResumable(null); setGenerating(false);
+    setPhase("exam");
+  };
+
+  const startExam = async (retryOnly = false) => {
     setGenerating(true);
     setLoadError("");
     const { plan, missing } = buildPlan();
-    const exam: Question[] = [];
-    const secs: Section[] = [];
+    // Retry keeps the paper that already loaded and re-fetches only the
+    // failed subjects; a fresh start loads everything.
+    const pending = retryOnly ? pendingRef.current : null;
+    const failedLabels = pending ? pending.failed.map(f => f.label) : [];
+    const toFetch = pending ? plan.filter(p => failedLabels.includes(p.label)) : plan;
+    const exam: Question[] = pending ? [...pending.exam] : [];
+    const secs: Section[] = pending ? [...pending.secs] : [];
     const missingNow: string[] = [...missing];
-    try {
-      for (const p of plan) {
+    const failedNow: FailedSubject[] = [];
+    for (const p of toFetch) {
+      setLoadStatus(prev => ({ ...prev, [p.id]: "loading" }));
+      try {
         const res  = await fetch(`/api/qbank/questions?subject=${p.id}&limit=1000`);
+        // H1: a failed subject used to be swallowed by the catch below and
+        // the exam started short with no warning. Check res.ok per subject.
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const usable = (data.questions || []).filter((q:any) =>
           q.answer && q.options && q.options.A && q.options.B && q.options.C && q.options.D);
         for (let i = usable.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [usable[i], usable[j]] = [usable[j], usable[i]]; }
         const picked = usable.slice(0, p.target);
-        if (!picked.length) { missingNow.push(p.label); continue; }
+        if (!picked.length) { failedNow.push({ label: p.label, empty: true }); setLoadStatus(prev => ({ ...prev, [p.id]: "failed" })); continue; }
         const start = exam.length;
         picked.forEach((q:any) => {
           exam.push({
             id: exam.length + 1,
+            // Stable bank identity for this question — the positional id is
+            // not stable across regenerations, so in-progress restore (H2)
+            // matches on this key instead.
+            key: `${p.id}-${q.year}-${q.num}`,
             subject: p.label,
             question: q.question,
             options: [q.options.A, q.options.B, q.options.C, q.options.D],
@@ -114,25 +209,86 @@ export default function MockExam() {
           });
         });
         secs.push({ id: p.id, label: p.label, target: p.target, start, count: picked.length });
+        setLoadedCounts(prev => ({ ...prev, [p.id]: picked.length }));
+        setLoadStatus(prev => ({ ...prev, [p.id]: "loaded" }));
+      } catch {
+        failedNow.push({ label: p.label, empty: false });
+        setLoadStatus(prev => ({ ...prev, [p.id]: "failed" }));
       }
-    } catch {}
+    }
     if (!exam.length) {
       setGenerating(false);
       setLoadError("Could not load exam questions. Check your connection and try again.");
+      pendingRef.current = null;
+      setFailedSubjects(failedNow);
       return;
     }
-    missingRef.current = missingNow;
-    setQuestions(exam);
-    setSections(secs);
-    setTimeLeft(TOTAL_TIME); setAnswers({}); setSkipped({});
-    setCurrent(0); setShowPalette(false); setShowSubmit(false); setShowAllMissed(false);
-    setPhase("exam"); setGenerating(false);
+    // One or more subjects failed but the rest loaded: do NOT start the
+    // exam silently short. Hold the partial paper on setup and let the
+    // student retry the failed subjects or start without them, knowing the
+    // adjusted total (H1). The result screen still discloses the shortfall.
+    if (failedNow.length) {
+      missingNow.push(...failedNow.map(f => f.label));
+      pendingRef.current = { exam, secs, missing: missingNow, failed: failedNow };
+      setFailedSubjects(failedNow);
+      setGenerating(false);
+      return;
+    }
+    beginExam(exam, secs, missingNow);
+  };
+
+  // Start the held partial paper, disclosing the adjusted total (H1).
+  const startWithoutFailed = () => {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    beginExam(pending.exam, pending.secs, pending.missing);
+  };
+
+  // Return to setup from the result screen. Clears the in-progress save
+  // so a finished exam can never resurrect (H2).
+  const backToSetup = () => {
+    clearInProgress();
+    pendingRef.current = null;
+    setFailedSubjects([]); setLoadStatus({}); setLoadedCounts({}); setLoadError("");
+    setTimedOut(false); setResumable(null);
+    setPhase("setup"); setResult(null); setQuestions([]); setSections([]);
+    setAnswers({}); setSkipped({}); setTimeLeft(TOTAL_TIME); setCurrent(0);
+    setShowPalette(false); setShowSubmit(false); setShowAllMissed(false);
+  };
+
+  // Resume a saved in-progress mock (H2): the stored paper is restored
+  // exactly — same questions, same order — with answers, skipped flags and
+  // the timer. The save effect re-saves it with a fresh timestamp.
+  const resumeExam = () => {
+    if (!resumable) return;
+    missingRef.current = resumable.missing;
+    setQuestions(resumable.questions);
+    setSections(resumable.sections);
+    setAnswers(resumable.answers);
+    setSkipped(resumable.skipped);
+    setTimeLeft(resumable.timeLeft);
+    const firstOpen = resumable.questions.findIndex((_, i) => resumable.answers[i] === undefined);
+    setCurrent(firstOpen === -1 ? 0 : firstOpen);
+    setShowPalette(false); setShowSubmit(false); setShowAllMissed(false);
+    setTimedOut(false); setResumable(null);
+    setPhase("exam");
+  };
+
+  const discardResumable = () => {
+    clearInProgress();
+    setResumable(null);
   };
 
   // Always keep submitRef pointing to latest submitExam
   // so the timer interval closure never calls a stale version
   const submitExam = () => {
     if(timerRef.current) clearInterval(timerRef.current);
+    // A submitted exam must never resurrect: wipe the in-progress save on
+    // every submit path, manual or 0:00 auto-submit (H2).
+    clearInProgress();
+    const wasTimeout = timedOutRef.current;
+    timedOutRef.current = false;
+    setTimedOut(wasTimeout);
     let score=0; const bySubject:Result["bySubject"]={};
     for (const s of sections) {
       let correct=0;
@@ -222,6 +378,37 @@ export default function MockExam() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase, current, questions]);
 
+  // ── In-progress restore (H2) ──
+  // On mount, validate any saved mock: same paper (stored questionIds must
+  // match the stored paper's keys exactly, in order) and saved within 3
+  // hours. Anything else is discarded by readStoredProgress. A valid save
+  // is staged as a Resume banner on setup — not auto-started, so a student
+  // who abandoned a paper can still choose a fresh one instead of being
+  // dropped back into a 2-hour exam with no way out except submitting it.
+  useEffect(() => {
+    const rec = readStoredProgress();
+    if (rec) setResumable(rec);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist answers, skipped flags and timer on every change while the
+  // exam runs, so a refresh, accidental navigation or tab kill loses
+  // nothing. Cleared on submit (submitExam) and on back-to-setup.
+  // Note: the save happens in an effect, so a tab killed in the same frame
+  // as an answer could lose that one tap — everything committed before the
+  // kill is saved.
+  useEffect(() => {
+    if (phase !== "exam" || !questions.length) return;
+    try {
+      localStorage.setItem(IN_PROGRESS_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        questionIds: questions.map(q => q.key),
+        answers, skipped, timeLeft,
+        questions, sections, missing: missingRef.current,
+      }));
+    } catch {}
+  }, [phase, questions, sections, answers, skipped, timeLeft]);
+
   // Exam focus mode: hide the layout chrome (top bar, tabs, rail) while an exam runs
   useEffect(() => {
     if (phase !== "exam") return;
@@ -281,7 +468,7 @@ export default function MockExam() {
     <div style={{ display: "flex", gap: 6, flexWrap: wrap ? "wrap" : "nowrap", overflowX: wrap ? undefined : "auto", scrollbarWidth: "none" }}>
       {sections.map((s, i) => (
         <button key={s.id} onClick={() => setCurrent(s.start)} style={{
-          flexShrink: 0, padding: "7px 12px", minHeight: 44, borderRadius: 999, cursor: "pointer",
+          flexShrink: 0, padding: "7px 12px", minHeight: 44, borderRadius:R.pill, cursor: "pointer",
           fontSize: 12, fontWeight: 700, fontFamily: "inherit",
           // Active is an outline, never a white slab — the white pill was
           // the loudest element in the bar, louder than the timer.
@@ -321,7 +508,7 @@ export default function MockExam() {
 
       <div className="hero-banner" style={{background:"linear-gradient(165deg,#2A1B6B 0%,#1F1156 55%,#150D38 100%)",padding:"20px 20px 32px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-          <Link href="/" style={{width:44,height:44,borderRadius:"12px",backgroundColor:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none"}}>
+          <Link href="/" style={{width:44,height:44,borderRadius:R.lg,backgroundColor:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none"}}>
             <ArrowLeft size={18} color="#fff" strokeWidth={2} />
           </Link>
           <div>
@@ -331,8 +518,29 @@ export default function MockExam() {
         </div>
       </div>
 
+      {resumable && (
+        <div style={{margin:"16px 20px 0",background:T.surface,borderRadius:R.xl,padding:"20px",border:`1px solid ${T.warning}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"12px"}}>
+            <div style={{width:44,height:44,borderRadius:R.lg,background:T.warningTint,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <Clock size={22} color={T.warning} strokeWidth={2} />
+            </div>
+            <div>
+              <div style={{fontSize:"15px",fontWeight:800,color:T.text}}>Mock in progress</div>
+              <div style={{fontSize:"13px",color:T.sub,marginTop:"2px"}}>{Object.keys(resumable.answers).length} of {resumable.questions.length} answered · {fmt(resumable.timeLeft)} left</div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:"10px"}}>
+            <button onClick={resumeExam} style={{flex:1,padding:"13px",borderRadius:R.lg,border:"none",background:T.primary,color:"#fff",fontWeight:700,cursor:"pointer"}}>
+              Resume mock
+            </button>
+            <button onClick={discardResumable} style={{flex:1,padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
+              Discard saved mock
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mock-setup mock-page-pad" style={{padding:"16px 20px"}}>
-        <div style={{background:T.surface,borderRadius:"16px",padding:"24px",border:`1px solid ${T.border}`,marginBottom:"14px"}}>
+        <div style={{background:T.surface,borderRadius:R.xl,padding:"24px",border:`1px solid ${T.border}`,marginBottom:"14px"}}>
           <div style={{textAlign:"center",marginBottom:"24px"}}>
             <div style={{width:64,height:64,borderRadius:"18px",background:T.primaryTint,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
               <ClipboardList size={28} color={T.primary} strokeWidth={1.8} />
@@ -358,14 +566,51 @@ export default function MockExam() {
                 <AlertTriangle size={16} strokeWidth={2} /> {planInfo.missing.join(", ")} {planInfo.missing.length>1 ? "are" : "is"} not in the question bank — your paper will have {planInfo.plan.length} subject{planInfo.plan.length>1 ? "s" : ""}.
               </div>
             )}
+            {Object.keys(loadStatus).length>0 && (
+              <div style={{marginTop:"12px"}}>
+                {planInfo.plan.map(p=>{
+                  const st = loadStatus[p.id];
+                  if (!st) return null;
+                  return (
+                    <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:"13px"}}>
+                      <span style={{color:T.text,fontWeight:600}}>{p.label}</span>
+                      {st==="loading" && <span style={{color:T.sub}}>Loading…</span>}
+                      {st==="loaded" && <span style={{color:T.successText,fontWeight:700}}>{loadedCounts[p.id] ?? p.target} questions ready</span>}
+                      {st==="failed" && <span style={{color:T.dangerText,fontWeight:700}}>Failed to load</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {failedSubjects.length>0 && (
+              <div style={{marginTop:"12px"}}>
+                <div style={{display:"flex",alignItems:"flex-start",gap:"8px",background:T.warningTint,color:T.warning,fontSize:"13px",fontWeight:600,padding:"10px 12px",borderRadius:"10px",lineHeight:1.5}}>
+                  <AlertTriangle size={16} strokeWidth={2} style={{flexShrink:0,marginTop:1}} />
+                  <span>
+                    {failedSubjects.map(f => f.empty
+                      ? `${f.label} has no questions yet — your total will be out of ${(planInfo.plan.length - failedSubjects.length) * 100}, not 400.`
+                      : `${f.label} couldn't load — your total will be out of ${(planInfo.plan.length - failedSubjects.length) * 100}, not 400.`).join(" ")}
+                    {" "}Retry to load {failedSubjects.map(f=>f.label).join(", ")}, or start without {failedSubjects.map(f=>f.label).join(", ")}.
+                  </span>
+                </div>
+                <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+                  <button onClick={()=>startExam(true)} disabled={generating} style={{flex:1,padding:"13px",borderRadius:R.lg,border:"none",background:T.primary,color:"#fff",fontWeight:700,cursor:generating?"not-allowed":"pointer"}}>
+                    {generating?"Loading questions…":"Retry failed subjects"}
+                  </button>
+                  <button onClick={startWithoutFailed} disabled={generating} style={{flex:1,padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:generating?"not-allowed":"pointer"}}>
+                    Start without {failedSubjects.map(f=>f.label).join(", ")}
+                  </button>
+                </div>
+              </div>
+            )}
             {loadError && <p style={{fontSize:"12px",color:T.dangerText,fontWeight:600,marginTop:"10px"}}>{loadError}</p>}
           </div>
-          <button onClick={startExam} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:generating?T.s3:T.primary,color:"#fff",fontSize:"15px",fontWeight:700,cursor:generating?"not-allowed":"pointer"}}>
+          <button onClick={()=>startExam()} disabled={generating} style={{width:"100%",padding:"15px",borderRadius:R.lg,border:"none",background:generating?T.s3:T.primary,color:"#fff",fontSize:"15px",fontWeight:700,cursor:generating?"not-allowed":"pointer"}}>
             {generating?"Loading questions…":"Start Mock Exam"}
           </button>
         </div>
 
-        <div style={{background:T.surface,borderRadius:"16px",border:`1px solid ${T.border}`,overflow:"hidden"}}>
+        <div style={{background:T.surface,borderRadius:R.xl,border:`1px solid ${T.border}`,overflow:"hidden"}}>
           <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
               <Trophy size={16} color={T.primary} strokeWidth={1.8} />
@@ -405,7 +650,7 @@ export default function MockExam() {
             <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px"}}>{current+1} / {questions.length}</div>
             <div className="mock-bar-answered" style={{color:"rgba(255,255,255,0.75)",fontSize:"13px"}}>Answered {totalAnswered}/{questions.length}</div>
             <div style={{color:timerCol,fontSize:"22px",fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:"-0.5px"}}>{fmt(timeLeft)}</div>
-            <button onClick={()=>setShowSubmit(true)} style={{padding:"10px 18px",minHeight:44,display:"flex",alignItems:"center",borderRadius:"12px",border:"none",backgroundColor:T.accent,color:"#fff",fontSize:"13px",fontWeight:700,cursor:"pointer"}}>
+            <button onClick={()=>setShowSubmit(true)} style={{padding:"10px 18px",minHeight:44,display:"flex",alignItems:"center",borderRadius:R.lg,border:"none",backgroundColor:T.accent,color:"#fff",fontSize:"13px",fontWeight:700,cursor:"pointer"}}>
               Submit
             </button>
           </div>
@@ -433,7 +678,7 @@ export default function MockExam() {
         <div style={{minWidth:0}}>
           {questions[current] && (
             <div>
-              <div style={{background:T.surface,borderRadius:"16px",padding:"18px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
+              <div style={{background:T.surface,borderRadius:R.xl,padding:"18px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
                 <div style={{fontSize:"11px",color:T.primaryText,fontWeight:700,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{questions[current].subject}</div>
                 {questions[current].image && (
                   <img src={questions[current].image} alt="Question diagram" style={{maxWidth:"100%",borderRadius:"10px",marginBottom:"10px",background:"#fff",padding:8,boxSizing:"border-box",display:"block"}} />
@@ -443,7 +688,7 @@ export default function MockExam() {
               <div style={{display:"flex",flexDirection:"column",gap:"9px"}}>
                 {questions[current].options.map((opt,i)=>(
                   <button key={i} onClick={()=>answerCurrent(i)} style={{
-                    width:"100%",padding:"15px",borderRadius:"12px",
+                    width:"100%",padding:"15px",borderRadius:R.lg,
                     border:`2px solid ${answers[current]===i?T.primary:T.border}`,
                     background:answers[current]===i?"rgba(99,102,241,0.25)":T.surface,
                     color:answers[current]===i?"#fff":T.text,
@@ -459,14 +704,14 @@ export default function MockExam() {
                 ))}
               </div>
               <div style={{display:"flex",gap:"10px",marginTop:"14px"}}>
-                <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} style={{flex:1,padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:current===0?T.muted:T.text,fontWeight:700,cursor:current===0?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><ChevronLeft size={16}/> Prev</button>
-                <button onClick={skipCurrent} style={{flex:1,padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:T.surface,color:T.sub,fontWeight:700,cursor:"pointer",fontSize:"13px"}}>
+                <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} style={{flex:1,padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:"transparent",color:current===0?T.muted:T.text,fontWeight:700,cursor:current===0?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><ChevronLeft size={16}/> Prev</button>
+                <button onClick={skipCurrent} style={{flex:1,padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:T.surface,color:T.sub,fontWeight:700,cursor:"pointer",fontSize:"13px"}}>
                   Skip
                 </button>
                 {current<questions.length-1?(
-                  <button onClick={()=>setCurrent(c=>c+1)} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:T.primary,color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>Next <ChevronRight size={16}/></button>
+                  <button onClick={()=>setCurrent(c=>c+1)} style={{flex:1,padding:"13px",borderRadius:R.lg,border:"none",background:T.primary,color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>Next <ChevronRight size={16}/></button>
                 ):(
-                  <button onClick={()=>setShowSubmit(true)} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:T.accent,color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><Check size={16} strokeWidth={2.5}/> Submit</button>
+                  <button onClick={()=>setShowSubmit(true)} style={{flex:1,padding:"13px",borderRadius:R.lg,border:"none",background:T.accent,color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}><Check size={16} strokeWidth={2.5}/> Submit</button>
                 )}
               </div>
             </div>
@@ -475,7 +720,7 @@ export default function MockExam() {
 
         {/* Laptop: sticky palette rail beside the question (P4 pattern) */}
         <aside className="mock-rail">
-          <div style={{background:T.surface,borderRadius:"16px",padding:"16px",border:`1px solid ${T.border}`}}>
+          <div style={{background:T.surface,borderRadius:R.xl,padding:"16px",border:`1px solid ${T.border}`}}>
             <div style={{fontSize:"13px",fontWeight:700,color:T.text,marginBottom:"12px"}}>Question map</div>
             <div style={{marginBottom:"12px"}}>{renderPills(false, true)}</div>
             {renderChips(false, "grid")}
@@ -490,7 +735,7 @@ export default function MockExam() {
           <div className="mock-overlay-card" onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}>
               <span style={{fontSize:"15px",fontWeight:700,color:T.text}}>Question map</span>
-              <button onClick={()=>setShowPalette(false)} aria-label="Close question map" style={{width:44,height:44,borderRadius:"12px",border:`1px solid ${T.border}`,background:T.s2,color:T.text,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+              <button onClick={()=>setShowPalette(false)} aria-label="Close question map" style={{width:44,height:44,borderRadius:R.lg,border:`1px solid ${T.border}`,background:T.s2,color:T.text,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                 <X size={18} />
               </button>
             </div>
@@ -514,10 +759,10 @@ export default function MockExam() {
               Your time stops when you submit.
             </p>
             <div style={{display:"flex",gap:"10px"}}>
-              <button onClick={()=>setShowSubmit(false)} style={{flex:1,padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
+              <button onClick={()=>setShowSubmit(false)} style={{flex:1,padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
                 Keep writing
               </button>
-              <button onClick={submitExam} style={{flex:1,padding:"13px",borderRadius:"12px",border:"none",background:T.accent,color:"#fff",fontWeight:700,cursor:"pointer"}}>
+              <button onClick={submitExam} style={{flex:1,padding:"13px",borderRadius:R.lg,border:"none",background:T.accent,color:"#fff",fontWeight:700,cursor:"pointer"}}>
                 Submit anyway
               </button>
             </div>
@@ -534,7 +779,18 @@ export default function MockExam() {
     const gap = result.total400 - targetNum;
     const bestBefore = history.length > 1 ? Math.max(...history.slice(1).map(h => h.jambEquivalent)) : null;
     const flameRes = mockResultFlame(result.total400, bestBefore);
+    // Result-hero heat is the mock score itself, not a constant (§24.1):
+    // total400/max400 mapped 0-100, the same scale heatBand() reads.
+    // max400 is sections.length*100, so it is >=100 whenever a result exists.
+    const flameHeat = Math.round((result.total400 / result.max400) * 100);
     const shortSections = sections.filter(s=>s.count<s.target);
+    // Weakest subject drives the "Practise your weakest subject" CTA (L15):
+    // lowest score out of 100 across the subjects actually sat. Ties keep
+    // the first subject in breakdown order.
+    const weakestEntry = Object.entries(result.bySubject).sort((a, b) => a[1].score100 - b[1].score100)[0];
+    const weakestId = weakestEntry ? BANK[weakestEntry[0]]?.id : undefined;
+    const weakestLabel = weakestEntry ? weakestEntry[0] : "";
+    const weakestShort = weakestLabel === "Literature in English" ? "Literature" : weakestLabel;
 
     // Missed = answered wrong. Skipped = never answered (deliberately
     // skipped or never reached). The two are never mixed: a student who
@@ -555,7 +811,7 @@ export default function MockExam() {
       const q = questions[entry.i];
       const isMissed = entry.kind === "missed";
       return (
-        <div key={entry.i} style={{padding:"12px",borderRadius:"12px",background:isMissed?T.dangerTint:T.s2,border:`1px solid ${isMissed?"rgba(250,62,62,0.2)":T.border}`,marginBottom:"10px"}}>
+        <div key={entry.i} style={{padding:"12px",borderRadius:R.lg,background:isMissed?T.dangerTint:T.s2,border:`1px solid ${isMissed?"rgba(250,62,62,0.2)":T.border}`,marginBottom:"10px"}}>
           <div style={{fontSize:"11px",color:isMissed?T.danger:T.warning,fontWeight:700,marginBottom:"4px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{q.subject}</div>
           <div style={{fontSize:"13px",color:T.text,fontWeight:600,marginBottom:"6px"}}>{q.question}</div>
           <div style={{fontSize:"12px",color:isMissed?T.dangerText:T.sub,fontWeight:600,display:"flex",alignItems:"center",gap:"5px"}}><XCircle size={16} color={isMissed?T.dangerText:T.sub} strokeWidth={2.5}/> {answers[entry.i]!==undefined ? `Your answer: ${"ABCD"[answers[entry.i]]} — ${q.options[answers[entry.i]]}` : "Your answer: — Not answered"}</div>
@@ -576,13 +832,18 @@ export default function MockExam() {
           </div>
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginBottom:"4px"}}>Mock score (out of 400)</div>
           {result.max400<400 && (
-            <div style={{display:"inline-block",background:T.warningTint,color:T.warning,fontSize:"13px",fontWeight:700,padding:"8px 12px",borderRadius:"8px",marginBottom:"10px"}}>Scored out of {result.max400} — {result.missing.join(", ")} not included</div>
+            <div style={{display:"inline-block",background:T.warningTint,color:T.warning,fontSize:"13px",fontWeight:700,padding:"8px 12px",borderRadius:R.md,marginBottom:"10px"}}>Scored out of {result.max400} — {result.missing.join(", ")} not included</div>
           )}
           <div style={{color:"#fff",fontSize:"52px",fontWeight:900,letterSpacing:"-2px"}}>{result.total400}<span style={{fontSize:"22px",color:"rgba(255,255,255,0.6)"}}>/{result.max400}</span></div>
           <div style={{color:"rgba(255,255,255,0.85)",fontSize:"14px",marginTop:"4px"}}>Each subject scored out of 100, then added up.</div>
           <div style={{color:T.accent,fontSize:"16px",fontWeight:700,marginTop:"4px"}}>{result.score}/{result.total} questions correct</div>
+          {timedOut && (
+            <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:T.warningTint,color:T.warning,fontSize:"13px",fontWeight:700,padding:"10px 12px",borderRadius:"10px",marginTop:"12px"}}>
+              <AlertTriangle size={16} strokeWidth={2} /> Time ran out — your answers were submitted automatically.
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-            <Flame stage={readFlameStage()} heat={50} mood={flameRes.mood} speech={flameRes.speech} size={44} />
+            <Flame stage={readFlameStage()} heat={flameHeat} mood={flameRes.mood} speech={flameRes.speech} size={44} />
           </div>
           <div style={{color:"rgba(255,255,255,0.75)",fontSize:"13px",marginTop:"6px"}}>
             Target {targetNum} · {gap>=0 ? `${gap} pts above target` : `${Math.abs(gap)} pts below target`}
@@ -596,7 +857,7 @@ export default function MockExam() {
 
         <div className="page-narrow mock-page-pad" style={{padding:"0 20px",marginTop:"-16px"}}>
           {/* Subject breakdown — each subject out of 100, the JAMB way */}
-          <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
+          <div style={{background:T.surface,borderRadius:R.xl,padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"16px"}}>
               <BarChart3 size={17} color={T.primary} strokeWidth={1.8} />
               <span style={{fontWeight:700,color:T.text,fontSize:"15px"}}>Subject Breakdown</span>
@@ -636,7 +897,7 @@ export default function MockExam() {
           </div>
 
           {/* Missed vs skipped — your answer, the correct answer, provenance only */}
-          <div style={{background:T.surface,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
+          <div style={{background:T.surface,borderRadius:R.xl,padding:"20px",marginBottom:"14px",border:`1px solid ${T.border}`}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"16px"}}>
               <AlertTriangle size={17} color={T.warning} strokeWidth={1.8} />
               <span style={{fontWeight:700,color:T.text,fontSize:"15px"}}>Questions you missed ({missedIdx.length}) · {skippedIdx.length} skipped</span>
@@ -654,7 +915,7 @@ export default function MockExam() {
                 )}
                 {shownReview.filter(r=>r.kind==="skipped").map(reviewItem)}
                 {reviewList.length>10 && (
-                  <button onClick={()=>setShowAllMissed(v=>!v)} style={{width:"100%",padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer",marginTop:"2px"}}>
+                  <button onClick={()=>setShowAllMissed(v=>!v)} style={{width:"100%",padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer",marginTop:"2px"}}>
                     {showAllMissed ? "Show less" : `Show all ${reviewList.length}`}
                   </button>
                 )}
@@ -662,13 +923,24 @@ export default function MockExam() {
             )}
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-            <button onClick={()=>{setPhase("setup");setResult(null);setQuestions([]);setSections([]);setAnswers({});setSkipped({});}} style={{padding:"13px",borderRadius:"12px",border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
-              Back to setup
+          <div style={{display:"flex",flexDirection:"column",gap:"10px",paddingBottom:"24px"}}>
+            <button onClick={backToSetup} style={{width:"100%",padding:"15px",borderRadius:R.lg,border:"none",background:T.primary,color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+              <RotateCcw size={16} strokeWidth={2.5} /> Retake mock
             </button>
-            <Link href="/studyplan" style={{padding:"13px",borderRadius:"12px",border:"none",background:T.primary,color:"#fff",fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
-              Study Plan <ArrowRight size={14} strokeWidth={2}/>
-            </Link>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+              {weakestId ? (
+                <Link href={`/questions?subject=${weakestId}&mode=practice`} style={{padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",fontSize:"13px",textAlign:"center"}}>
+                  <BookOpen size={16} strokeWidth={2} /> Practise {weakestShort}
+                </Link>
+              ) : (
+                <button onClick={backToSetup} style={{padding:"13px",borderRadius:R.lg,border:`1.5px solid ${T.border}`,background:"transparent",color:T.text,fontWeight:700,cursor:"pointer"}}>
+                  Back to setup
+                </button>
+              )}
+              <Link href="/studyplan" style={{padding:"13px",borderRadius:R.lg,border:"none",background:T.primary,color:"#fff",fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+                Study Plan <ArrowRight size={14} strokeWidth={2}/>
+              </Link>
+            </div>
           </div>
         </div>
         </div>

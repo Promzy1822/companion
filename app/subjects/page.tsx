@@ -118,7 +118,10 @@ export default function Subjects() {
           </div>
         ) : (
           <div style={{ fontSize: "13px", color: T.sub, marginBottom: "24px" }}>
-            No subjects selected yet — pick yours in Profile
+            No subjects selected yet —{" "}
+            <Link href="/profile" style={{ color: T.primary, fontWeight: 700, textDecoration: "none" }}>
+              pick yours in Profile
+            </Link>
           </div>
         )}
 

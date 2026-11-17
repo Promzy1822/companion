@@ -8,10 +8,19 @@
  *
  * RULE: logout removes the local session cache + cookie only.
  *       Nothing in this file is a database — accounts live exclusively in KV.
+ * H3 (2026-11-17): session expiry is tracked here too — markExpired() /
+ * consumeExpiredFlag() carry the reason across the redirect to
+ * /landing?session=expired, and logout() signs out of Supabase FIRST
+ * (so sync no-ops) before any local key is cleared. See logout().
  */
 
 const SESSION_COOKIE  = "companion_session";
 const ACTIVE_USER_KEY = "companion_user"; // local cache of the logged-in session
+const SESSION_EXPIRED_KEY = "companion_session_expired"; // sessionStorage: set on expiry, read once by the next screen
+const LOGGING_OUT_KEY     = "companion_logging_out"; // sessionStorage: intentional-logout marker (see logout())
+// Device-level install state is NOT personal data: logout keeps it so the
+// install banner does not reappear after every logout.
+const INSTALL_KEYS = new Set(["companion_install_dismissed_at", "companion_install_done"]);
 
 export interface UserAccount {
   email:          string;
@@ -43,6 +52,20 @@ function clearCookie(): void {
   document.cookie = `${SESSION_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 }
 
+function clearLocalDeviceData(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const doomed: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("companion_") && !INSTALL_KEYS.has(k)) doomed.push(k);
+    }
+    for (const k of doomed) localStorage.removeItem(k);
+    // Personal progress not under the companion_ prefix.
+    localStorage.removeItem("mock_history");
+  } catch {}
+}
+
 // ── Session (active login) ────────────────────────────────────────────────────
 
 export const Session = {
@@ -52,6 +75,9 @@ export const Session = {
     try {
       localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(account));
       setCookie();
+      // Fresh login clears any stale expiry / logging-out markers.
+      try { sessionStorage.removeItem(SESSION_EXPIRED_KEY); } catch {}
+      try { sessionStorage.removeItem(LOGGING_OUT_KEY); } catch {}
     } catch (e) {
       console.error("[Session] Failed to start session:", e);
     }
@@ -69,20 +95,82 @@ export const Session = {
   /**
    * END SESSION ONLY — does NOT delete the account.
    * The account lives permanently in Vercel KV regardless of this call.
+   *
+   * ORDERING (H3) — sign out FIRST, then clear local data:
+   *   1. Mark "logging out" (sessionStorage) so the AppChrome
+   *      onAuthStateChange handler knows this SIGNED_OUT is intentional
+   *      and does NOT treat it as a session expiry.
+   *   2. Await Supabase signOut. Sync.pushNow() no-ops without a uid, so
+   *      once this resolves no pending sync can touch the cloud backup.
+   *      (Raced against a 5s timeout so a hung signOut can never trap
+   *      logout; the local clear below still runs.)
+   *   3. Cancel pending debounced sync pushes, then clear the
+   *      companion_* localStorage keys (+ mock_history) and the cookie.
+   *      Clearing BEFORE signOut would let a pending push see a null
+   *      local value and DELETE the cloud snapshot for that key.
+   *   The logging-out marker is left set on purpose: AppChrome consumes
+   *   it when it sees SIGNED_OUT, and Session.start() clears it on the
+   *   next login. Never clear it here — the SIGNED_OUT event fires
+   *   asynchronously and may arrive after signOut() resolves.
    */
-  logout(): void {
+  async logout(): Promise<void> {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(ACTIVE_USER_KEY);
-    try { localStorage.removeItem("companion_sync_meta"); } catch {}
-    clearCookie();
-    // End the real Supabase session too — without this the user stays
-    // signed in underneath, and sync keeps running as them after
-    // "logout" (and can leak into the next account on a shared device).
+    try { sessionStorage.setItem(LOGGING_OUT_KEY, "1"); } catch {}
     try {
-      void import("./supabase/client")
-        .then(m => m.createClient().auth.signOut())
-        .catch(() => {});
+      const { createClient } = await import("./supabase/client");
+      const signOut = createClient().auth.signOut();
+      const timeout = new Promise<void>(resolve => { setTimeout(resolve, 5000); });
+      await Promise.race([signOut.then(() => undefined).catch(() => undefined), timeout]);
     } catch {}
+    try {
+      const { Sync } = await import("./sync");
+      Sync.cancelPending();
+    } catch {}
+    clearLocalDeviceData();
+    try { sessionStorage.removeItem(SESSION_EXPIRED_KEY); } catch {}
+    try { sessionStorage.removeItem("companion_hydrated"); } catch {}
+    clearCookie();
+  },
+
+  /**
+   * Clear only the cached identity (companion_user), keeping study data
+   * on-device. Used on session expiry so the UI stops looking logged
+   * in; the next login re-hydrates from the cloud. Expiry must NOT
+   * clear the plan/progress keys — that is logout's job only.
+   */
+  clearUserCache(): void {
+    if (typeof window === "undefined") return;
+    try { localStorage.removeItem(ACTIVE_USER_KEY); } catch {}
+  },
+
+  /** Record that the Supabase session died (not a logout). Read once
+   *  by the next screen via consumeExpiredFlag(). */
+  markExpired(): void {
+    if (typeof window === "undefined") return;
+    try { sessionStorage.setItem(SESSION_EXPIRED_KEY, "1"); } catch {}
+  },
+
+  /** True once if markExpired() was called since the last read; clears the flag. */
+  consumeExpiredFlag(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      if (!sessionStorage.getItem(SESSION_EXPIRED_KEY)) return false;
+      sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+      return true;
+    } catch { return false; }
+  },
+
+  /** True while an intentional logout is in flight (set by logout(),
+   *  consumed by AppChrome when it handles SIGNED_OUT). */
+  isLoggingOut(): boolean {
+    if (typeof window === "undefined") return false;
+    try { return sessionStorage.getItem(LOGGING_OUT_KEY) === "1"; } catch { return false; }
+  },
+
+  /** Consume the logging-out marker (AppChrome, on SIGNED_OUT). */
+  clearLoggingOutFlag(): void {
+    if (typeof window === "undefined") return;
+    try { sessionStorage.removeItem(LOGGING_OUT_KEY); } catch {}
   },
 
   /** Called on app boot — refreshes the cookie if a local session exists */

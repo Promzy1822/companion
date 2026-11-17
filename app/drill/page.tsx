@@ -7,7 +7,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { NAVBAR_HEIGHT } from "../components/NavbarView";
-import { BOTTOM_NAV_HEIGHT } from "../components/BottomNavView";
 import { palette, subjectColor } from "../lib/design";
 import { useDark } from "../lib/theme";
 import { getTopics } from "../lib/syllabus";
@@ -60,7 +59,7 @@ export default function DrillPicker() {
   const active = SUBJECTS.find(s => s.id === subject);
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, paddingTop: NAVBAR_HEIGHT, paddingBottom: BOTTOM_NAV_HEIGHT + 20, fontFamily: "var(--font)" }}>
+    <div className="drill-page-pad" style={{ minHeight: "100vh", background: T.bg, paddingTop: NAVBAR_HEIGHT, fontFamily: "var(--font)" }}>
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "20px" }}>
         <Link href="/practice" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: T.sub, fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 12, minHeight: 44 }}>
           <ArrowLeft size={16} /> Practice

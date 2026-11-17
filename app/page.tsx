@@ -13,7 +13,7 @@ import { getFlameState, homeFlame } from "./lib/flame";
 import { daysUntil, getEffectiveExam } from "./lib/exam-date";
 import { getTopics } from "./lib/syllabus";
 import { Progress, todayWAT } from "./lib/progress";
-import { Bot, CalendarDays, Check, ChevronRight, Crosshair, Flame, Sparkles, Target, Timer } from "lucide-react";
+import { AlertTriangle, Bot, CalendarDays, Check, ChevronRight, Crosshair, Flame, Sparkles, Target, Timer, X } from "lucide-react";
 
 // Home rebuild (Home v3 sample, structural): hero band with greeting,
 // bigger living Flame, glass streak/days-left chips and a Daily spark;
@@ -49,7 +49,7 @@ interface TodayTask {
   subject: string; topic: string; done: boolean;
   rest: boolean; practice: boolean; minutes: number; nextSubject: string | null;
 }
-interface HomeData { upNext: UpNext; today: TodayTask | null; hasPlan: boolean; weakest: Weakest; upcoming: PlanDay[]; }
+interface HomeData { upNext: UpNext; today: TodayTask | null; hasPlan: boolean; weakest: Weakest; upcoming: PlanDay[]; planCorrupt: boolean; }
 
 // ── Weakest subject: honest, from stored data only ─────────────────────
 // 1. Lowest syllabus coverage % among registered subjects
@@ -87,15 +87,38 @@ function computeWeakest(subjects: string[]): Weakest {
   return { subject: list[0], pct: null, source: "none" };
 }
 
-// ── Plan reading (companion_study_plan_v2: weeks[].days[]) ─────────────
-function readPlan(): PlanDay[] {
-  if (typeof window === "undefined") return [];
+// ── Safe localStorage JSON read (L4): distinguishes "nothing stored"
+// from "stored but unreadable", so corrupt data is reported to the user
+// instead of silently reading as "not logged in" / "no plan yet".
+// app/lib/storage.ts already parses safely but swallows the error, so
+// this local helper reports it. Never deletes or rewrites the data.
+// (storage.ts already exists at HEAD, so the helper lives here rather
+// than in a file outside this patch's scope.)
+function readStored<T>(key: string): { value: T | null; corrupt: boolean } {
+  if (typeof window === "undefined") return { value: null, corrupt: false };
+  const raw = localStorage.getItem(key);
+  if (!raw) return { value: null, corrupt: false };
   try {
-    const raw = localStorage.getItem("companion_study_plan_v2");
-    if (!raw) return [];
-    const weeks = JSON.parse(raw) as WeekPlan[];
-    return (weeks || []).flatMap((w) => w.days || []);
-  } catch { return []; }
+    const value = JSON.parse(raw) as T;
+    if (typeof value !== "object" || value === null) return { value: null, corrupt: true };
+    return { value, corrupt: false };
+  } catch {
+    return { value: null, corrupt: true };
+  }
+}
+
+// ── Plan reading (companion_study_plan_v2: weeks[].days[]) ─────────────
+// Corrupt or wrong-shaped stored data is reported (planCorrupt), never
+// silently read as "no plan yet". Never deletes the stored plan.
+function readPlan(): { days: PlanDay[]; corrupt: boolean } {
+  const { value, corrupt } = readStored<WeekPlan[]>("companion_study_plan_v2");
+  if (corrupt || !value) return { days: [], corrupt };
+  if (!Array.isArray(value)) return { days: [], corrupt: true };
+  try {
+    return { days: value.flatMap((w) => (w && w.days) || []), corrupt: false };
+  } catch {
+    return { days: [], corrupt: true };
+  }
 }
 
 // Older stored plans may predate the `type` field; derive it from the
@@ -177,7 +200,8 @@ function computeUpcoming(days: PlanDay[], today: string): PlanDay[] {
 }
 
 function readHomeData(user: User | null): HomeData {
-  const days = readPlan();
+  const plan = readPlan();
+  const days = plan.days;
   const today = todayWAT();
   const weakest = computeWeakest(user?.subjects || []);
   return {
@@ -186,29 +210,62 @@ function readHomeData(user: User | null): HomeData {
     hasPlan: days.length > 0,
     weakest,
     upcoming: computeUpcoming(days, today),
+    planCorrupt: plan.corrupt,
   };
 }
 
 interface HeroData { streak: number; daysLeft: number; spark: string; }
 
 export default function Home() {
-  const [user] = useState<User | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const u = localStorage.getItem("companion_user");
-      return u ? JSON.parse(u) : null;
-    } catch { return null; }
+  // L4: corrupt stored user JSON is NOT "not logged in". The sentinel
+  // keeps `user` non-null so the no-user redirect in the effect below
+  // (the Session worker's block — untouched by this patch) does not fire
+  // for corrupt data; the corrupt card rendered further down explains
+  // what happened instead. The placeholder is never rendered as a page
+  // (the card returns first) and the stored value is left exactly as is.
+  const [userState] = useState<{ user: User | null; corrupt: boolean }>(() => {
+    const r = readStored<User>("companion_user");
+    if (r.corrupt) return { user: { name: "", email: "", target: "", institution: "", subjects: [], course: "" }, corrupt: true };
+    return { user: r.value, corrupt: false };
   });
+  const user = userState.user;
+  const userCorrupt = userState.corrupt;
   // Re-read on mount: Session.sync() may hydrate newer data after first paint.
   const [homeData, setHomeData] = useState<HomeData>(() => readHomeData(user));
   // Hero chips + spark: localStorage reads only, so effect-only (never render).
   const [hero, setHero] = useState<HeroData | null>(null);
+  // L12: one-line return acknowledgement. Today's recorded activity count
+  // is compared with the count seen on the last Home visit; if it grew,
+  // show the streak line once — the marker is updated on this mount, so
+  // a remount does not repeat it. Dismissible, one line, no new card.
+  const [welcomeBack, setWelcomeBack] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user || userCorrupt) return;
+    try {
+      const today = todayWAT();
+      const streak = Progress.getStreak();
+      const count = (streak.activityLog[today] || []).length;
+      let seenCount = 0;
+      try {
+        const seen = JSON.parse(localStorage.getItem("companion_home_last_seen") || "null");
+        if (seen && seen.date === today && typeof seen.count === "number") seenCount = seen.count;
+      } catch {}
+      if (count > 0 && count > seenCount && streak.current > 0) {
+        setWelcomeBack(`Welcome back — your streak is now ${streak.current} day${streak.current === 1 ? "" : "s"}.`);
+      }
+      localStorage.setItem("companion_home_last_seen", JSON.stringify({ date: today, count }));
+    } catch {}
+  }, [user, userCorrupt]);
   const router = useRouter();
   const T = palette();
 
   useEffect(() => {
     Session.sync();
-    if (!user) { router.replace("/landing"); return; }
+    // H3: carry the reason — a dead session (flag set by AppChrome's
+    // onAuthStateChange handler) redirects with ?session=expired so the
+    // login screen can say the session ended; a plain logged-out state
+    // redirects silently as before.
+    if (!user) { router.replace(Session.consumeExpiredFlag() ? "/landing?session=expired" : "/landing"); return; }
     setHomeData(readHomeData(user));
     setHero({
       streak: Progress.getStreak().current,
@@ -219,7 +276,7 @@ export default function Home() {
 
   if (!user) return null;
 
-  const { upNext, today, hasPlan, weakest, upcoming } = homeData;
+  const { upNext, today, hasPlan, weakest, upcoming, planCorrupt } = homeData;
   const todayISO = todayWAT();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -289,6 +346,40 @@ export default function Home() {
     ? `/ai?q=${encodeURIComponent(`Explain ${today.topic} (${today.subject})`)}`
     : null;
 
+  // L4: corrupt saved user data — explain it instead of silently
+  // redirecting. Nothing is deleted here: "Log in" goes back to the
+  // account, "Start fresh" opens setup, which only overwrites the
+  // stored user when a new account is created.
+  if (userCorrupt) {
+    return (
+      <div style={{
+        minHeight: "100vh", background: T.bg,
+        paddingTop: NAVBAR_HEIGHT + "px",
+        fontFamily: "var(--font)",
+      }}>
+        <div style={{ padding: SP[5] }}>
+          <div style={{ ...card, padding: SP[5] }}>
+            <div style={{ display: "flex", alignItems: "center", gap: SP[3] }}>
+              <div style={tile(T.dangerTint)}>
+                <AlertTriangle size={20} color={T.dangerText} strokeWidth={1.8} />
+              </div>
+              <div style={{ fontSize: TY.lg, fontWeight: FW.bold, color: T.text }}>
+                We couldn&apos;t read your saved data
+              </div>
+            </div>
+            <div style={{ fontSize: TY.base, color: T.sub, marginTop: SP[3], lineHeight: px(LH.base) }}>
+              We couldn&apos;t read your saved data on this device — your progress may be lost. Log in again or start fresh.
+            </div>
+            <div style={{ display: "flex", gap: SP[2], marginTop: SP[4] }}>
+              <Link href="/auth" style={{ ...orangeBtn, flex: 1, marginTop: 0 }}>Log in</Link>
+              <Link href="/landing" style={{ ...ghostBtn, flex: 1 }}>Start fresh</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       minHeight: "100vh", background: T.bg,
@@ -313,7 +404,7 @@ export default function Home() {
               Target <span style={{ color: ORANGE }}>{user?.target} pts</span>
               {user?.institution ? " · " + user.institution : ""}
             </div>
-            {hero && (
+            {hero ? (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                 <span style={glassChip}>
                   <Flame size={14} color="#FB923C" style={{ flexShrink: 0 }} />
@@ -324,19 +415,35 @@ export default function Home() {
                   {hero.daysLeft === 0 ? "Exam day" : hero.daysLeft === 1 ? "1 day left" : `${hero.daysLeft} days left`}
                 </span>
               </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                <div className="skeleton" style={{ width: 118, height: 28, borderRadius: R.pill }} />
+                <div className="skeleton" style={{ width: 104, height: 28, borderRadius: R.pill }} />
+              </div>
             )}
           </div>
           <div style={{ flexShrink: 0, minWidth: 84, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <FlameGreeting topic={user?.subjects?.[0]} size={84} showSpeech={false} />
           </div>
         </div>
-        {hero && (
+        {hero ? (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12 }}>
             <Sparkles size={14} color="#FDBA74" style={{ flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{hero.spark}</span>
           </div>
+        ) : (
+          <div className="skeleton" style={{ height: 14, marginTop: 12, maxWidth: 260, borderRadius: 6 }} />
         )}
       </div>
+
+      {welcomeBack && (
+        <div style={{ display: "flex", alignItems: "center", gap: SP[2], padding: "12px 20px 0" }}>
+          <span style={{ flex: 1, fontSize: TY.sm, color: T.sub, lineHeight: px(LH.sm) }}>{welcomeBack}</span>
+          <button type="button" onClick={() => setWelcomeBack(null)} aria-label="Dismiss" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: R.pill, border: "none", background: "transparent", color: T.sub, cursor: "pointer", flexShrink: 0 }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       <div className="home-cols">
         <div className="home-main" style={{ display: "flex", flexDirection: "column", gap: SP[4] }}>
@@ -389,6 +496,11 @@ export default function Home() {
                 </div>
               )}
             </div>
+            {planCorrupt && (
+              <div style={{ fontSize: TY.xs, color: T.dangerText, marginTop: 6, lineHeight: px(LH.xs) }}>
+                Your saved plan couldn&apos;t be read — <Link href="/studyplan" style={{ color: T.dangerText, fontWeight: FW.semibold }}>generate a new one</Link>.
+              </div>
+            )}
             {isRestToday && (
               <div style={{ fontSize: TY.xs, color: T.sub, marginTop: 6, lineHeight: px(LH.xs) }}>
                 {restLine}

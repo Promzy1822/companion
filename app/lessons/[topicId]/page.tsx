@@ -1,22 +1,4 @@
-/**
- * DRAFT — Lesson reader rebuild (W1). Do NOT copy straight into the repo;
- * the coordinator assembles the package.
- *
- * Based on app/lessons/[topicId]/page.tsx at HEAD aabd1582 (Home v3 landed).
- * Structural rebuild to the approved Lesson sample (Gas Laws, phy_25).
- *
- * Engine wiring preserved exactly: /api/lessons fetch, stage state
- * (video/summary/learn/quiz/done), quiz state + heat + Flame, Progress
- * sync (recordActivity "lesson" + setTopicDone), drill link /drill/[topicId].
- * Player internals live in app/components/lesson/players.tsx (W2's draft);
- * this page only renders LessonBlockView and passes it the optional
- * onContinueExercises callback (story finished state).
- *
- * Layout classes come from globals.css (W3's patcher): .lesson-page-pad,
- * .lesson-layout, .lesson-main, .lesson-rail, .lesson-prose. This file
- * carries NO layout CSS of its own — only the drill-pattern spin
- * keyframes inside the loading state.
- */
+// Lesson reader — rebuilt to the approved Lesson sample.
 "use client";
 import { useState, useEffect, useRef, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
@@ -31,6 +13,8 @@ import { LessonBlockView } from "../../components/lesson/players";
 import { palette, R, S } from "../../lib/design";
 import { useDark } from "../../lib/theme";
 import { Progress } from "../../lib/progress";
+import { fetchWithTimeout } from "../../lib/fetch-timeout";
+import { getTopics } from "../../lib/syllabus";
 import { Flame, FlameHeatMeter } from "../../components/Flame";
 import { applyAnswer, completionFlame, readFlameStage, HEAT_START } from "../../lib/flame";
 import type { LessonBlock } from "../../lib/lesson-v2";
@@ -59,6 +43,10 @@ type Stage = "video" | "summary" | "learn" | "quiz" | "done";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
 
+// The six block kinds LessonBlockView knows (app/lib/lesson-v2.ts); anything
+// else renders the fallback card below instead of nothing (L5c).
+const KNOWN_BLOCK_KINDS: string[] = ["section", "predict", "do-you-know", "worked-example", "story", "simulator"];
+
 function gradeFor(pct: number): string {
   if (pct >= 90) return "Excellent";
   if (pct >= 75) return "Well done";
@@ -75,6 +63,9 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const T = palette();
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
+  const [slowLoad, setSlowLoad] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [data, setData]       = useState<LessonData | null>(null);
   const [reload, setReload]   = useState(0);
 
@@ -89,13 +80,20 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const [objOpen, setObjOpen] = useState(true);
   const recordedRef           = useRef(false);
 
+  // Slow-network staging (H5): after ~8s the loading copy escalates and
+  // offers Cancel, which aborts the fetch and returns to Learn.
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setSlowLoad(false);
+    const slowTimer = window.setTimeout(() => { if (!cancelled) setSlowLoad(true); }, 8000);
     (async () => {
       setLoading(true);
       setError("");
+      setVideoFailed(false);
       try {
-        const res  = await fetch(`/api/lessons/${topicId}`);
+        const res  = await fetchWithTimeout(`/api/lessons/${topicId}`, 60000, { signal: controller.signal });
         const body = await res.json();
         if (cancelled) return;
         if (!res.ok) { setError(body.error || "Could not load this lesson."); return; }
@@ -103,13 +101,23 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         setStage(body.version === 2 ? "learn" : (body.videoId ? "video" : "summary"));
         setHeat(HEAT_START);
         setInRow(0);
-      } catch {
-        if (!cancelled) setError("Network error. Please try again.");
+      } catch (e: unknown) {
+        if (cancelled || controller.signal.aborted) return;
+        const errName = e instanceof Error ? e.name : "";
+        const errMsg = e instanceof Error ? e.message : "";
+        if (errName === "TimeoutError" || /timed out/i.test(errMsg)) {
+          setError("Something went wrong on our side. Please try again.");
+        } else if (typeof navigator !== "undefined" && !navigator.onLine) {
+          setError("You're offline — check your connection and try again.");
+        } else {
+          setError("Network error. Please try again.");
+        }
       } finally {
         if (!cancelled) setLoading(false);
+        window.clearTimeout(slowTimer);
       }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.clearTimeout(slowTimer); controller.abort(); };
   }, [topicId, reload]);
 
   // Objectives are the learn-stage reference: collapse the card when the
@@ -119,13 +127,27 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
     if (stage === "quiz" || stage === "done") setObjOpen(false);
   }, [stage]);
 
+  const cancelLoad = () => {
+    abortRef.current?.abort();
+    router.back();
+  };
+
   // Drill loading pattern, verbatim (L3): spinner + copy, never blank.
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: T.bg, paddingTop: NAVBAR_HEIGHT, fontFamily: "var(--font)" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "60px 20px", textAlign: "center" }}>
           <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${T.s3}`, borderTopColor: "#F97316", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-          <div style={{ fontSize: 13, color: T.sub }}>Loading your lesson…</div>
+          <div style={{ fontSize: 13, color: T.sub }}>{slowLoad ? "Still loading — this can take a few seconds on a slow connection." : "Loading your lesson…"}</div>
+          {slowLoad && (
+            <button onClick={cancelLoad} style={{
+              marginTop: 14, padding: "10px 22px", minHeight: 44, borderRadius: R.pill,
+              background: "transparent", color: T.text, fontWeight: 700, fontSize: 14,
+              border: `1.5px solid ${T.border}`, cursor: "pointer", fontFamily: "inherit",
+            }}>
+              Cancel
+            </button>
+          )}
           <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
         </div>
       </div>
@@ -179,6 +201,11 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   const pct = exercises.length > 0 ? Math.round((score / exercises.length) * 100) : 100;
   const flameDone = completionFlame(score, exercises.length);
   const summaryParas = (data.summary || "").split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+  // Next lesson (L15): next topic in the same subject, in Learn's order
+  // (getTopics returns the syllabus order Learn renders).
+  const subjectTopics = getTopics(data.subjectKey);
+  const topicIdx = subjectTopics.findIndex(t => t.id === data.topicId);
+  const nextTopic = topicIdx >= 0 ? subjectTopics[topicIdx + 1] : undefined;
 
   const selectAnswer = (i: number) => {
     if (selected !== null) return;
@@ -297,27 +324,60 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
 
             {isV2 && stage === "learn" && (
               <>
-                {(data.blocks ?? []).map((b, i) => (
-                  <LessonBlockView key={i} block={b} T={T} onContinueExercises={startQuiz} />
-                ))}
-                <button onClick={startQuiz} style={primaryBtn}>
-                  <span>{exercises.length > 0 ? `Start exercises (${exercises.length})` : "Finish lesson"}</span>
-                  <ChevronRight size={16} />
-                </button>
+                {(data.blocks ?? []).length === 0 && exercises.length === 0 ? (
+                  <div style={{ background: T.surface, borderRadius: R.xxl, padding: "24px 18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14, textAlign: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                      <BookOpen size={32} color={T.muted} />
+                    </div>
+                    <h2 style={{ fontSize: 16, fontWeight: 800, color: T.text, margin: "0 0 6px" }}>This lesson has no content yet.</h2>
+                    <p style={{ color: T.sub, fontSize: 14, lineHeight: 1.6, margin: "0 0 18px" }}>
+                      There is nothing to read or practise here yet. Try loading it again, or come back later.
+                    </p>
+                    <button onClick={() => setReload(r => r + 1)} style={{ ...primaryBtn, marginBottom: 10 }}>Try again</button>
+                    <button onClick={() => router.back()} style={secondaryBtn}>Go back</button>
+                  </div>
+                ) : (
+                  <>
+                    {(data.blocks ?? []).map((b, i) =>
+                      KNOWN_BLOCK_KINDS.includes(b.kind) ? (
+                        <LessonBlockView key={i} block={b} T={T} onContinueExercises={startQuiz} />
+                      ) : (
+                        <div key={i} style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
+                          <p style={{ fontSize: 14, color: T.text, margin: 0, lineHeight: 1.6 }}>This interactive isn&apos;t available yet.</p>
+                        </div>
+                      )
+                    )}
+                    <button onClick={startQuiz} style={primaryBtn}>
+                      <span>{exercises.length > 0 ? `Start exercises (${exercises.length})` : "Finish lesson"}</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </>
+                )}
               </>
             )}
 
             {!isV2 && stage === "video" && (
               <div style={{ background: T.surface, borderRadius: R.xxl, padding: "18px", border: `1px solid ${T.border}`, boxShadow: S.sm, marginBottom: 14 }}>
                 {data.videoId ? (
-                  <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, borderRadius: R.lg, overflow: "hidden", marginBottom: 14 }}>
-                    <iframe
-                      src={`https://www.youtube.com/embed/${data.videoId}`}
-                      style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
+                  videoFailed ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", background: T.s2, borderRadius: R.lg, marginBottom: 14, textAlign: "center" }}>
+                      <AlertCircle size={32} color={T.muted} />
+                      <p style={{ color: T.sub, fontSize: 14, margin: "8px 0 14px" }}>This video couldn&apos;t be played — read the summary instead.</p>
+                      <button onClick={() => setStage("summary")} style={{ ...secondaryBtn, width: "auto", padding: "10px 18px", minHeight: 44 }}>
+                        Read the summary
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, borderRadius: R.lg, overflow: "hidden", marginBottom: 14 }}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${data.videoId}`}
+                        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        onError={() => setVideoFailed(true)}
+                      />
+                    </div>
+                  )
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", background: T.s2, borderRadius: R.lg, marginBottom: 14, textAlign: "center" }}>
                     <PlayCircle size={32} color={T.muted} />
@@ -443,6 +503,17 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
                     <button onClick={retakeExercises} style={{ ...primaryBtn, marginBottom: 10 }}>
                       <RotateCcw size={15} /> Retake exercises
                     </button>
+                  )}
+                  {nextTopic ? (
+                    <Link href={`/lessons/${nextTopic.id}`} style={{ ...primaryBtn, textDecoration: "none", marginBottom: 10 }}>
+                      <span>Next lesson: {nextTopic.topic}</span>
+                      <ChevronRight size={16} />
+                    </Link>
+                  ) : (
+                    <Link href={`/learn/${data.subjectKey}`} style={{ ...primaryBtn, textDecoration: "none", marginBottom: 10 }}>
+                      <span>Back to {data.subject}</span>
+                      <ChevronRight size={16} />
+                    </Link>
                   )}
                   <Link href={`/learn/${data.subjectKey}`} style={{ ...secondaryBtn, textDecoration: "none", marginBottom: 10 }}>
                     Back to {data.subject} topics

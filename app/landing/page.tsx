@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { palette } from "../lib/design";
 import { useDark, useIsoLayoutEffect } from "../lib/theme";
+import { DOORS } from "../lib/doors";
+import { Session } from "../lib/session";
 import {
-  ArrowLeft, ArrowRight, BookOpen, Bot, CalendarDays, Check, CheckCircle,
-  ClipboardList, Clock, Target, X,
+  AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle,
+  Clock, Target, X,
 } from "lucide-react";
 
 /* ── Data ──────────────────────────────────────────────────────────────── */
@@ -46,12 +48,6 @@ const TIMES = [
   { v: 45, label: "45 minutes", sub: "Steady progress" },
   { v: 60, label: "1 hour", sub: "Serious pace" },
   { v: 120, label: "2 hours +", sub: "Full push to exam day" },
-];
-const DOORS = [
-  { icon: BookOpen, color: "#2FBF71", title: "Learn", desc: "Lessons for every topic in the official JAMB syllabus, written in clear, simple English." },
-  { icon: ClipboardList, color: "#E3B341", title: "Practice", desc: "4,060 real past questions, timed mock exams, and instant feedback on every answer." },
-  { icon: CalendarDays, color: "#FF6B5E", title: "Plan", desc: "A day-by-day study plan matched to your exam date, with your syllabus coverage tracked topic by topic." },
-  { icon: Bot, color: "#6366F1", title: "AI Tutor", desc: "Ask anything, anytime — or send a photo of a question and watch it solved step by step." },
 ];
 
 function localISO(d: Date): string {
@@ -134,11 +130,25 @@ export default function Landing() {
   const [warmSelected, setWarmSelected] = useState<string | null>(null);
   const [warmAnswers, setWarmAnswers] = useState<Record<string, boolean>>({});
   const [warmSkipped, setWarmSkipped] = useState(false);
+  // M14: which subjects' warm-up questions failed to load (same order as
+  // subjectKeys) — disclosed in the plan summary instead of silently
+  // reporting "X of Y correct" against the loaded count.
+  const [warmMissing, setWarmMissing] = useState<string[]>([]);
 
   /* Logged-in users never see the front door. */
+  // H3: an expired session redirects here (?session=expired, plus the
+  // sessionStorage flag AppChrome sets) — show it instead of silently
+  // landing on the welcome step. The flag is always consumed so a stale
+  // one can never re-fire on a later visit.
+  const [sessionExpired, setSessionExpired] = useState(false);
   useIsoLayoutEffect(() => {
     const user = localStorage.getItem("companion_user");
     if (user) { router.replace("/"); return; }
+    try {
+      const viaQuery = new URLSearchParams(window.location.search).get("session") === "expired";
+      const viaFlag = Session.consumeExpiredFlag();
+      if (viaQuery || viaFlag) setSessionExpired(true);
+    } catch {}
     setReady(true);
   }, [router]);
 
@@ -153,10 +163,13 @@ export default function Landing() {
     if (step !== "warmup" || warmStatus !== "idle") return;
     let cancelled = false;
     setWarmStatus("loading");
+    setWarmMissing([]);
     Promise.all(subjectKeys.map(fetchWarmQuestion)).then((results) => {
       if (cancelled) return;
       const loaded = results.filter((q): q is WarmQ => q !== null);
       if (loaded.length === 0) { setWarmStatus("error"); return; }
+      // Promise.all preserves order, so index i of results is subjectKeys[i].
+      setWarmMissing(subjectKeys.filter((_, i) => results[i] === null));
       setWarmQs(loaded);
       setWarmIndex(0);
       setWarmSelected(null);
@@ -171,6 +184,10 @@ export default function Landing() {
   const examEstimated = examMode === "window";
   const warmTotal = warmQs.length;
   const warmCorrect = Object.values(warmAnswers).filter(Boolean).length;
+  // M14: partial load — some subjects have no question. The plan summary
+  // must say so (and name them) instead of silently scoring the loaded few.
+  const warmPartial = warmMissing.length > 0 && warmTotal > 0;
+  const warmMissingLabels = warmMissing.map(labelFor).join(", ");
   const topicsPerWeek = examDays > 0 ? Math.max(1, Math.round((TOPIC_COUNT / examDays) * 7)) : TOPIC_COUNT;
 
   /* Weakest subject first: the first subject answered wrong, in
@@ -193,6 +210,7 @@ export default function Landing() {
     /* Changing subjects invalidates any loaded warm-up. */
     setWarmStatus("idle");
     setWarmQs([]);
+    setWarmMissing([]);
     setWarmIndex(0);
     setWarmSelected(null);
     setWarmAnswers({});
@@ -260,11 +278,11 @@ export default function Landing() {
   /* ── Shared styles ────────────────────────────────────────────────────── */
   const btnPrimary: React.CSSProperties = {
     width: "100%", padding: "15px", borderRadius: "12px", border: "none",
-    background: "#F97316", color: "#1F1156", fontWeight: 800, fontSize: "15px",
-    cursor: "pointer", boxShadow: "0 2px 10px rgba(249,115,22,0.35)", minHeight: 52,
+    background: T.accent, color: "#1F1156", fontWeight: 800, fontSize: "15px",
+    cursor: "pointer", boxShadow: `0 2px 10px ${T.accent}59`, minHeight: 52,
   };
   const btnPrimaryDisabled: React.CSSProperties = {
-    ...btnPrimary, background: "#2A2F45", color: "#5B6070", boxShadow: "none", cursor: "not-allowed",
+    ...btnPrimary, background: T.border, color: T.muted, boxShadow: "none", cursor: "not-allowed",
   };
   const btnGhost: React.CSSProperties = {
     width: "100%", padding: "13px", borderRadius: "12px", border: "1.5px solid rgba(255,255,255,0.2)",
@@ -302,7 +320,7 @@ export default function Landing() {
       </div>
       <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
         {[1, 2, 3, 4, 5].map((s) => (
-          <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: s <= n ? "#6366F1" : "#2A2F45" }} />
+          <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: s <= n ? T.primary : T.border }} />
         ))}
       </div>
       <h1 style={h1}>{title}</h1>
@@ -331,6 +349,16 @@ export default function Landing() {
         .fd-step { animation: fdStepIn 0.25s ease-out; }
         @keyframes fdStepIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @media (prefers-reduced-motion: reduce) { .fd-step { animation: none; } }
+        /* A3/D19: hover states for the front door — CSS :hover, the same
+           mechanism as globals.css .rail-link:hover / .lift:hover, under
+           the same (hover: hover) guard. Inline styles win over classes,
+           so the ghost-button background needs !important. Disabled
+           buttons and maxed-out chips (aria-disabled) are excluded. */
+        @media (hover: hover) {
+          .fd-page button:not(:disabled):not([aria-disabled="true"]):hover { filter: brightness(1.08); }
+          .fd-page a:hover { filter: brightness(1.15); text-decoration: underline !important; }
+          .fd-ghost:hover { background: rgba(255,255,255,0.08) !important; }
+        }
       `}</style>
 
       {/* ── NAV ── */}
@@ -353,7 +381,7 @@ export default function Landing() {
             <button
               onClick={() => { if (step === "welcome") setStep("subjects"); window.scrollTo({ top: 0 }); }}
               style={{
-                background: "#F97316", color: "#1F1156", border: "none", borderRadius: "50px", padding: "8px 16px",
+                background: T.accent, color: "#1F1156", border: "none", borderRadius: "50px", padding: "8px 16px",
                 fontSize: "13px", fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
               }}
             >
@@ -375,9 +403,9 @@ export default function Landing() {
         <div className="fd-auth-pitch">
           <img src="/icon-192.png" alt="Companion" width={44} height={44} style={{ borderRadius: "12px", display: "block", marginBottom: "20px" }} />
           <div style={{ fontSize: "30px", fontWeight: 900, color: "#fff", lineHeight: 1.2, letterSpacing: "-0.5px", marginBottom: "12px" }}>
-            Real questions. A real plan.<br /><span style={{ color: "#F97316" }}>A tutor in your pocket.</span>
+            4,060 real past questions.<br /><span style={{ color: T.accent }}>One plan to your target score.</span>
           </div>
-          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: "0 0 28px", maxWidth: "400px" }}>
+          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.78)", lineHeight: 1.6, margin: "0 0 28px", maxWidth: "400px" }}>
             Companion is the free JAMB study app built for Nigerian students — it plans your days and keeps you on track until exam day.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px" }}>
@@ -385,10 +413,10 @@ export default function Landing() {
               const Icon = d.icon;
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "12px", padding: "10px 14px" }}>
-                  <Icon size={18} strokeWidth={1.9} color="#F97316" />
+                  <Icon size={18} strokeWidth={1.9} color={T.accent} />
                   <div>
                     <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff" }}>{d.title}</div>
-                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{d.desc}</div>
+                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)" }}>{d.desc}</div>
                   </div>
                 </div>
               );
@@ -396,25 +424,35 @@ export default function Landing() {
           </div>
           {step !== "welcome" && (
             <div style={{ marginTop: "20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "16px", padding: "16px", maxWidth: "400px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#A5B4FC", letterSpacing: "2px", marginBottom: "10px" }}>YOUR PLAN — LIVE</div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: T.primaryText, letterSpacing: "2px", marginBottom: "10px" }}>YOUR PLAN — LIVE</div>
               {planSummaryLines}
               <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", marginTop: "10px" }}>
                 {examDays > 0 ? `About ${examDays} days left${examEstimated ? " (estimated)" : ""} — your plan fills in as you answer.` : "Answer the steps and watch your plan fill in."}
               </div>
             </div>
           )}
-          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", margin: "28px 0 0" }}>Free · No credit card · Set up in 2 minutes</p>
         </div>
 
         {/* Wizard column — .fd-auth-form caps it at 420px in the laptop split */}
         <div className="fd-auth-form" style={{ display: "flex", flexDirection: "column", minHeight: "calc(100dvh - 56px)", padding: "20px 16px 28px", boxSizing: "border-box" }}>
+
+          {/* H3: session-expired notice — AppChrome redirects here on expiry. */}
+          {sessionExpired && (
+            <div role="alert" style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "12px 14px", borderRadius: "12px", background: T.dangerTint, border: `1px solid ${T.danger}59`, marginBottom: "16px" }}>
+              <AlertTriangle size={16} strokeWidth={2} color={T.dangerText} style={{ flexShrink: 0, marginTop: "1px" }} />
+              <span style={{ flex: 1, fontSize: "13px", color: T.dangerText, lineHeight: 1.5 }}>Your session ended — <Link href="/auth" style={{ color: T.dangerText, fontWeight: 700 }}>log in again</Link> to keep syncing.</span>
+              <button onClick={() => setSessionExpired(false)} aria-label="Dismiss" style={{ background: "none", border: "none", color: T.dangerText, cursor: "pointer", padding: "0", flexShrink: 0 }}>
+                <X size={15} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
 
           {/* ── WELCOME ── */}
           {step === "welcome" && (
             <div key="welcome" className="fd-step" style={{ display: "flex", flexDirection: "column", flex: 1, textAlign: "center" }}>
               <img src="/icon-192.png" alt="Companion" width={60} height={60} style={{ borderRadius: "18px", display: "block", margin: "24px auto 20px", boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }} />
               <h1 style={{ fontSize: "clamp(30px, 9vw, 40px)", fontWeight: 900, color: "#fff", lineHeight: 1.15, letterSpacing: "-1px", margin: "0 0 14px" }}>
-                Ace your JAMB,<br />one step at a time.
+                Turn real questions<br />into your target score.
               </h1>
               <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.78)", lineHeight: 1.6, margin: "0 auto 24px", maxWidth: "340px" }}>
                 Pick your subjects, try a few real questions from them, and get a plan built around your target score and the exam window.
@@ -427,7 +465,7 @@ export default function Landing() {
                 ].map((s, i) => (
                   <div key={i} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "14px", padding: "12px 6px" }}>
                     <div style={{ fontSize: "20px", fontWeight: 900, color: "#fff" }}>{s.v}</div>
-                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>{s.l}</div>
+                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", marginTop: "2px" }}>{s.l}</div>
                   </div>
                 ))}
               </div>
@@ -435,10 +473,10 @@ export default function Landing() {
                 <button onClick={() => setStep("subjects")} style={btnPrimary}>
                   Get started <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
                 </button>
-                <Link href="/auth" style={{ display: "block", marginTop: "14px", fontSize: "13px", fontWeight: 700, color: "#A5B4FC", textDecoration: "none" }}>
+                <Link href="/auth" style={{ display: "block", marginTop: "14px", fontSize: "13px", fontWeight: 700, color: T.primaryText, textDecoration: "none" }}>
                   I already have an account — Log in
                 </Link>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", margin: "16px 0 0" }}>Free · No credit card · Set up in 2 minutes</p>
+                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", margin: "16px 0 0" }}>Free · No credit card · Set up in 2 minutes</p>
               </div>
             </div>
           )}
@@ -448,9 +486,9 @@ export default function Landing() {
             <div key="subjects" className="fd-step" style={{ display: "flex", flexDirection: "column", flex: 1 }}>
               {backTo("welcome")}
               {stepHead(1, "Which subjects are you writing?", "English Language is compulsory. Pick 3 more — your warm-up questions come from these.")}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "12px", background: "rgba(49,162,76,0.14)", border: "1px solid rgba(49,162,76,0.35)", marginBottom: "12px" }}>
-                <CheckCircle size={15} color="#2FBF71" strokeWidth={2} />
-                <span style={{ fontSize: "13px", color: "#7BD88F", fontWeight: 600 }}>English Language (compulsory)</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "12px", background: T.successTint, border: `1px solid ${T.success}59`, marginBottom: "12px" }}>
+                <CheckCircle size={15} color={T.successText} strokeWidth={2} />
+                <span style={{ fontSize: "13px", color: T.successText, fontWeight: 600 }}>English Language (compulsory)</span>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
                 {PICKABLE.map((s) => {
@@ -460,13 +498,14 @@ export default function Landing() {
                     <button
                       key={s.key}
                       onClick={() => togglePick(s.key)}
+                      aria-disabled={max ? true : undefined}
                       style={{
                         padding: "9px 14px", borderRadius: "50px", fontSize: "13px", minHeight: 44,
                         cursor: max ? "not-allowed" : "pointer", fontFamily: "inherit",
-                        border: `1.5px solid ${sel ? "#6366F1" : "#2A2F45"}`,
-                        background: sel ? "rgba(99,102,241,0.12)" : "#1E2230",
-                        color: sel ? "#A5B4FC" : max ? "#5B6070" : "#C9CDDD",
-                        fontWeight: sel ? 700 : 400, opacity: max ? 0.6 : 1, transition: "all 0.15s",
+                        border: `1.5px solid ${sel ? T.primary : T.border}`,
+                        background: sel ? T.primaryTint : T.s2,
+                        color: sel ? T.primaryText : max ? T.muted : T.text,
+                        fontWeight: sel ? 700 : 400, transition: "all 0.15s",
                       }}
                     >
                       {s.label}
@@ -474,9 +513,10 @@ export default function Landing() {
                   );
                 })}
               </div>
-              <div style={{ padding: "10px 14px", borderRadius: "12px", background: picked.length === 3 ? "rgba(49,162,76,0.14)" : "rgba(99,102,241,0.12)", border: `1px solid ${picked.length === 3 ? "rgba(49,162,76,0.35)" : "rgba(99,102,241,0.35)"}`, marginBottom: "16px" }}>
-                <span style={{ fontSize: "13px", color: picked.length === 3 ? "#7BD88F" : "#A5B4FC", fontWeight: 700 }}>
-                  English + {picked.length} of 3 picked{picked.length === 3 ? " — complete" : ` — pick ${3 - picked.length} more`}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "12px", background: T.primaryTint, border: `1px solid ${T.primary}59`, marginBottom: "16px" }}>
+                {picked.length === 3 && <CheckCircle size={15} color={T.successText} strokeWidth={2} />}
+                <span style={{ fontSize: "13px", color: T.primaryText, fontWeight: 700 }}>
+                  English + {picked.length} of 3 picked{picked.length === 3 ? ", all set" : `, ${3 - picked.length} more to go`}
                 </span>
               </div>
               <div style={{ marginTop: "auto" }}>
@@ -499,7 +539,7 @@ export default function Landing() {
               </div>
               <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: s <= 2 ? "#6366F1" : "#2A2F45" }} />
+                  <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: s <= 2 ? T.primary : T.border }} />
                 ))}
               </div>
 
@@ -516,7 +556,7 @@ export default function Landing() {
                   <p style={{ ...sub, marginBottom: "20px" }}>We couldn&apos;t load your questions. Check your connection and try again — or skip the warm-up and keep going.</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <button onClick={() => setWarmStatus("idle")} style={btnPrimary}>Try again</button>
-                    <button onClick={skipWarm} style={btnGhost}>Skip warm-up</button>
+                    <button onClick={skipWarm} className="fd-ghost" style={btnGhost}>Skip warm-up</button>
                   </div>
                 </div>
               )}
@@ -530,6 +570,11 @@ export default function Landing() {
                     <p style={{ ...sub, marginBottom: "16px" }}>
                       Four questions from your subjects — one from each. No pressure, this just finds your level.
                     </p>
+                    {warmPartial && (
+                      <p style={{ fontSize: "13px", color: T.warning, margin: "-8px 0 16px", lineHeight: 1.5 }}>
+                        Only {warmTotal} of {subjectKeys.length} questions loaded — no question for {warmMissingLabels}.
+                      </p>
+                    )}
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
                       <span style={{ fontSize: "11px", fontWeight: 700, color: T.primaryText, letterSpacing: "1.5px" }}>{labelFor(q.key).toUpperCase()}</span>
                       <span style={{ fontSize: "12px", color: T.muted }}>Question {warmIndex + 1} of {warmTotal}</span>
@@ -584,7 +629,7 @@ export default function Landing() {
                       <div style={{
                         marginTop: "12px", padding: "12px 14px", borderRadius: "12px", fontSize: "13px", lineHeight: 1.55,
                         background: warmSelected === q.answer ? T.successTint : T.dangerTint,
-                        border: `1px solid ${warmSelected === q.answer ? "rgba(49,162,76,0.35)" : "rgba(250,62,62,0.35)"}`,
+                        border: `1px solid ${warmSelected === q.answer ? T.success + "59" : T.danger + "59"}`,
                         color: warmSelected === q.answer ? T.successText : T.dangerText,
                       }}>
                         {warmSelected === q.answer
@@ -636,7 +681,7 @@ export default function Landing() {
               <div style={{ ...card, marginBottom: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
                   <span style={{ fontSize: "11px", fontWeight: 700, color: T.primaryText, letterSpacing: "1.5px" }}>JAMB 2027 · UTME WINDOW</span>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#F97316", background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.35)", borderRadius: "50px", padding: "3px 10px" }}>Proposed</span>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: T.accent, background: T.accentTint, border: `1px solid ${T.accent}59`, borderRadius: "50px", padding: "3px 10px" }}>Proposed</span>
                 </div>
                 <div style={{ fontSize: "22px", fontWeight: 900, color: T.text, letterSpacing: "-0.5px" }}>{WINDOW_LABEL}</div>
                 <p style={{ fontSize: "13px", color: T.sub, lineHeight: 1.55, margin: "8px 0 0" }}>
@@ -654,7 +699,7 @@ export default function Landing() {
                   <button onClick={() => setStep("time")} style={btnPrimary}>
                     Use the window — continue <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
                   </button>
-                  <button onClick={() => { setExamMode("exact"); setExactError(""); }} style={btnGhost}>
+                  <button onClick={() => { setExamMode("exact"); setExactError(""); }} className="fd-ghost" style={btnGhost}>
                     I know my exact date
                   </button>
                   <p style={{ fontSize: "12px", color: T.muted, lineHeight: 1.55, margin: "4px 0 0", textAlign: "center" }}>
@@ -664,33 +709,33 @@ export default function Landing() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "auto" }}>
                   <div>
-                    <label style={{ fontSize: "13px", fontWeight: 600, color: "#9AA0B5", display: "block", marginBottom: "6px" }}>Your exact date — from your exam slip</label>
+                    <label style={{ fontSize: "13px", fontWeight: 600, color: T.sub, display: "block", marginBottom: "6px" }}>Your exact date — from your exam slip</label>
                     <input
                       type="date"
                       min={tomorrowISO}
                       value={exactDate}
                       onChange={(e) => { setExactDate(e.target.value); setExactError(""); }}
                       style={{
-                        width: "100%", padding: "13px 16px", borderRadius: "12px", border: "1.5px solid #2A2F45",
-                        fontSize: "15px", outline: "none", background: "#0E1018", color: "#F1F2F8",
+                        width: "100%", padding: "13px 16px", borderRadius: "12px", border: `1.5px solid ${T.border}`,
+                        fontSize: "15px", outline: "none", background: T.bg, color: T.text,
                         boxSizing: "border-box", fontFamily: "inherit", colorScheme: "dark",
                       }}
                     />
                   </div>
                   {exactDate && !exactError && daysUntil(exactDate) > 0 && (
-                    <div style={{ padding: "10px 14px", borderRadius: "12px", background: T.successTint, border: "1px solid rgba(49,162,76,0.35)", fontSize: "13px", color: T.successText, lineHeight: 1.5 }}>
+                    <div style={{ padding: "10px 14px", borderRadius: "12px", background: T.successTint, border: `1px solid ${T.success}59`, fontSize: "13px", color: T.successText, lineHeight: 1.5 }}>
                       {daysUntil(exactDate)} days left — your exact day, {fmtDate(exactDate)}, from your slip. Your plan will spread {TOPIC_COUNT} topics across them, weakest subject first.
                     </div>
                   )}
                   {exactError && (
-                    <div style={{ padding: "10px 14px", borderRadius: "12px", background: T.dangerTint, border: "1px solid rgba(250,62,62,0.35)", fontSize: "13px", color: T.dangerText, lineHeight: 1.5 }}>
+                    <div style={{ padding: "10px 14px", borderRadius: "12px", background: T.dangerTint, border: `1px solid ${T.danger}59`, fontSize: "13px", color: T.dangerText, lineHeight: 1.5 }}>
                       {exactError}
                     </div>
                   )}
                   <button onClick={confirmExactDate} disabled={!exactDate} style={!exactDate ? btnPrimaryDisabled : btnPrimary}>
                     Continue with this date <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
                   </button>
-                  <button onClick={() => { setExamMode("window"); setExactDate(""); setExactError(""); }} style={btnGhost}>
+                  <button onClick={() => { setExamMode("window"); setExactDate(""); setExactError(""); }} className="fd-ghost" style={btnGhost}>
                     Use the window instead
                   </button>
                 </div>
@@ -730,17 +775,17 @@ export default function Landing() {
               </div>
               <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: "#6366F1" }} />
+                  <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: T.primary }} />
                 ))}
               </div>
               <h1 style={h1}>Your plan is ready</h1>
               <p style={{ ...sub, marginBottom: "16px" }}>Built from your answers — your weakest warm-up subject goes first. Create a free account to save it.</p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 14px", borderRadius: "14px", background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.4)" }}>
-                  <Target size={19} strokeWidth={2} color="#F97316" style={{ flexShrink: 0 }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 14px", borderRadius: "14px", background: T.accentTint, border: `1px solid ${T.accent}66` }}>
+                  <Target size={19} strokeWidth={2} color={T.accent} style={{ flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#F97316", letterSpacing: "1.5px" }}>START HERE</div>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: T.accent, letterSpacing: "1.5px" }}>START HERE</div>
                     <div style={{ fontSize: "14px", fontWeight: 700, color: T.text }}>{labelFor(weakestKey)}</div>
                     <div style={{ fontSize: "12px", color: T.sub }}>
                       {warmSkipped
@@ -760,6 +805,11 @@ export default function Landing() {
                     <span style={{ color: T.muted }}>Warm-up</span>
                     <span style={{ color: T.text, fontWeight: 600 }}>{warmSkipped ? "Skipped" : `${warmCorrect} of ${warmTotal} correct`}</span>
                   </div>
+                  {!warmSkipped && warmPartial && (
+                    <div style={{ fontSize: "12px", color: T.warning, lineHeight: 1.5 }}>
+                      Warm-up: {warmTotal} of {subjectKeys.length} questions loaded — no question for {warmMissingLabels}.
+                    </div>
+                  )}
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "13px" }}>
                     <span style={{ color: T.muted }}>Target score</span>
                     <span style={{ color: T.text, fontWeight: 600 }}>{target} out of 400</span>
@@ -781,7 +831,7 @@ export default function Landing() {
                       <span key={i} style={{
                         width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "11px", fontWeight: 700,
-                        background: i < 6 ? "#F97316" : "transparent",
+                        background: i < 6 ? T.accent : "transparent",
                         border: i < 6 ? "none" : "1.5px solid rgba(255,255,255,0.25)",
                         color: i < 6 ? "#1F1156" : T.muted,
                       }}>
@@ -794,11 +844,11 @@ export default function Landing() {
               </div>
 
               {examEstimated ? (
-                <div style={{ padding: "12px 14px", borderRadius: "12px", background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.35)", fontSize: "13px", lineHeight: 1.55, color: "#FDBA74", marginBottom: "16px" }}>
+                <div style={{ padding: "12px 14px", borderRadius: "12px", background: T.accentTint, border: `1px solid ${T.accent}59`, fontSize: "13px", lineHeight: 1.55, color: T.accent, marginBottom: "16px" }}>
                   We&apos;ll ask once to update this date — when JAMB confirms the 2027 dates, or you print your exam slip with your exact day, Companion asks once to re-plan to that day, so your countdown stops being estimated.
                 </div>
               ) : (
-                <div style={{ padding: "12px 14px", borderRadius: "12px", background: T.successTint, border: "1px solid rgba(49,162,76,0.35)", fontSize: "13px", lineHeight: 1.55, color: T.successText, marginBottom: "16px" }}>
+                <div style={{ padding: "12px 14px", borderRadius: "12px", background: T.successTint, border: `1px solid ${T.success}59`, fontSize: "13px", lineHeight: 1.55, color: T.successText, marginBottom: "16px" }}>
                   Your exact day is set — no estimating. Your countdown and plan are built around {fmtDate(exactDate)}.
                 </div>
               )}
@@ -821,14 +871,14 @@ export default function Landing() {
               </div>
               <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: "#6366F1" }} />
+                  <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: T.primary }} />
                 ))}
               </div>
               <h1 style={h1}>Create your account</h1>
               <p style={{ ...sub, marginBottom: "16px" }}>Free. Your plan, warm-up result and progress sync to your account.</p>
-              <div style={{ padding: "14px 16px", borderRadius: "14px", background: T.successTint, border: "1px solid rgba(49,162,76,0.35)", marginBottom: "16px" }}>
+              <div style={{ padding: "14px 16px", borderRadius: "14px", background: T.successTint, border: `1px solid ${T.success}59`, marginBottom: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                  <CheckCircle size={15} color="#2FBF71" strokeWidth={2} style={{ flexShrink: 0 }} />
+                  <CheckCircle size={15} color={T.successText} strokeWidth={2} style={{ flexShrink: 0 }} />
                   <span style={{ fontSize: "13px", fontWeight: 700, color: T.successText }}>Your choices are saved with your account</span>
                 </div>
                 <div style={{ fontSize: "13px", color: T.sub, lineHeight: 1.6 }}>
@@ -855,10 +905,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* ── FOOTER ── */}
-      <div style={{ background: "transparent", padding: "20px", textAlign: "center" }}>
-        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>© 2026 Companion · Free for every student</span>
-      </div>
     </div>
   );
 }

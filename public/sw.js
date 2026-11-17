@@ -1,6 +1,6 @@
 // Cache version — update this string on every deployment to bust old caches.
 // Format: companion-YYYYMMDD-N
-const CACHE_NAME    = 'companion-20261109-2';
+const CACHE_NAME    = 'companion-20261117-1';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icon-192.png',

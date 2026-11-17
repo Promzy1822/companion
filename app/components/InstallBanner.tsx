@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { X, Download, Share, Plus, Check } from "lucide-react";
+import { X, Download, Share, Plus, Check, Menu } from "lucide-react";
 import { palette } from "../lib/design";
 import { useDark } from "../lib/theme";
 
@@ -19,7 +19,7 @@ const INSTALLED_KEY = "companion_install_done";
 const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 const HIDE_ROUTES = ["/auth", "/reset-password"];
 
-type Mode = "none" | "prompt" | "ios";
+type Mode = "none" | "prompt" | "ios" | "manual";
 
 function lsGet(key: string): string | null {
   try { return window.localStorage.getItem(key); } catch { return null; }
@@ -57,6 +57,7 @@ export default function InstallBanner() {
   const [mode, setMode] = useState<Mode>("none");
   const [ready, setReady] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
+  const [justInstalled, setJustInstalled] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) { lsSet(INSTALLED_KEY, "1"); return; }
@@ -67,14 +68,22 @@ export default function InstallBanner() {
     let alive = true;
     const showTimer = window.setTimeout(() => { if (alive) setReady(true); }, 1200);
 
+    // L10: tracks whether a real install prompt ever arrived, so the
+    // poll below can fall back to manual steps when it never does.
+    let sawPrompt = !!getPrompt();
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setPrompt(e);
+      sawPrompt = true;
       if (alive) setMode("prompt");
     };
     const onInstalled = () => {
       lsSet(INSTALLED_KEY, "1");
-      if (alive) setMode("none");
+      if (!alive) return;
+      setMode("none");
+      // L10: confirm the install instead of going silently blank.
+      setJustInstalled(true);
+      window.setTimeout(() => { if (alive) setJustInstalled(false); }, 6000);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
@@ -86,14 +95,19 @@ export default function InstallBanner() {
     }
 
     // The boot script may stash the prompt just after this mounts; poll briefly.
+    // L10: if no prompt ever arrives (non-iOS, non-Chrome) fall back to
+    // manual steps instead of never appearing at all. The ~15s wait is
+    // deliberate: the prompt can arrive late via the boot script.
     let tries = 0;
     const poll = window.setInterval(() => {
       tries += 1;
       if (getPrompt()) {
+        sawPrompt = true;
         if (alive) setMode("prompt");
         window.clearInterval(poll);
       } else if (tries >= 15) {
         window.clearInterval(poll);
+        if (alive && !sawPrompt && !isIOS()) setMode("manual");
       }
     }, 1000);
 
@@ -107,6 +121,24 @@ export default function InstallBanner() {
   }, []);
 
   const routeHidden = HIDE_ROUTES.some(p => pathname === p || pathname.startsWith(p + "/"));
+  if (justInstalled && !routeHidden) {
+    return (
+      <div className="install-banner" role="status" aria-label="Companion installed" style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, boxShadow: "0 12px 32px rgba(10, 8, 40, 0.22)", padding: 12, fontFamily: "var(--font)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ width: 42, height: 42, borderRadius: 11, flexShrink: 0, background: T.successTint, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Check size={20} color={T.successText} strokeWidth={2.2} />
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.text, lineHeight: 1.25 }}>Installed</div>
+            <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.35, marginTop: 1 }}>Find Companion on your home screen.</div>
+          </div>
+          <button type="button" onClick={() => setJustInstalled(false)} aria-label="Dismiss" style={{ background: "transparent", border: "none", padding: 6, color: T.muted, cursor: "pointer", flexShrink: 0, display: "flex" }}>
+            <X size={16} strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (routeHidden || mode === "none" || !ready) return null;
 
   const dismiss = () => {
@@ -122,6 +154,8 @@ export default function InstallBanner() {
       const choice = await p.userChoice;
       if (choice.outcome === "accepted") {
         lsSet(INSTALLED_KEY, "1");
+        setJustInstalled(true);
+        window.setTimeout(() => setJustInstalled(false), 6000);
       } else {
         lsSet(DISMISS_KEY, String(Date.now()));
       }
@@ -216,11 +250,21 @@ export default function InstallBanner() {
           <X size={16} strokeWidth={2} />
         </button>
       </div>
-      {mode === "ios" && showSteps && (
+      {(mode === "ios" || mode === "manual") && showSteps && (
         <div style={{ borderTop: `1px solid ${T.borderLight}`, marginTop: 10, paddingTop: 8 }}>
-          {stepRow(Share, "Tap the Share button in your browser's toolbar.")}
-          {stepRow(Plus, "Scroll down and choose \u201CAdd to Home Screen\u201D.")}
-          {stepRow(Check, "Tap Add \u2014 Companion will sit on your home screen like any app.")}
+          {mode === "ios" ? (
+            <>
+              {stepRow(Share, "Tap the Share button in your browser's toolbar.")}
+              {stepRow(Plus, "Scroll down and choose \u201CAdd to Home Screen\u201D.")}
+              {stepRow(Check, "Tap Add \u2014 Companion will sit on your home screen like any app.")}
+            </>
+          ) : (
+            <>
+              {stepRow(Menu, "Open your browser's menu (top corner).")}
+              {stepRow(Download, "Choose \u201CInstall Companion\u201D or \u201CAdd to Home screen\u201D.")}
+              {stepRow(Check, "Companion will sit on your home screen like any app.")}
+            </>
+          )}
         </div>
       )}
     </div>

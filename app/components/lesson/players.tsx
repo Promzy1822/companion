@@ -1,44 +1,4 @@
-/**
- * players.tsx — REVISED DRAFT (Lesson rebuild, worker W2)
- * Against HEAD aabd1582a5619a9e6425afac67ac6340c091f6b7.
- *
- * Structural rebuild to the approved Lesson sample (Gas Laws, phy_25).
- * Presentation / layout / typography / tokens ONLY. Every interaction
- * state machine is preserved exactly as in the current file:
- *  - Predict: single choice, locks after answering, correctIndex verdict.
- *  - StoryShort: cur/answers/finished state, decision gating, collapsed
- *    completed steps, closingPattern on finish.
- *  - BoyleLab: vol useState(10), P = 480 / vol, same dots / curve math
- *    (re-mapped linearly onto a larger, labelled graph — same hyperbola).
- *  - Block schema, sanitizeLessonV2 and REGISTERED_SIMS untouched
- *    (this file only renders; unregistered sims never reach it, but the
- *    simulator case now renders a fallback card instead of null anyway).
- *
- * DEVIATIONS FROM THE SAMPLE SPEC (deliberate, see report):
- *  1. Spec says card shell radius "R.xl2" — no such token exists in
- *     app/lib/design.ts at HEAD (radii are sm/md/lg/xl/xxl/pill).
- *     The shell uses R.xxl (20px), exactly as the current card() does.
- *  2. "Continue to exercises" in the finished StoryShort needs a
- *     navigation callback the player never had. LessonBlockView /
- *     StoryShort accept an OPTIONAL onContinueExercises prop; the
- *     button renders only when the lesson page passes it. Without it
- *     the page's own "Start exercises" CTA (below the learn stage)
- *     remains the way forward — no dead button is rendered.
- *  3. L27 asked for the Continue button NOT to be disabled. Kept
- *     disabled: the task preserves the interaction state machine
- *     exactly; only the hint moved above the button (13px, T.sub).
- *  4. Hover states are done with onMouseEnter/Leave state, not CSS
- *     :hover — inline styles cannot express :hover. Same for
- *     :focus-visible (L14/D7): needs a shared class + focus-ring
- *     token, which lives outside this file.
- *  5. "Wrong feedback in danger text": the verdict line ("Not quite —
- *     the answer is …") is danger text; the feedback paragraph itself
- *     is 14px T.text per the "teaching text floored at 14px in text
- *     colour" rule, so the teaching copy stays readable.
- *  6. Eyebrows are 12px T.primaryText (L21: orange reserved for the
- *     subject line; players use primaryText) — including DoYouKnow,
- *     whose shell (accentTint bg + accent border) carries the accent.
- */
+// Lesson players — rebuilt to the approved Lesson sample.
 "use client";
 import { useMemo, useState, type CSSProperties } from "react";
 import {

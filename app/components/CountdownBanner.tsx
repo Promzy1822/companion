@@ -467,7 +467,8 @@ export default function CountdownBanner({ darkMode: _darkMode }: Props) {
                         value={exactDate}
                         onChange={(e) => {
                           setExactDate(e.target.value);
-                          setExactError("");
+                          const err = validateExact(e.target.value);
+                          setExactError(err ?? "");
                         }}
                         onClick={(e) => e.stopPropagation()}
                         style={{
@@ -476,7 +477,7 @@ export default function CountdownBanner({ darkMode: _darkMode }: Props) {
                           marginTop: SP[3],
                           padding: "0 12px",
                           borderRadius: R.lg,
-                          border: "1px solid " + T.border,
+                          border: "1px solid " + (exactError ? T.dangerText : T.border),
                           background: T.s2,
                           color: T.text,
                           fontSize: TY.base,

@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, BookOpen, LayoutGrid } from "lucide-react";
 import { NAVBAR_HEIGHT } from "../../components/NavbarView";
-import { BOTTOM_NAV_HEIGHT } from "../../components/BottomNavView";
 import { palette, R } from "../../lib/design";
+import { fetchWithTimeout, FETCH_TIMEOUTS, OfflineError, TimeoutError } from "../../lib/fetch-timeout";
 import { useDark } from "../../lib/theme";
 import { Progress } from "../../lib/progress";
 import { Flame, FlameHeatMeter } from "../../components/Flame";
@@ -50,26 +50,42 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
   const [heat, setHeat]       = useState(HEAT_START);
   const [inRow, setInRow]     = useState(0);
   const recordedRef           = useRef(false);
+  // H5: slow-network escalation for the drill fetch (~8s) + user cancel.
+  const [slowDrill, setSlowDrill] = useState(false);
+  const drillAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const aborter = new AbortController();
+    drillAbortRef.current = aborter;
+    // H5: staged loading — after ~8s say so and offer Cancel.
+    const slowTimer = window.setTimeout(() => { if (!cancelled) setSlowDrill(true); }, 8000);
     (async () => {
       setLoading(true);
       setError("");
       try {
-        const res  = await fetch(`/api/drills/${topicId}`);
+        const res  = await fetchWithTimeout(`/api/drills/${topicId}`, { signal: aborter.signal }, FETCH_TIMEOUTS.drill);
         const body = await res.json();
         if (cancelled) return;
         if (!res.ok) { setError(body.error || "Could not load this drill."); return; }
         setData(body);
         setOrder(shuffled(body.exercises || []));
-      } catch {
-        if (!cancelled) setError("Network error. Please try again.");
+      } catch (err) {
+        if (cancelled) return;
+        if (err instanceof Error && err.name === "AbortError") return; // user pressed Cancel
+        if (err instanceof OfflineError) { setError("You're offline — check your connection and try again."); return; }
+        if (err instanceof TimeoutError) { setError("This drill is taking too long to load. Check your connection and try again."); return; }
+        setError("Network error. Please try again.");
       } finally {
-        if (!cancelled) setLoading(false);
+        window.clearTimeout(slowTimer);
+        if (!cancelled) { setLoading(false); setSlowDrill(false); }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(slowTimer);
+      aborter.abort();
+    };
   }, [topicId]);
 
   const currentQ = order[qIndex];
@@ -125,6 +141,12 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "60px 20px", textAlign: "center" }}>
           <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${T.s3}`, borderTopColor: "#F97316", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
           <div style={{ fontSize: 13, color: T.sub }}>Preparing your drill… the first drill on a topic can take a few seconds.</div>
+          {slowDrill && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 13, color: T.sub, marginBottom: 12 }}>Still loading — this can take a few seconds on a slow connection.</div>
+              <button onClick={() => { drillAbortRef.current?.abort(); router.back(); }} style={{ padding: "10px 20px", borderRadius: R.pill, border: `1px solid ${T.border}`, background: T.s2, color: T.text, fontWeight: 700, fontSize: 14, cursor: "pointer", minHeight: 44, fontFamily: "inherit" }}>Cancel</button>
+            </div>
+          )}
           <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
         </div>
       </div>
@@ -133,7 +155,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
 
   if (error || !data) {
     return (
-      <div style={{ minHeight: "100vh", background: T.bg, paddingTop: NAVBAR_HEIGHT, paddingBottom: BOTTOM_NAV_HEIGHT + 20, fontFamily: "var(--font)" }}>
+      <div className="drill-page-pad" style={{ minHeight: "100vh", background: T.bg, paddingTop: NAVBAR_HEIGHT, fontFamily: "var(--font)" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "24px 16px", textAlign: "center" }}>
           <p style={{ color: T.sub, fontSize: 14, marginBottom: 16 }}>{error || "Something went wrong loading this drill."}</p>
           <button onClick={() => router.back()} style={{ padding: "10px 20px", borderRadius: R.pill, border: "none", background: T.primary, color: "#fff", fontWeight: 700, cursor: "pointer" }}>Go back</button>
@@ -143,7 +165,7 @@ export default function DrillPage({ params }: { params: { topicId: string } }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, paddingTop: NAVBAR_HEIGHT, paddingBottom: BOTTOM_NAV_HEIGHT + 20, fontFamily: "var(--font)" }}>
+    <div className="drill-page-pad" style={{ minHeight: "100vh", background: T.bg, paddingTop: NAVBAR_HEIGHT, fontFamily: "var(--font)" }}>
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "16px" }}>
         <button onClick={() => router.back()} style={{
           display: "flex", alignItems: "center", gap: 6, background: "none", border: "none",

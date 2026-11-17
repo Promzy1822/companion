@@ -14,6 +14,11 @@ import { createClient } from "./supabase/client";
  * Everything here is fire-and-forget: no call throws or blocks the UI. When
  * the student is logged out or offline the call is a no-op, and the next
  * hydrate reconciles.
+ *
+ * Logout ordering (H3): Session.logout() signs out of Supabase first,
+ * then calls Sync.cancelPending() before any local key is cleared — a
+ * pending debounced push must never see a cleared key (pushNow deletes
+ * the cloud snapshot when the local value is null).
  */
 
 const KEY_TO_LOCAL = {
@@ -72,6 +77,16 @@ async function pushNow(key: SyncKey): Promise<void> {
 }
 
 export const Sync = {
+  /** Cancel all pending debounced pushes. Called by Session.logout()
+   *  after signOut, before local keys are cleared (H3). */
+  cancelPending(): void {
+    for (const key of Object.keys(timers) as SyncKey[]) {
+      const t = timers[key];
+      if (t) clearTimeout(t);
+      delete timers[key];
+    }
+  },
+
   /** Queue a snapshot push for a key (debounced; safe to call on every write). */
   push(key: SyncKey): void {
     if (typeof window === "undefined") return;

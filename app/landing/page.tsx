@@ -372,21 +372,36 @@ export default function Landing() {
             <span style={{ fontWeight: 800, fontSize: "17px", color: "#fff", letterSpacing: "-0.3px" }}>companion</span>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <Link href="/auth" style={{
-              borderRadius: "50px", padding: "8px 16px", fontSize: "13px", fontWeight: 700, textDecoration: "none",
-              border: "1.5px solid rgba(255,255,255,0.45)", color: "#fff", background: "transparent",
-            }}>
-              Log In
-            </Link>
-            <button
-              onClick={() => { if (step === "welcome") setStep("subjects"); window.scrollTo({ top: 0 }); }}
-              style={{
-                background: T.accent, color: "#1F1156", border: "none", borderRadius: "50px", padding: "8px 16px",
-                fontSize: "13px", fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              Get Started
-            </button>
+            {/* landingheaderfix: wizard nav — the header Get Started button is
+                dead once the wizard starts (its onClick only fires on the
+                welcome step), so it hides after step 1; Log In stays as a
+                quiet text link for returning users. */}
+            {step === "welcome" ? (
+              <>
+                <Link href="/auth" style={{
+                  borderRadius: "50px", padding: "8px 16px", fontSize: "13px", fontWeight: 700, textDecoration: "none",
+                  border: "1.5px solid rgba(255,255,255,0.45)", color: "#fff", background: "transparent",
+                }}>
+                  Log In
+                </Link>
+                <button
+                  onClick={() => { if (step === "welcome") setStep("subjects"); window.scrollTo({ top: 0 }); }}
+                  style={{
+                    background: T.accent, color: "#1F1156", border: "none", borderRadius: "50px", padding: "8px 16px",
+                    fontSize: "13px", fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  Get Started
+                </button>
+              </>
+            ) : (
+              <Link href="/auth" style={{
+                padding: "8px 4px", fontSize: "13px", fontWeight: 700, textDecoration: "none",
+                color: T.primaryText, background: "transparent",
+              }}>
+                Log in
+              </Link>
+            )}
           </div>
         </div>
       </nav>

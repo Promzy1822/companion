@@ -179,7 +179,9 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
     if (submitTimer.current) { clearTimeout(submitTimer.current); submitTimer.current = null; }
   };
   // M13: real spinner (not just a label change) for submit buttons.
-  const spinner = (size = 16) => <LoaderCircle size={size} strokeWidth={2.5} style={{ animation: "auth-spin 0.9s linear infinite", verticalAlign: "-3px", marginRight: "8px" }} />;
+  // landingarrowfix: primary-button icon row -- primaryBtn is a flex row
+  // so the (block, per preflight) spinner svg stays on the label's line.
+  const spinner = (size = 16) => <LoaderCircle size={size} strokeWidth={2.5} style={{ animation: "auth-spin 0.9s linear infinite", flexShrink: 0, marginRight: "8px" }} />;
 
   // M12: the subject-limit error is a field error under the picker — it
   // never auto-clears (a slow reader must still see it).
@@ -318,7 +320,7 @@ export function AuthForm({ initialMode }: { initialMode: Mode }) {
   const lbl: React.CSSProperties = { fontSize:"13px", fontWeight:600, color:D.sub, display:"block", marginBottom:"6px" };
   const errBox: React.CSSProperties = { display:"flex", alignItems:"flex-start", gap:"8px", padding:"10px 14px", background:D.dangerLight, border:`1px solid ${D.danger}66`, borderRadius:"12px", color:D.dangerText, fontSize:"13px", lineHeight:1.45 };
   const infoBox: React.CSSProperties = { display:"flex", alignItems:"flex-start", gap:"8px", padding:"10px 14px", background:D.successLight, border:`1px solid ${D.success}59`, borderRadius:"12px", color:D.successText, fontSize:"13px", lineHeight:1.45 };
-  const primaryBtn = (loading: boolean): React.CSSProperties => ({ width:"100%", padding:"14px", borderRadius:"12px", border:"none", background:loading?D.muted:D.accent, color:loading?"#fff":"#1F1156", fontWeight:800, fontSize:"15px", cursor:loading?"not-allowed":"pointer", boxShadow:loading?"none":`0 2px 10px ${D.accent}59` });
+  const primaryBtn = (loading: boolean): React.CSSProperties => ({ width:"100%", padding:"14px", borderRadius:"12px", border:"none", background:loading?D.muted:D.accent, color:loading?"#fff":"#1F1156", fontWeight:800, fontSize:"15px", cursor:loading?"not-allowed":"pointer", boxShadow:loading?"none":`0 2px 10px ${D.accent}59`, display:"flex", alignItems:"center", justifyContent:"center" });
   const COMP_DISP: Record<string,string> = { "Very High":D.dangerText, "High":D.accent, "Moderate":D.primaryText, "Low":D.successText };
   const compColor = rec ? (COMP_DISP[rec.competition] || D.primaryText) : D.primaryText;
 

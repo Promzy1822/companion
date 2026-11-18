@@ -276,10 +276,13 @@ export default function Landing() {
   if (!ready) return null;
 
   /* ── Shared styles ────────────────────────────────────────────────────── */
+  // landingarrowfix: primary-button icon row -- flex row keeps the
+  // ArrowRight on the same line as the label (preflight makes svg block).
   const btnPrimary: React.CSSProperties = {
     width: "100%", padding: "15px", borderRadius: "12px", border: "none",
     background: T.accent, color: "#1F1156", fontWeight: 800, fontSize: "15px",
     cursor: "pointer", boxShadow: `0 2px 10px ${T.accent}59`, minHeight: 52,
+    display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
   };
   const btnPrimaryDisabled: React.CSSProperties = {
     ...btnPrimary, background: T.border, color: T.muted, boxShadow: "none", cursor: "not-allowed",
@@ -486,7 +489,7 @@ export default function Landing() {
               </div>
               <div style={{ marginTop: "auto" }}>
                 <button onClick={() => setStep("subjects")} style={btnPrimary}>
-                  Get started <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                  Get started <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                 </button>
                 <Link href="/auth" style={{ display: "block", marginTop: "14px", fontSize: "13px", fontWeight: 700, color: T.primaryText, textDecoration: "none" }}>
                   I already have an account — Log in
@@ -536,7 +539,7 @@ export default function Landing() {
               </div>
               <div style={{ marginTop: "auto" }}>
                 <button onClick={() => setStep("warmup")} disabled={picked.length !== 3} style={picked.length === 3 ? btnPrimary : btnPrimaryDisabled}>
-                  Continue <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                  Continue <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                 </button>
               </div>
             </div>
@@ -657,7 +660,7 @@ export default function Landing() {
                         {warmSelected === null
                           ? "Pick an answer first"
                           : warmIndex + 1 < warmTotal ? "Next question" : "See my plan"}
-                        <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                        <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                       </button>
                     </div>
                   </div>
@@ -682,7 +685,7 @@ export default function Landing() {
               </div>
               <div style={{ marginTop: "auto" }}>
                 <button onClick={() => setStep("exam")} disabled={target === null} style={target === null ? btnPrimaryDisabled : btnPrimary}>
-                  Continue <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                  Continue <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                 </button>
               </div>
             </div>
@@ -712,7 +715,7 @@ export default function Landing() {
               {examMode === "window" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "auto" }}>
                   <button onClick={() => setStep("time")} style={btnPrimary}>
-                    Use the window — continue <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                    Use the window — continue <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                   </button>
                   <button onClick={() => { setExamMode("exact"); setExactError(""); }} className="fd-ghost" style={btnGhost}>
                     I know my exact date
@@ -748,7 +751,7 @@ export default function Landing() {
                     </div>
                   )}
                   <button onClick={confirmExactDate} disabled={!exactDate} style={!exactDate ? btnPrimaryDisabled : btnPrimary}>
-                    Continue with this date <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                    Continue with this date <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                   </button>
                   <button onClick={() => { setExamMode("window"); setExactDate(""); setExactError(""); }} className="fd-ghost" style={btnGhost}>
                     Use the window instead
@@ -774,7 +777,7 @@ export default function Landing() {
               </div>
               <div style={{ marginTop: "auto" }}>
                 <button onClick={() => setStep("plan")} disabled={dailyMinutes === null} style={dailyMinutes === null ? btnPrimaryDisabled : btnPrimary}>
-                  Build my plan <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                  Build my plan <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                 </button>
               </div>
             </div>
@@ -870,7 +873,7 @@ export default function Landing() {
 
               <div style={{ marginTop: "auto" }}>
                 <button onClick={() => setStep("signup")} style={btnPrimary}>
-                  Create my free account <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                  Create my free account <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                 </button>
               </div>
             </div>
@@ -907,7 +910,7 @@ export default function Landing() {
               </p>
               <div style={{ marginTop: "auto" }}>
                 <button onClick={goSignup} style={btnPrimary}>
-                  Create my free account <ArrowRight size={17} strokeWidth={2.2} style={{ verticalAlign: "-3px", marginLeft: "4px" }} />
+                  Create my free account <ArrowRight size={17} strokeWidth={2.2} style={{ flexShrink: 0 }} />
                 </button>
                 <p style={{ textAlign: "center", fontSize: "13px", color: T.muted, margin: "14px 0 0" }}>
                   Already have an account?{" "}
